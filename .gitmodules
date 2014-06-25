@@ -1,0 +1,3 @@
+[submodule "libchuck"]
+	path = libchuck
+	url = git@github.com:briansorahan/libchuck.git
