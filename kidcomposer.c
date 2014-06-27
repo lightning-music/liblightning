@@ -1,4 +1,14 @@
+/*
+  kidcomposer
+  A program for kids to make music with Linux.
+  Brian Sorahan 2014
+*/
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <gtk/gtk.h>
+#include <jack/jack.h>
 
 static void
 callback(GtkWidget *widget,
@@ -21,11 +31,27 @@ destroy(GtkWidget *widget,
     gtk_main_quit();
 }
 
+/*
+  jack process callback
+ */
+int
+process(jack_nframes_t nframes, void *arg) {
+	jack_default_audio_sample_t *in, *out;
+	
+	/* in = jack_port_get_buffer (input_port, nframes); */
+	/* out = jack_port_get_buffer (output_port, nframes); */
+	memcpy (out, in,
+		sizeof (jack_default_audio_sample_t) * nframes);
+
+	return 0;      
+}
+
 int main(int argc, char **argv) {
+    /* setup gtk widgets */
     GtkWidget *window;
     GtkWidget *button;
     GtkWidget *box1;
-
+	
     gtk_init(&argc, &argv);
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Hello, Buttons!");
@@ -56,6 +82,25 @@ int main(int argc, char **argv) {
 
     gtk_widget_show(box1);
     gtk_widget_show(window);
+
+    /* setup jack */
+    jack_client_t *client;
+	const char **ports;
+	const char *client_name = "simple";
+	const char *server_name = NULL;
+	jack_options_t options = JackNullOption;
+	jack_status_t status;
+
+    client = jack_client_open(client_name, options, &status, server_name);
+    if (client == NULL) {
+		fprintf (stderr, "jack_client_open() failed, "
+			 "status = 0x%2.0x\n", status);
+		if (status & JackServerFailed) {
+			fprintf (stderr, "Unable to connect to JACK server\n");
+		}
+		exit (1);
+    }
+
     gtk_main();
 
     return 0;
