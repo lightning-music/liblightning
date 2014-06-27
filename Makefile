@@ -3,27 +3,28 @@
 # Brian Sorahan 2014
 #
 GTK_FLAGS := $(shell pkg-config --cflags --libs gtk+-2.0)
-ALSA_FLAGS := $(shell pkg-config --cflags --libs alsa)
 JACK_FLAGS := $(shell pkg-config --cflags --libs jack)
 SNDFILE_FLAGS := $(shell pkg-config --cflags --libs sndfile)
 CPPFLAGS := -I/usr/include/gtk-2.0
 CFLAGS := $(GTK_FLAGS)
-LDLIBS := $(GTK_FLAGS) $(ALSA_FLAGS) $(JACK_FLAGS) \
-          $(SNDFILE_FLAGS) -lm
+LDLIBS := $(GTK_FLAGS) $(JACK_FLAGS) $(SNDFILE_FLAGS) -lm
 
 .PHONY: all
 
-PROGS = kidcomposer packbox table-pack pcm-min simple_client \
+PROGS = kidcomposer packbox table-pack simple_client \
         capture_client
 
 all .DEFAULT: $(PROGS)
 
-kidcomposer: kidcomposer.c
+kidcomposer: kidcomposer.c      \
+             kit.c kit.h
+
+kit.c: mem.c mem.h
+
 packbox: packbox.c
 table-pack: table-pack.c
-pcm-min: pcm-min.c
 simple_client: simple_client.c
 capture_client: capture_client.c
 
 clean:
-	rm -rf $(PROGS) *~
+	rm -rf $(PROGS) *~ *.o

@@ -1,13 +1,18 @@
+/**
+ * kidcomposer jack client
+ * see http://jackaudio.org
+ */
 #ifndef AUDIO_ENGINE_H_INCLUDED
 #define AUDIO_ENGINE_H_INCLUDED
-// Play sound files with libsndfile and jack.
-// http://mega-nerd.com/libsndfile
-// http://jackaudio.org
 
-// opaque data structure
+/**
+ * AudioEngine data structure.
+ */
 typedef struct AudioEngine *AudioEngine;
 
-// initialize the audio engine
+/**
+ * Initialize an audio engine.
+ */
 AudioEngine
 AudioEngine_init();
 
