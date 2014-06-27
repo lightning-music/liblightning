@@ -9,6 +9,8 @@
 #include <string.h>
 #include <gtk/gtk.h>
 
+#include "kit.h"
+
 static void
 callback(GtkWidget *widget,
          gpointer data) {
@@ -70,7 +72,12 @@ int main(int argc, char **argv) {
     gtk_widget_show(box1);
     gtk_widget_show(window);
 
+    // setup kit
+    Kit kit = Kit_load("kits/default");
+
     gtk_main();
+
+    Kit_free(&kit);
 
     return 0;
 }

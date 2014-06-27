@@ -4,6 +4,9 @@
 #include "sample.h"
 #include "audio-engine.h"
 
+/* we only allow 25 samples in a kit */
+#define MAX_SAMPLES 25
+
 typedef struct Kit *Kit;
 
 /**
