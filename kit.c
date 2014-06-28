@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <dirent.h>
 #include <limits.h>
 #include <sndfile.h>
 #include <stddef.h>
@@ -19,13 +18,11 @@ struct Kit {
 
 Kit
 Kit_load(const char *dir) {
-    // TODO: better error-handling with errno
-
+    /* TODO: better error-handling with errno */
     /* read .kit */
     char kitfile_path[PATH_MAX];
     sprintf(kitfile_path, "%s/%s", dir, ".kit");
     size_t path_max = PATH_MAX;
-    /* char f[PATH_MAX]; */
     char *f;
     int file_index = 0;
     char files[MAX_SAMPLES][PATH_MAX];
@@ -36,14 +33,14 @@ Kit_load(const char *dir) {
     } else {
         printf("reading samples from %s\n", kitfile_path);
     }
-
+    /* load samples */
     ssize_t chars_read = 0;
     while (file_index < MAX_SAMPLES) {
         chars_read = getline(&f, &path_max, kitfile);
         if (-1 == chars_read) {
             break;
         }
-        f[chars_read - 2] = '\0';
+        f[chars_read - 1] = '\0';
         memcpy(files[file_index], f, PATH_MAX);
         printf("read file %d\n", file_index);
         file_index++;

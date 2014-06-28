@@ -68,6 +68,11 @@ disk_thread (void *arg)
 	static jack_nframes_t total_captured = 0;
 	jack_nframes_t samples_per_frame = info->channels;
 	size_t bytes_per_frame = samples_per_frame * sample_size;
+    /*
+      buffer that holds one frame.
+      equal to
+      channels * sizeof(jack_default_audio_sample_t)
+     */
 	void *framebuf = malloc (bytes_per_frame);
 
 	pthread_setcanceltype (PTHREAD_CANCEL_ASYNCHRONOUS, NULL);

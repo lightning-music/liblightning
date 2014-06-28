@@ -9,7 +9,7 @@ Sample
 Sample_load(const char *file);
 
 kc_size_t
-Sample_size(Sample *samp);
+Sample_num_frames(Sample samp);
 
 void
 Sample_free(Sample *samp);
