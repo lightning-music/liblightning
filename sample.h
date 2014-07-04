@@ -8,7 +8,7 @@ typedef struct Sample *Sample;
 Sample
 Sample_load(const char *file);
 
-kc_size_t
+nframes_t
 Sample_num_frames(Sample samp);
 
 void

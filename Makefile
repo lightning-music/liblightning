@@ -1,5 +1,5 @@
 #
-# kidcomposer
+# simplify
 # Brian Sorahan 2014
 #
 GTK_FLAGS := $(shell pkg-config --cflags --libs gtk+-2.0)
@@ -12,14 +12,16 @@ LDLIBS := $(GTK_FLAGS) $(JACK_FLAGS) $(SNDFILE_FLAGS) -lm
 
 .PHONY: all
 
-PROGS = kidcomposer packbox table-pack simple_client \
+PROGS = simplify packbox table-pack simple_client \
         capture_client
 
 all .DEFAULT: $(PROGS)
 
-kidcomposer: kidcomposer.c      \
-             kit.o kit.h        \
-             mem.o mem.h
+simplify: simplify.c                         \
+          kit.o kit.h                        \
+          mem.o mem.h                        \
+          audio-engine.o audio-engine.h      \
+          mixer.o mixer.h
 
 packbox: packbox.c
 table-pack: table-pack.c

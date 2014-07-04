@@ -1,5 +1,5 @@
 /**
- * kidcomposer jack client
+ * simplify jack client
  * see http://jackaudio.org
  */
 #ifndef AUDIO_ENGINE_H_INCLUDED
@@ -18,6 +18,6 @@ AudioEngine_init();
 
 // free any resources being used by the audio engine
 void
-AudioEngine_free(AudioEngine *ae);
+AudioEngine_free(AudioEngine *engine);
 
 #endif

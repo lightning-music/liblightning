@@ -1,15 +1,12 @@
-/*
-  kidcomposer
-  A program for kids to make music with Linux.
-  Brian Sorahan 2014
-*/
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <gtk/gtk.h>
 
+#include "audio-engine.h"
 #include "kit.h"
+#include "mixer.h"
 
 static void
 callback(GtkWidget *widget,
@@ -32,11 +29,10 @@ destroy(GtkWidget *widget,
     gtk_main_quit();
 }
 
-/*
-  jack process callback
- */
 int main(int argc, char **argv) {
-    /* setup gtk widgets */
+
+    // setup gtk widgets
+
     GtkWidget *window;
     GtkWidget *button;
     GtkWidget *box1;
@@ -52,18 +48,21 @@ int main(int argc, char **argv) {
     gtk_container_add(GTK_CONTAINER(window), box1);
 
     // Button 1
+    
     button = gtk_button_new_with_label("Button 1");
     g_signal_connect(button, "clicked", G_CALLBACK(callback), (gpointer) "button 1");
     gtk_box_pack_start(GTK_BOX(box1), button, TRUE, TRUE, 0);
     gtk_widget_show(button);
 
     // Button 2
+
     button = gtk_button_new_with_label("Button 2");
     g_signal_connect(button, "clicked", G_CALLBACK(callback), (gpointer) "button 2");
     gtk_box_pack_start(GTK_BOX(box1), button, TRUE, TRUE, 0);
     gtk_widget_show(button);
 
-    // Quit
+    // Quit button
+    
     button = gtk_button_new_with_label("Quit");
     g_signal_connect(button, "clicked", G_CALLBACK(destroy), NULL);
     gtk_box_pack_start(GTK_BOX(box1), button, TRUE, TRUE, 0);
@@ -72,12 +71,20 @@ int main(int argc, char **argv) {
     gtk_widget_show(box1);
     gtk_widget_show(window);
 
+    // setup audio engine
+
+    AudioEngine audio_engine = AudioEngine_init();
+    Mixer mixer = Mixer_init(audio_engine, 32);
+
     // setup kit
+
     Kit kit = Kit_load("kits/default");
 
     gtk_main();
 
     Kit_free(&kit);
+    Mixer_free(&mixer);
+    AudioEngine_free(&audio_engine);
 
     return 0;
 }
