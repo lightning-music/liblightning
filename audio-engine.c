@@ -4,17 +4,31 @@
 #include <stdlib.h>
 #include <string.h>
 #include <jack/jack.h>
+#include <jack/ringbuffer.h>
 
 #include "audio-engine.h"
 #include "mem.h"
 #include "types.h"
+
+/**
+ * Default ringbuffer size
+ */
+#define DEFAULT_RB_SIZE 16384
+
+/**
+ * Only support stereo output.
+ */
+#define NUM_CHANNELS 2
 
 struct AudioEngine {
     const char **ports;
     const char *server_name;
     jack_client_t *jack_client;
     jack_port_t *jack_output_port;
+    long overruns;
 };
+
+static jack_ringbuffer_t *g_ringbuffer = NULL;
 
 /**
  * Audio engine singleton
@@ -48,6 +62,13 @@ AudioEngine
 AudioEngine_init() {
     if (g_engine != NULL) {
         return g_engine;
+    }
+
+    size_t rb_size = \
+        DEFAULT_RB_SIZE * NUM_CHANNELS * sizeof(sample_t);
+
+    if (g_ringbuffer == NULL) {
+        g_ringbuffer = jack_ringbuffer_create(rb_size);
     }
 
     AudioEngine engine;
@@ -88,9 +109,14 @@ AudioEngine_init() {
     return g_engine = engine;
 }
 
-int
-AudioEngine_play_samples(sample_t *frames,
-                         nframes_t nframes) {
+size_t
+AudioEngine_play(AudioEngine engine,
+                 sample_t *sample_data,
+                 size_t frames,
+                 int channels) {
+    assert(engine);
+    size_t cnt = sizeof(sample_t) * frames * channels;
+    return jack_ringbuffer_write(g_ringbuffer, (void *) sample_data, cnt);
 }
 
 void

@@ -13,6 +13,7 @@ float *framebuf;
 
 int main(int argc, char **argv) {
     AudioEngine engine = AudioEngine_init();
+
     const char *f = "/home/brian/Audio/freesound/playing_in_the_backyard_with_diggers.flac";
     SF_INFO sfinfo;
     SNDFILE *sf = sf_open(f, SFM_READ, &sfinfo);
