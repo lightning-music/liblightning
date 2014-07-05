@@ -9,7 +9,8 @@
 #include "types.h"
 
 struct Sample {
-    kc_size_t num_frames;
+    const char *path;
+    sample_t *framebuf;
     SNDFILE *sf;
     SF_INFO *sfinfo;
 };
@@ -21,23 +22,47 @@ Sample
 Sample_load(const char *file) {
     Sample s;
     NEW(s);
+    NEW(s->sfinfo);
 
     s->sf = sf_open(file, SFM_READ, s->sfinfo);
+
     if (s->sf == NULL) {
         fprintf(stderr, "%s\n", sf_strerror(s->sf));
         exit(EXIT_FAILURE);
     }
 
+    s->path = file;
+
+    // frame buffer contains n samples,
+    // where n = frames * channels
+
+    s->framebuf = CALLOC(s->sfinfo->frames * s->sfinfo->channels,
+                         sizeof(sample_t));
+
+    // fill the frame buffer
+
+    sf_count_t frames = 1024 * s->sfinfo->channels;
+    while (sf_readf_float(s->sf, s->framebuf, frames)) ;
+
     return s;
+}
+
+/**
+ * Path to loaded file.
+ */
+const char *
+Sample_path(Sample samp) {
+    assert(samp);
+    return samp->path;
 }
 
 /**
  * Number of frames in the audio sample.
  */
-kc_size_t
+nframes_t
 Sample_num_frames(Sample samp) {
     assert(samp);
-    return (kc_size_t) samp->sf->frames;
+    return (nframes_t) samp->sfinfo->frames;
 }
 
 /**
@@ -46,7 +71,7 @@ Sample_num_frames(Sample samp) {
 int
 Sample_sample_rate(Sample samp) {
     assert(samp);
-    return samp->sf->samplerate;
+    return samp->sfinfo->samplerate;
 }
 
 /**

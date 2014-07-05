@@ -17,11 +17,11 @@ PROGS = simplify packbox table-pack simple_client \
 
 all .DEFAULT: $(PROGS)
 
-simplify: simplify.c                         \
-          kit.o kit.h                        \
-          mem.o mem.h                        \
-          audio-engine.o audio-engine.h      \
-          mixer.o mixer.h
+simplify: simplify.c                          \
+          kit.o kit.h                         \
+          mem.o mem.h                         \
+          audio-engine.o audio-engine.h       \
+          sample.o sample.h
 
 packbox: packbox.c
 table-pack: table-pack.c

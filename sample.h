@@ -8,6 +8,9 @@ typedef struct Sample *Sample;
 Sample
 Sample_load(const char *file);
 
+const char *
+Sample_path(Sample samp);
+
 nframes_t
 Sample_num_frames(Sample samp);
 

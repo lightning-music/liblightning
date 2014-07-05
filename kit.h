@@ -4,8 +4,10 @@
 #include "sample.h"
 #include "audio-engine.h"
 
-/* we only allow 25 samples in a kit */
-#define MAX_SAMPLES 25
+/*
+ * Maximum number of samples a kit can load.
+ */
+#define MAX_SAMPLES 32
 
 typedef struct Kit *Kit;
 
@@ -13,9 +15,11 @@ typedef struct Kit *Kit;
  * load all the samples in a given directory
  * expects a .kit file containing a list
  * of samples to load
+ * uses @a engine for audio playback
  */
 Kit
-Kit_load(const char *dir);
+Kit_load(const char *dir,
+         AudioEngine engine);
 
 /**
  * Return the number of samples successfully loaded.
@@ -35,8 +39,7 @@ Kit_sample_list(Kit kit);
  */
 void
 Kit_play_sample(Kit kit,
-                Sample samp,
-                AudioEngine engine);
+                Sample samp);
 
 void
 Kit_free(Kit *kit);

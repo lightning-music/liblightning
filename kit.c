@@ -17,44 +17,64 @@ struct Kit {
 };
 
 Kit
-Kit_load(const char *dir) {
+Kit_load(const char *dir,
+         AudioEngine engine) {
+
+    int i;
+    Kit kit;
+    NEW(kit);
+
     /* TODO: better error-handling with errno */
     /* read .kit */
     char kitfile_path[PATH_MAX];
+    char sample_path[PATH_MAX];
+
     sprintf(kitfile_path, "%s/%s", dir, ".kit");
+
     size_t path_max = PATH_MAX;
-    char *f;
+    char *f = NULL;
     int file_index = 0;
-    char files[MAX_SAMPLES][PATH_MAX];
     FILE *kitfile = fopen(kitfile_path, "r");
+
     if (NULL == kitfile) {
         fprintf(stderr, "Could not open %s\n", kitfile_path);
         exit(EXIT_FAILURE);
     } else {
-        printf("reading samples from %s\n", kitfile_path);
+        printf("opened %s\n", kitfile_path);
     }
-    /* load samples */
-    ssize_t chars_read = 0;
+
+    kit->samples = CALLOC(MAX_SAMPLES, sizeof(Sample));
+
+    printf("allocated sample buffer\n");
+
+    // read sample paths
+    ssize_t read = 0;
     while (file_index < MAX_SAMPLES) {
-        chars_read = getline(&f, &path_max, kitfile);
-        if (-1 == chars_read) {
+        read = getline(&f, &path_max, kitfile);
+
+        if (-1 == read) {
             break;
         }
-        f[chars_read - 1] = '\0';
-        memcpy(files[file_index], f, PATH_MAX);
-        printf("read file %d\n", file_index);
+
+        // get rid of the newline
+        f[read - 1] = '\0';
+
+        sample_path[0] = '\0';
+
+        sprintf(sample_path, "%s/%s", dir, f);
+
+        kit->samples[file_index] = Sample_load(sample_path);
+
         file_index++;
     }
 
-    int i;
-    for (i = 0; i < file_index; i++) {
-        printf("found sample %s\n", files[i]);
-    }
+    kit->num_samples = file_index;
 
-    /* Sample *samples; */
+    // initialize samples
 
-    Kit kit;
-    NEW(kit);
+    /* for (i = 0; i < file_index; i++) { */
+    /*     kit->samples[i] = Sample_load(files[file_index]); */
+    /* } */
 
     return kit;
 }
@@ -73,8 +93,7 @@ Kit_sample_list(Kit kit) {
 
 void
 Kit_play_sample(Kit kit,
-                Sample samp,
-                AudioEngine engine) {
+                Sample samp) {
     assert(kit);
 }
 

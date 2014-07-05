@@ -6,7 +6,7 @@
 
 #include "audio-engine.h"
 #include "kit.h"
-#include "mixer.h"
+#include "sample.h"
 
 static void
 callback(GtkWidget *widget,
@@ -30,6 +30,8 @@ destroy(GtkWidget *widget,
 }
 
 int main(int argc, char **argv) {
+
+    /* int i; */
 
     // setup gtk widgets
 
@@ -74,16 +76,22 @@ int main(int argc, char **argv) {
     // setup audio engine
 
     AudioEngine audio_engine = AudioEngine_init();
-    Mixer mixer = Mixer_init(audio_engine, 32);
 
     // setup kit
 
-    Kit kit = Kit_load("kits/default");
+    const char * default_kit = "kits/default";
+
+    Kit kit = Kit_load(default_kit, audio_engine);
+
+    /* unsigned int num_samples = Kit_num_samples(kit); */
+    /* Sample * sample_list = Kit_sample_list(kit); */
+    /* for (i = 0; i < num_samples; i++) { */
+    /*     printf("loaded %s\n", Sample_path(sample_list[i])); */
+    /* } */
 
     gtk_main();
 
     Kit_free(&kit);
-    Mixer_free(&mixer);
     AudioEngine_free(&audio_engine);
 
     return 0;

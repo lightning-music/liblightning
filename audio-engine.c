@@ -2,10 +2,12 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <jack/jack.h>
 
-#include "mem.h"
 #include "audio-engine.h"
+#include "mem.h"
+#include "types.h"
 
 struct AudioEngine {
     const char **ports;
@@ -13,6 +15,11 @@ struct AudioEngine {
     jack_client_t *jack_client;
     jack_port_t *jack_output_port;
 };
+
+/**
+ * Audio engine singleton
+ */
+static AudioEngine g_engine = NULL;
 
 /**
  * JACK shutdown callback
@@ -29,11 +36,20 @@ jack_shutdown(void *arg) {
 int
 process(jack_nframes_t nframes,
         void *arg) {
+
+    // output sample buffer
+    sample_t *outbuf = \
+        jack_port_get_buffer(g_engine->jack_output_port, nframes);
+
     return 0;
 }
 
 AudioEngine
 AudioEngine_init() {
+    if (g_engine != NULL) {
+        return g_engine;
+    }
+
     AudioEngine engine;
 
     NEW(engine);
@@ -69,7 +85,7 @@ AudioEngine_init() {
         exit(EXIT_FAILURE);
     }
 
-    return engine;
+    return g_engine = engine;
 }
 
 void
