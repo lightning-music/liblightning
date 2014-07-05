@@ -88,6 +88,11 @@ AudioEngine_init() {
     return g_engine = engine;
 }
 
+int
+AudioEngine_play_samples(sample_t *frames,
+                         nframes_t nframes) {
+}
+
 void
 AudioEngine_free(AudioEngine *engine) {
     assert(engine && *engine);

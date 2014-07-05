@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <limits.h>
+#include <pthread.h>
 #include <sndfile.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -19,7 +20,6 @@ struct Kit {
 Kit
 Kit_load(const char *dir,
          AudioEngine engine) {
-
     int i;
     Kit kit;
     NEW(kit);
