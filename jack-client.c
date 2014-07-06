@@ -6,6 +6,7 @@
  * - Utilizes a jack ringbuffer to transfer data to the jack process callback.
  */
 #include <assert.h>
+#include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -99,6 +100,11 @@ JackClient_init(sample_data_callback callback,
 
     jack_on_shutdown(client->jack_client, jack_shutdown, NULL);
 
+    if (jack_activate(client->jack_client)) {
+        fprintf(stderr, "Could not activate JACK client\n");
+        exit(EXIT_FAILURE);
+    }
+
     // register output port
 
     client->jack_output_port = \
@@ -107,11 +113,6 @@ JackClient_init(sample_data_callback callback,
                            JACK_DEFAULT_AUDIO_TYPE,
                            JackPortIsOutput,
                            0);
-
-    if (jack_activate(client->jack_client)) {
-        fprintf(stderr, "Could not activate JACK client\n");
-        exit(EXIT_FAILURE);
-    }
 
     return client;
 }

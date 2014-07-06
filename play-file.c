@@ -14,9 +14,12 @@
 typedef struct FilePlayer {
     SNDFILE *sf;
     struct SF_INFO sfinfo;
+    int channels;
+    int frames;
     long length; // in samples
+    long sample_countdown;
     float *framebuf;
-    pthread_cond_t ready;
+    pthread_cond_t done;
 } FilePlayer;
 
 /**
@@ -27,14 +30,19 @@ initialize_file_player(FilePlayer *fp,
                        const char *f) {
     assert(fp);
     // initialize condition variable
-    pthread_cond_init(&fp->ready, NULL);
+    pthread_cond_init(&fp->done, NULL);
     // open file
     fp->sf = sf_open(f, SFM_READ, &fp->sfinfo);
-    fp->length = fp->sfinfo.frames * fp->sfinfo.channels;
+    // initialize data members
+    fp->channels = fp->sfinfo.channels;
+    fp->frames = fp->sfinfo.frames;
+    // samples = frames * channels
+    fp->length = fp->frames * fp->channels;
+    fp->sample_countdown = fp->length;
     // allocate frame buffer
     fp->framebuf = malloc(sizeof(sample_t) * fp->length);
-    // read frame buffer
-    while (sf_readf_float(fp->sf, fp->framebuf, fp->sfinfo.frames)) ;
+    // fill frame buffer
+    while (sf_readf_float(fp->sf, fp->framebuf, fp->frames)) ;
 }
 
 /**
@@ -46,22 +54,26 @@ free_file_player(FilePlayer *fp) {
     // close file
     sf_close(fp->sf);
     // free condition variable
-    pthread_cond_destroy(&fp->ready);
+    pthread_cond_destroy(&fp->done);
     // free frame buffer
     free(fp->framebuf); fp->framebuf = NULL;
-    free(fp); fp = NULL;
 }
 
-// jack realtime callback
+// jack-client ealtime callback
 static int
 audio_callback(sample_t *buf,
                nframes_t frames,
                void *data) {
+    FilePlayer *fp = (FilePlayer *) data;
+
+    
+
     return 0;
 }
 
 int main(int argc, char **argv) {
-    const char *f = "/home/brian/Audio/freesound/playing_in_the_backyard_with_diggers.flac";
+    const char *f = "/home/brian/Audio/freesound/"
+                    "playing_in_the_backyard_with_diggers.flac";
 
     FilePlayer fp;
 
@@ -72,7 +84,7 @@ int main(int argc, char **argv) {
     // initialize jack client
 
     JackClient jack_client = \
-        JackClient_init(audio_callback, NULL);
+        JackClient_init(audio_callback, &fp);
 
     // free FilePlayer
 
