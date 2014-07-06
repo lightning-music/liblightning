@@ -19,7 +19,7 @@ all .DEFAULT: $(PROGS)
 simplify: simplify.c                          \
           kit.o kit.h                         \
           mem.o mem.h                         \
-          audio-engine.o audio-engine.h       \
+          jack-client.o jack-client.h         \
           sample.o sample.h
 
 packbox: packbox.c
@@ -28,7 +28,7 @@ simple_client: simple_client.c
 capture_client: capture_client.c
 play-file: play-file.c                         \
            mem.o mem.h                         \
-           audio-engine.o audio-engine.h
+           jack-client.o jack-client.h
 
 clean:
 	rm -rf $(PROGS) *~ *.o

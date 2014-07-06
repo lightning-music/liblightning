@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "jack-client.h"
 #include "kit.h"
 #include "mem.h"
 #include "sample.h"
@@ -19,7 +20,7 @@ struct Kit {
 
 Kit
 Kit_load(const char *dir,
-         AudioEngine engine) {
+         JackClient jack_client) {
     int i;
     Kit kit;
     NEW(kit);

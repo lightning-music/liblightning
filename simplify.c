@@ -4,9 +4,18 @@
 #include <string.h>
 #include <gtk/gtk.h>
 
-#include "audio-engine.h"
+#include "jack-client.h"
 #include "kit.h"
 #include "sample.h"
+#include "types.h"
+
+// jack realtime callback
+static int
+audio_callback(sample_t *buf,
+               nframes_t frames,
+               void *data) {
+    return 0;
+}
 
 static void
 callback(GtkWidget *widget,
@@ -75,13 +84,14 @@ int main(int argc, char **argv) {
 
     // setup audio engine
 
-    AudioEngine audio_engine = AudioEngine_init();
+    JackClient jack_client = \
+        JackClient_init(audio_callback, NULL);
 
     // setup kit
 
     const char * default_kit = "kits/default";
 
-    Kit kit = Kit_load(default_kit, audio_engine);
+    Kit kit = Kit_load(default_kit, jack_client);
 
     /* unsigned int num_samples = Kit_num_samples(kit); */
     /* Sample * sample_list = Kit_sample_list(kit); */
@@ -92,7 +102,7 @@ int main(int argc, char **argv) {
     gtk_main();
 
     Kit_free(&kit);
-    AudioEngine_free(&audio_engine);
+    JackClient_free(&jack_client);
 
     return 0;
 }

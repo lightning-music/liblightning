@@ -2,7 +2,7 @@
 #define KIT_H_INCLUDED
 
 #include "sample.h"
-#include "audio-engine.h"
+#include "jack-client.h"
 
 /*
  * Maximum number of samples a kit can load.
@@ -19,7 +19,7 @@ typedef struct Kit *Kit;
  */
 Kit
 Kit_load(const char *dir,
-         AudioEngine engine);
+         JackClient jack_client);
 
 /**
  * Return the number of samples successfully loaded.
