@@ -33,6 +33,8 @@ initialize_file_player(FilePlayer *fp,
     fp->length = fp->sfinfo.frames * fp->sfinfo.channels;
     // allocate frame buffer
     fp->framebuf = malloc(sizeof(sample_t) * fp->length);
+    // read frame buffer
+    while (sf_readf_float(fp->sf, fp->framebuf, fp->sfinfo.frames)) ;
 }
 
 /**
@@ -71,10 +73,6 @@ int main(int argc, char **argv) {
 
     JackClient jack_client = \
         JackClient_init(audio_callback, NULL);
-
-    // read frame buffer
-
-    while (sf_readf_float(fp.sf, fp.framebuf, fp.sfinfo.frames)) ;
 
     // free FilePlayer
 
