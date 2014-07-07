@@ -117,16 +117,11 @@ JackClient_init(sample_data_callback callback,
 
     // list system ports on stdout
 
-    long j = 0;
-    long max_ports = 10;
-
-    printf("listing ports\n");
-
     const char **port_list = \
         jack_get_ports(client->jack_client, NULL, NULL, 0);
 
-    for ( ; port_list != NULL && j < max_ports; port_list++, j++) {
-        printf("%s\n", port_list);
+    for ( ; port_list != NULL && *port_list != NULL; port_list++) {
+        printf("%s\n", *port_list);
     }
 
     return client;
