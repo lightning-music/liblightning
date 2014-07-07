@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <jack/jack.h>
 
+#define SAMPLE_SIZE sizeof(sample_t)
+
 /**
  * default sample size
  */

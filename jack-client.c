@@ -93,6 +93,7 @@ JackClient_init(sample_data_callback callback,
 
     // register realtime callback
 
+    client->data = client_data;
     client->callback = callback;
     jack_set_process_callback(client->jack_client, process, client);
 
@@ -113,6 +114,20 @@ JackClient_init(sample_data_callback callback,
                            JACK_DEFAULT_AUDIO_TYPE,
                            JackPortIsOutput,
                            0);
+
+    // list system ports on stdout
+
+    long j = 0;
+    long max_ports = 10;
+
+    printf("listing ports\n");
+
+    const char **port_list = \
+        jack_get_ports(client->jack_client, NULL, NULL, 0);
+
+    for ( ; port_list != NULL && j < max_ports; port_list++, j++) {
+        printf("%s\n", port_list);
+    }
 
     return client;
 }
