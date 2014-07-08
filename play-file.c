@@ -43,12 +43,22 @@ initialize_file_player(FilePlayer *fp,
     fp->length = fp->frames * fp->channels;
     fp->samples_left = fp->length;
     // allocate frame buffer
+    printf("%s length = %ld samples\n", f, fp->length);
     fp->framebuf = malloc(sizeof(sample_t) * fp->length);
     // fill frame buffer
-    while (sf_readf_float(fp->sf, fp->framebuf, fp->frames)) ;
-    printf("locking fp->done\n");
+    printf("reading %s\n", f);
+    int frames_to_read = 4096;
+    float *p = fp->framebuf;
+    long frames_read = sf_readf_float(fp->sf, p, frames_to_read);
+    while (frames_read == frames_to_read) {
+        /* printf("read %ld frames\n", frames_read); */
+        // adjust buffer pointer
+        p += frames_read * fp->channels;
+        frames_read = sf_readf_float(fp->sf, p, frames_to_read);
+    }
     // lock the done mutex
     pthread_mutex_lock(&fp->done_lock);
+    printf("done reading %s\n", f);
 }
 
 /**
@@ -85,12 +95,13 @@ audio_callback(sample_t *buf,
         p = NULL;
         // signal done playing audio file
         pthread_cond_broadcast(&fp->done);
-    } else {    
+        // we've played the last samples
+        fp->samples_left = 0;
+    } else {
         memcpy(buf, fp->framebuf, samples_to_copy);
+        // TODO: synchronization around decrementing samples_left
+        fp->samples_left -= samples_to_copy;
     }
-
-    // TODO: synchronization around decrementing samples_left
-    fp->samples_left -= samples_to_copy;
     
     return 0;
 }
@@ -105,14 +116,12 @@ int main(int argc, char **argv) {
 
     initialize_file_player(&fp, f);
 
-    printf("done calling initialize_file_player\n");
+    printf("playing %s\n", f);
 
     // initialize jack client
 
     JackClient jack_client = \
         JackClient_init(audio_callback, &fp);
-
-    printf("reading audio file...\n");
 
     // wait to be done
     pthread_cond_wait(&fp.done, &fp.done_lock);

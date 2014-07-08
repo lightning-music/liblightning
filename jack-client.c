@@ -118,10 +118,35 @@ JackClient_init(sample_data_callback callback,
     // list system ports on stdout
 
     const char **port_list = \
-        jack_get_ports(client->jack_client, NULL, NULL, 0);
+        jack_get_ports(client->jack_client, "system:playback", NULL, 0);
 
     for ( ; port_list != NULL && *port_list != NULL; port_list++) {
         printf("%s\n", *port_list);
+    }
+
+    const char *playback1 = "system:playback_1";
+    const char *playback2 = "system:playback_2";
+
+    // connect playback_1
+
+    if (jack_connect(client->jack_client,
+                     jack_port_name(client->jack_output_port),
+                     playback1)) {
+        fprintf(stderr, "Could not connect %s to %s\n",
+                jack_port_name(client->jack_output_port),
+                playback1);
+        exit(EXIT_FAILURE);
+    }
+
+    // connect playback_2
+
+    if (jack_connect(client->jack_client,
+                     jack_port_name(client->jack_output_port),
+                     playback2)) {
+        fprintf(stderr, "Could not connect %s to %s\n",
+                jack_port_name(client->jack_output_port),
+                playback2);
+        exit(EXIT_FAILURE);
     }
 
     return client;
