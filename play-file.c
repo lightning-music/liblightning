@@ -53,6 +53,7 @@ initialize_file_player(FilePlayer *fp,
     fp->frames = fp->sfinfo.frames;
     // samples = frames * channels
     fp->length = fp->frames * fp->channels;
+    // count for the samples we have left to play in this file
     fp->samples_left = fp->length;
     // allocate frame buffer
     printf("%s length = %ld samples\n", f, fp->length);
@@ -94,12 +95,14 @@ audio_callback(sample_t *buf,
                void *data) {
     float *p = NULL;
     FilePlayer *fp = (FilePlayer *) data;
+    long len = fp->length;
     long samples_left = fp->samples_left;
     long samples_to_copy = frames * fp->channels;
+    long sample_offset = len - samples_left;
     // copy frames of data to buf
     if (samples_to_copy > samples_left) {
         // copy the remaining samples in framebuf
-        memcpy(buf, fp->framebuf, samples_left);
+        memcpy(buf, fp->framebuf + sample_offset, samples_left);
         // 0 out all the others
         for (p = buf + samples_left; p < buf + samples_to_copy; p++) {
             *p = 0.0f;
@@ -110,8 +113,9 @@ audio_callback(sample_t *buf,
         // we've played the last samples
         fp->samples_left = 0;
     } else {
-        memcpy(buf, fp->framebuf, samples_to_copy);
+        memcpy(buf, fp->framebuf + sample_offset, samples_to_copy);
         // TODO: synchronization around decrementing samples_left
+        // NOTE: this would be problematic (not good to call pthread_mutex_lock in the jack realtime callback)
         fp->samples_left -= samples_to_copy;
     }
     
@@ -141,6 +145,10 @@ int main(int argc, char **argv) {
     // free FilePlayer
 
     free_file_player(&fp);
+
+    // free jack client
+    
+    JackClient_free(&jack_client);
 
     return 0;
 }

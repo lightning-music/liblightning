@@ -32,7 +32,7 @@ Ringbuffer_read(Ringbuffer rb,
                 sample_t *buf,
                 size_t len) {
     assert(rb);
-    return jack_ringbuffer_read(rb->jrb, buf, len);
+    return jack_ringbuffer_read(rb->jrb, (void *) buf, len);
 }
 
 sample_count_t
@@ -40,7 +40,7 @@ Ringbuffer_write(Ringbuffer rb,
                  sample_t *buf,
                  size_t len) {
     assert(rb);
-    return jack_ringbuffer_write(rb->jrb, buf, len);
+    return jack_ringbuffer_write(rb->jrb, (void *) buf, len);
 }
 
 void
