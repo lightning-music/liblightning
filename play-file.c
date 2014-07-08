@@ -13,13 +13,25 @@
 #include "types.h"
 
 typedef struct FilePlayer {
+    // TODO: get rid of sf and sfinfo
     SNDFILE *sf;
     struct SF_INFO sfinfo;
+    // number of channels
     int channels;
+    // number of frames
     int frames;
-    long length; // in samples
+    // length in samples = channels * frames
+    long length;
+    // TODO: get rid of this var and expose methods to manipulate framep instead
     long samples_left;
-    float *framebuf;
+    // buffer holding the entire sample
+    sample_t *framebuf;
+    // frame pointer
+    sample_t *framep;
+    // frame pointer mutex
+    pthread_mutex_t framep_lock;
+    // mutex and conditional variable
+    // used to signal sample done
     pthread_cond_t done;
     pthread_mutex_t done_lock;
 } FilePlayer;
