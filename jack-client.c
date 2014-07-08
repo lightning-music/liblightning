@@ -1,9 +1,6 @@
 /**
  * jack client
  * see http://jackaudio.org
- *
- * Implementation Notes:
- * - Utilizes a jack ringbuffer to transfer data to the jack process callback.
  */
 #include <assert.h>
 #include <pthread.h>
@@ -12,21 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <jack/jack.h>
-#include <jack/ringbuffer.h>
 
 #include "jack-client.h"
 #include "mem.h"
+#include "ringbuffer.h"
 #include "types.h"
-
-/**
- * Default ringbuffer size
- */
-#define DEFAULT_RB_SIZE 16384
-
-/**
- * Only support stereo output.
- */
-#define NUM_CHANNELS 2
 
 struct JackClient {
     const char **ports;
@@ -34,9 +21,8 @@ struct JackClient {
     void *data;
     jack_client_t *jack_client;
     jack_port_t *jack_output_port;
-    jack_ringbuffer_t *rb;
     sample_data_callback callback;
-    long overruns;
+    Ringbuffer rb;
 };
 
 /**
@@ -77,10 +63,7 @@ JackClient_init(sample_data_callback callback,
 
     // initialize the ringbuffer
 
-    size_t rb_size = \
-        DEFAULT_RB_SIZE * NUM_CHANNELS * sizeof(sample_t);
-
-    client->rb = jack_ringbuffer_create(rb_size);
+    client->rb = Ringbuffer_default();
 
     // open jack client
     
