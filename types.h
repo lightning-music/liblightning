@@ -12,6 +12,11 @@
 typedef jack_default_audio_sample_t sample_t;
 
 /**
+ * sample count
+ */
+typedef unsigned long sample_count_t;
+
+/**
  * alias of jack_nframes_t (type used to represent sample frame counts)
  */
 typedef jack_nframes_t nframes_t;
