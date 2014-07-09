@@ -20,7 +20,8 @@ struct JackClient {
     const char *server_name;
     void *data;
     jack_client_t *jack_client;
-    jack_port_t *jack_output_port;
+    jack_port_t *jack_output_port_1;
+    jack_port_t *jack_output_port_2;
     sample_data_callback callback;
     Ringbuffer rb;
 };
@@ -43,14 +44,18 @@ process(jack_nframes_t nframes,
 
     JackClient client = (JackClient) arg;
 
-    // setup output sample buffer
+    // setup output sample buffers
 
-    sample_t *outbuf = \
-        jack_port_get_buffer(client->jack_output_port, nframes);
+    sample_t *ch1 = \
+        jack_port_get_buffer(client->jack_output_port_1, nframes);
+
+    sample_t *ch2 = \
+        jack_port_get_buffer(client->jack_output_port_2, nframes);
 
     // write data to the output buffer
 
-    return client->callback(outbuf,
+    return client->callback(ch1,
+                            ch2,
                             (nframes_t) nframes,
                             client->data);
 }
@@ -89,23 +94,30 @@ JackClient_init(sample_data_callback callback,
         exit(EXIT_FAILURE);
     }
 
-    // register output port
+    // register output ports
 
-    client->jack_output_port = \
+    client->jack_output_port_1 = \
         jack_port_register(client->jack_client,
-                           "output",
+                           "output_1",
+                           JACK_DEFAULT_AUDIO_TYPE,
+                           JackPortIsOutput,
+                           0);
+
+    client->jack_output_port_2 = \
+        jack_port_register(client->jack_client,
+                           "output_2",
                            JACK_DEFAULT_AUDIO_TYPE,
                            JackPortIsOutput,
                            0);
 
     // list system ports on stdout
 
-    const char **port_list = \
-        jack_get_ports(client->jack_client, "system:playback", NULL, 0);
+    /* const char **port_list = \ */
+    /*     jack_get_ports(client->jack_client, "system:playback", NULL, 0); */
 
-    for ( ; port_list != NULL && *port_list != NULL; port_list++) {
-        printf("%s\n", *port_list);
-    }
+    /* for ( ; port_list != NULL && *port_list != NULL; port_list++) { */
+    /*     printf("%s\n", *port_list); */
+    /* } */
 
     const char *playback1 = "system:playback_1";
     const char *playback2 = "system:playback_2";
@@ -113,10 +125,10 @@ JackClient_init(sample_data_callback callback,
     // connect playback_1
 
     if (jack_connect(client->jack_client,
-                     jack_port_name(client->jack_output_port),
+                     jack_port_name(client->jack_output_port_1),
                      playback1)) {
         fprintf(stderr, "Could not connect %s to %s\n",
-                jack_port_name(client->jack_output_port),
+                jack_port_name(client->jack_output_port_1),
                 playback1);
         exit(EXIT_FAILURE);
     }
@@ -124,10 +136,10 @@ JackClient_init(sample_data_callback callback,
     // connect playback_2
 
     if (jack_connect(client->jack_client,
-                     jack_port_name(client->jack_output_port),
+                     jack_port_name(client->jack_output_port_2),
                      playback2)) {
         fprintf(stderr, "Could not connect %s to %s\n",
-                jack_port_name(client->jack_output_port),
+                jack_port_name(client->jack_output_port_2),
                 playback2);
         exit(EXIT_FAILURE);
     }

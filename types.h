@@ -25,7 +25,8 @@ typedef jack_nframes_t nframes_t;
  * callback for getting @a frames of sample data
  * return 0 for success, nonzero for failure
  */
-typedef int (* sample_data_callback)(sample_t *buf,
+typedef int (* sample_data_callback)(sample_t *ch1,
+                                     sample_t *ch2,
                                      nframes_t frames,
                                      void *client_data);
 

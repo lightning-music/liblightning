@@ -24,6 +24,8 @@ typedef struct FilePlayer {
     long length;
     // TODO: get rid of this var and expose methods to manipulate framep instead
     long samples_left;
+    // frames we've read
+    long frames_read;
     // buffer holding the entire sample
     sample_t *framebuf;
     // frame pointer
@@ -55,8 +57,11 @@ initialize_file_player(FilePlayer *fp,
     fp->length = fp->frames * fp->channels;
     // count for the samples we have left to play in this file
     fp->samples_left = fp->length;
+    // frames we have already read from the frame buffer
+    fp->frames_read = 0;
     // allocate frame buffer
-    printf("%s length = %ld samples\n", f, fp->length);
+    printf("%s length   = %ld samples\n", f, fp->length);
+    printf("%s channels = %d \n", f, fp->channels);
     fp->framebuf = malloc(sizeof(sample_t) * fp->length);
     // fill frame buffer
     printf("reading %s\n", f);
@@ -88,37 +93,63 @@ free_file_player(FilePlayer *fp) {
     free(fp->framebuf); fp->framebuf = NULL;
 }
 
-// jack-client realtime callback
+/**
+ * jack client realtime callback
+ */
 static int
-audio_callback(sample_t *buf,
+audio_callback(sample_t *ch1,
+               sample_t *ch2,
                nframes_t frames,
                void *data) {
-    float *p = NULL;
+    long frame;
     FilePlayer *fp = (FilePlayer *) data;
-    long len = fp->length;
-    long samples_left = fp->samples_left;
-    long samples_to_copy = frames * fp->channels;
-    long sample_offset = len - samples_left;
-    // copy frames of data to buf
-    if (samples_to_copy > samples_left) {
-        // copy the remaining samples in framebuf
-        memcpy(buf, fp->framebuf + sample_offset, samples_left);
-        // 0 out all the others
-        for (p = buf + samples_left; p < buf + samples_to_copy; p++) {
-            *p = 0.0f;
-        }
-        p = NULL;
-        // signal done playing audio file
+    int channels = fp->channels;
+    long offset = fp->frames_read;
+
+    if (fp->frames_read == fp->frames) {
+        // we've played the whole buffer
         pthread_cond_broadcast(&fp->done);
-        // we've played the last samples
-        fp->samples_left = 0;
+    } else if (fp->frames_read < fp->frames - frames) {
+        // we can read as many frames as jack is asking for
+        switch(channels) {
+        case 1:
+            for (frame = 0; frame < frames; frame++) {
+                ch1[frame] = ch2[frame] = fp->framebuf[offset + frame];
+            }
+            break;
+        case 2:
+            for (frame = 0; frame < frames; frame++) {
+                ch1[frame] = fp->framebuf[offset + frame];
+                ch2[frame] = fp->framebuf[offset + frame + 1];
+            }
+            break;
+        }
+
+        fp->frames_read += frames;
     } else {
-        memcpy(buf, fp->framebuf + sample_offset, samples_to_copy);
-        // TODO: synchronization around decrementing samples_left
-        // NOTE: this would be problematic (not good to call pthread_mutex_lock in the jack realtime callback)
-        fp->samples_left -= samples_to_copy;
+        // we can read less than we're being asked to
+        // zero out the remaining samples
+        long frames_available = fp->frames - fp->frames_read;
+        switch(channels) {
+        case 1:
+            for (frame = 0; frame < frames_available; frame++) {
+                ch1[frame] = ch2[frame] = fp->framebuf[offset + frame];
+            }
+            break;
+        case 2:
+            for (frame = 0; frame < frames_available; frame++) {
+                ch1[frame] = fp->framebuf[offset + frame];
+                ch2[frame] = fp->framebuf[offset + frame + 1];
+            }
+            for ( ; frame < frames; frame++) {
+                ch1[frame] = ch2[frame] = 0.0f;
+            }
+            break;
+        }
+
+        fp->frames_read += frames_available;
     }
-    
+
     return 0;
 }
 
