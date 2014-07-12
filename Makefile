@@ -13,7 +13,8 @@ LDLIBS := $(GTK_FLAGS) $(JACK_FLAGS) $(SNDFILE_FLAGS) -lm
 .PHONY: all
 
 PROGS = simplify packbox table-pack simple_client \
-        capture_client play-file
+        capture_client play-file play-sample
+
 all .DEFAULT: $(PROGS)
 
 simplify: simplify.c                          \
@@ -35,6 +36,12 @@ play-file: play-file.c                         \
            mem.o mem.h                         \
            ringbuffer.o ringbuffer.h           \
            jack-client.o jack-client.h
+
+play-sample: play-sample.c                     \
+             mem.o mem.h                       \
+             ringbuffer.o ringbuffer.h         \
+             sample.o sample.h                 \
+             jack-client.o jack-client.h
 
 clean:
 	rm -rf $(PROGS) *~ *.o
