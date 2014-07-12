@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <pthread.h>
 #include <sndfile.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -10,9 +11,12 @@
 
 struct Sample {
     const char *path;
+    channels_t channels;
+    nframes_t frames;
+    int samplerate;
     sample_t *framebuf;
-    SNDFILE *sf;
-    SF_INFO *sfinfo;
+    pthread_cond_t done;
+    pthread_mutex_t done_lock;
 };
 
 /**
@@ -22,27 +26,41 @@ Sample
 Sample_load(const char *file) {
     Sample s;
     NEW(s);
-    NEW(s->sfinfo);
 
-    s->sf = sf_open(file, SFM_READ, s->sfinfo);
+    SF_INFO sfinfo;
+    SNDFILE *sf = sf_open(file, SFM_READ, &sfinfo);
 
-    if (s->sf == NULL) {
-        fprintf(stderr, "%s\n", sf_strerror(s->sf));
+    if (sf == NULL) {
+        fprintf(stderr, "%s\n", sf_strerror(sf));
         exit(EXIT_FAILURE);
     }
+
+    s->frames = sfinfo.frames;
+    s->channels = sfinfo.channels;
+    s->samplerate = sfinfo.samplerate;
+
+    pthread_cond_init(&s->done, NULL);
+    pthread_mutex_init(&s->done_lock, NULL);
 
     s->path = file;
 
     // frame buffer contains n samples,
     // where n = frames * channels
 
-    s->framebuf = CALLOC(s->sfinfo->frames * s->sfinfo->channels,
-                         sizeof(sample_t));
+    s->framebuf = CALLOC(s->frames * s->channels, SAMPLE_SIZE);
 
     // fill the frame buffer
 
-    sf_count_t frames = 1024 * s->sfinfo->channels;
-    while (sf_readf_float(s->sf, s->framebuf, frames)) ;
+    sf_count_t frames = 1024 * s->channels;
+    long total_frames = sf_readf_float(sf, s->framebuf, frames);
+
+    while (total_frames < s->frames) {
+        total_frames += sf_readf_float(sf,
+                                       s->framebuf + (total_frames * s->channels),
+                                       frames);
+    }
+
+    sf_close(sf);
 
     return s;
 }
@@ -62,7 +80,7 @@ Sample_path(Sample samp) {
 nframes_t
 Sample_num_frames(Sample samp) {
     assert(samp);
-    return (nframes_t) samp->sfinfo->frames;
+    return (nframes_t) samp->frames;
 }
 
 /**
@@ -71,7 +89,7 @@ Sample_num_frames(Sample samp) {
 int
 Sample_sample_rate(Sample samp) {
     assert(samp);
-    return samp->sfinfo->samplerate;
+    return samp->samplerate;
 }
 
 /**
@@ -80,5 +98,4 @@ Sample_sample_rate(Sample samp) {
 void
 Sample_free(Sample *samp) {
     assert(samp && *samp);
-    sf_close((*samp)->sf);
 }

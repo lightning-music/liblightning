@@ -18,6 +18,24 @@ const char *
 Sample_path(Sample samp);
 
 /**
+ * Get the number of channels for a Sample.
+ */
+channels_t
+Sample_num_channels(Sample samp);
+
+/**
+ * Get the number of frames for a Sample.
+ */
+nframes_t
+Sample_num_frames(Sample samp);
+
+/**
+ * Get the sample rate of the Sample.
+ */
+int
+Sample_sample_rate(Sample samp);
+
+/**
  * Write sample data to a mono output buffer.
  * Returns the number of frames written.
  */
@@ -35,16 +53,10 @@ Sample_write_stereo(sample_t *ch1,
                     nframes_t frames);
 
 /**
- * Get the number of channels for a Sample.
+ * Make current thread wait for the sample to finish playing.
  */
-channels_t
-Sample_num_channels(Sample samp);
-
-/**
- * Get the number of frames for a Sample.
- */
-nframes_t
-Sample_num_frames(Sample samp);
+int
+Sample_wait();
 
 /**
  * Free resources associated with a Sample.

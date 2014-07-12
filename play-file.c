@@ -22,16 +22,10 @@ typedef struct FilePlayer {
     int frames;
     // length in samples = channels * frames
     long length;
-    // TODO: get rid of this var and expose methods to manipulate framep instead
-    long samples_left;
     // frames we've read
     long frames_read;
     // buffer holding the entire sample
     sample_t *framebuf;
-    // frame pointer
-    sample_t *framep;
-    // frame pointer mutex
-    pthread_mutex_t framep_lock;
     // mutex and conditional variable
     // used to signal sample done
     pthread_cond_t done;
@@ -55,8 +49,6 @@ initialize_file_player(FilePlayer *fp,
     fp->frames = fp->sfinfo.frames;
     // samples = frames * channels
     fp->length = fp->frames * fp->channels;
-    // count for the samples we have left to play in this file
-    fp->samples_left = fp->length;
     // frames we have already read from the frame buffer
     fp->frames_read = 0;
     // allocate frame buffer
@@ -64,15 +56,13 @@ initialize_file_player(FilePlayer *fp,
     assert(fp->framebuf);
     // fill frame buffer
     int frames_to_read = 4096;
-    float *p = fp->framebuf;
-    long frames_read = sf_readf_float(fp->sf, p, frames_to_read);
-    long total_frames_read = frames_read;
-    while (frames_read == frames_to_read
-           && total_frames_read < fp->frames) {
+    long total_frames_read = sf_readf_float(fp->sf, fp->framebuf, frames_to_read);
+    while (total_frames_read < fp->frames) {
         // adjust buffer pointer
-        p += frames_read * fp->channels;
-        frames_read = sf_readf_float(fp->sf, p, frames_to_read);
-        total_frames_read += frames_read;
+        total_frames_read +=                    \
+            sf_readf_float(fp->sf,
+                           fp->framebuf + (total_frames_read * fp->channels),
+                           frames_to_read);
     }
     // lock the done mutex
     pthread_mutex_lock(&fp->done_lock);
