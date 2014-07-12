@@ -60,23 +60,22 @@ initialize_file_player(FilePlayer *fp,
     // frames we have already read from the frame buffer
     fp->frames_read = 0;
     // allocate frame buffer
-    printf("%s length   = %ld samples\n", f, fp->length);
-    printf("%s channels = %d \n", f, fp->channels);
     fp->framebuf = malloc(sizeof(sample_t) * fp->length);
+    assert(fp->framebuf);
     // fill frame buffer
-    printf("reading %s\n", f);
     int frames_to_read = 4096;
     float *p = fp->framebuf;
     long frames_read = sf_readf_float(fp->sf, p, frames_to_read);
-    while (frames_read == frames_to_read) {
-        /* printf("read %ld frames\n", frames_read); */
+    long total_frames_read = frames_read;
+    while (frames_read == frames_to_read
+           && total_frames_read < fp->frames) {
         // adjust buffer pointer
         p += frames_read * fp->channels;
         frames_read = sf_readf_float(fp->sf, p, frames_to_read);
+        total_frames_read += frames_read;
     }
     // lock the done mutex
     pthread_mutex_lock(&fp->done_lock);
-    printf("done reading %s\n", f);
 }
 
 /**
@@ -166,17 +165,11 @@ int main(int argc, char **argv) {
         usage_and_exit(argv[0]);
     }
 
-    const char *f = "/home/brian/Audio/freesound/"
-                    /* "geese09.wav"; */
-                    "marvie_baaaa_01.flac";
-
     FilePlayer fp;
 
     // initialize FilePlayer
 
-    initialize_file_player(&fp, f);
-
-    printf("playing %s\n", f);
+    initialize_file_player(&fp, argv[1]);
 
     // initialize jack client
 
