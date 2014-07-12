@@ -1,5 +1,5 @@
 /*
- * Use audio-engine to play a sound file.
+ * A working example of how to play samples with jack-client
  */
 #include <assert.h>
 #include <pthread.h>
@@ -154,7 +154,18 @@ audio_callback(sample_t *ch1,
     return 0;
 }
 
+void
+usage_and_exit(char *prog) {
+    fprintf(stderr, "Usage\n");
+    fprintf(stderr, "$ %s path/to/audio/file\n", prog);
+    exit(EXIT_FAILURE);
+}
+
 int main(int argc, char **argv) {
+    if (argc < 2) {
+        usage_and_exit(argv[0]);
+    }
+
     const char *f = "/home/brian/Audio/freesound/"
                     /* "geese09.wav"; */
                     "marvie_baaaa_01.flac";
