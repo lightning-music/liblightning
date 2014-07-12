@@ -26,6 +26,9 @@ JackClient
 JackClient_init(sample_data_callback callback,
                 void *client_data);
 
+int
+JackClient_playback_ports(JackClient jack);
+
 // free any resources being used by the audio engine
 void
 JackClient_free(JackClient *jack);

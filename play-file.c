@@ -104,7 +104,7 @@ audio_callback(sample_t *ch1,
     long frame;
     FilePlayer *fp = (FilePlayer *) data;
     int channels = fp->channels;
-    long offset = fp->frames_read;
+    long offset = fp->frames_read * channels;
 
     if (fp->frames_read == fp->frames) {
         // we've played the whole buffer
@@ -114,13 +114,13 @@ audio_callback(sample_t *ch1,
         switch(channels) {
         case 1:
             for (frame = 0; frame < frames; frame++) {
-                ch1[frame] = ch2[frame] = fp->framebuf[offset + frame];
+                ch1[frame] = ch2[frame] = fp->framebuf[offset + (frame * channels)];
             }
             break;
         case 2:
             for (frame = 0; frame < frames; frame++) {
-                ch1[frame] = fp->framebuf[offset + frame];
-                ch2[frame] = fp->framebuf[offset + frame + 1];
+                ch1[frame] = fp->framebuf[offset + (frame * channels)    ];
+                ch2[frame] = fp->framebuf[offset + (frame * channels) + 1];
             }
             break;
         }
@@ -130,19 +130,20 @@ audio_callback(sample_t *ch1,
         // we can read less than we're being asked to
         // zero out the remaining samples
         long frames_available = fp->frames - fp->frames_read;
+        
         switch(channels) {
         case 1:
             for (frame = 0; frame < frames_available; frame++) {
-                ch1[frame] = ch2[frame] = fp->framebuf[offset + frame];
+                ch1[frame] = ch2[frame] = fp->framebuf[offset + (frame * channels)];
             }
             break;
         case 2:
             for (frame = 0; frame < frames_available; frame++) {
-                ch1[frame] = fp->framebuf[offset + frame];
-                ch2[frame] = fp->framebuf[offset + frame + 1];
+                ch1[frame] = fp->framebuf[offset + (frame * channels)    ];
+                ch2[frame] = fp->framebuf[offset + (frame * channels) + 1];
             }
             for ( ; frame < frames; frame++) {
-                ch1[frame] = ch2[frame] = 0.0f;
+                ch1[frame * channels] = ch2[frame * channels] = 0.0f;
             }
             break;
         }
@@ -155,6 +156,7 @@ audio_callback(sample_t *ch1,
 
 int main(int argc, char **argv) {
     const char *f = "/home/brian/Audio/freesound/"
+                    /* "geese09.wav"; */
                     "marvie_baaaa_01.flac";
 
     FilePlayer fp;

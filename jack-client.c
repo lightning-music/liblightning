@@ -110,15 +110,6 @@ JackClient_init(sample_data_callback callback,
                            JackPortIsOutput,
                            0);
 
-    // list system ports on stdout
-
-    /* const char **port_list = \ */
-    /*     jack_get_ports(client->jack_client, "system:playback", NULL, 0); */
-
-    /* for ( ; port_list != NULL && *port_list != NULL; port_list++) { */
-    /*     printf("%s\n", *port_list); */
-    /* } */
-
     const char *playback1 = "system:playback_1";
     const char *playback2 = "system:playback_2";
 
@@ -132,7 +123,6 @@ JackClient_init(sample_data_callback callback,
                 playback1);
         exit(EXIT_FAILURE);
     }
-
     // connect playback_2
 
     if (jack_connect(client->jack_client,
@@ -145,6 +135,10 @@ JackClient_init(sample_data_callback callback,
     }
 
     return client;
+}
+
+int
+JackClient_playback_ports(JackClient jack) {
 }
 
 void

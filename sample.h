@@ -11,6 +11,9 @@ Sample_load(const char *file);
 const char *
 Sample_path(Sample samp);
 
+channels_t
+Sample_num_channels(Sample samp);
+
 nframes_t
 Sample_num_frames(Sample samp);
 

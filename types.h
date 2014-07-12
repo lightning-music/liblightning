@@ -12,6 +12,11 @@
 typedef jack_default_audio_sample_t sample_t;
 
 /**
+ * number of channels
+ */
+typedef int channels_t;
+
+/**
  * sample count
  */
 typedef unsigned long sample_count_t;
