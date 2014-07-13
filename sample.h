@@ -38,6 +38,12 @@ int
 Sample_samplerate(Sample samp);
 
 /**
+ * Return the number of samples available for reading.
+ */
+nframes_t
+Sample_frames_available(Sample samp);
+
+/**
  * Write sample data to a mono output buffer.
  * Returns the number of frames written.
  */
@@ -55,6 +61,12 @@ Sample_write_stereo(Sample samp,
                     sample_t *ch1,
                     sample_t *ch2,
                     nframes_t frames);
+
+/**
+ * Returns 0 if the sample is not done, non-zero otherwise.
+ */
+int
+Sample_is_done(Sample samp);
 
 /**
  * Make current thread wait for the sample to finish playing.

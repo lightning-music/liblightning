@@ -17,7 +17,7 @@ typedef float gain_t;
 typedef float pitch_t;
 
 /**
- * default sample size
+ * default sample size (jack currently uses 32-bit float)
  */
 typedef jack_default_audio_sample_t sample_t;
 

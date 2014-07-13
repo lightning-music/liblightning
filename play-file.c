@@ -132,7 +132,7 @@ audio_callback(sample_t *ch1,
                 ch2[frame] = fp->framebuf[offset + (frame * channels) + 1];
             }
             for ( ; frame < frames; frame++) {
-                ch1[frame * channels] = ch2[frame * channels] = 0.0f;
+                ch1[frame] = ch2[frame] = 0.0f;
             }
             break;
         }

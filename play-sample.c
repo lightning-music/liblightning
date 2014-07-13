@@ -49,12 +49,18 @@ main(int argc, char **argv) {
         break;
     }
 
-    Sample s = Sample_load(f, pitch, gain);
+    // initialize sample and jack client
 
+    Sample s = Sample_load(f, pitch, gain);
     JackClient jack_client = JackClient_init(audio_callback, s);
 
-    Sample_free(&s);
+    // wait for sample to finish playing
 
+    Sample_wait(s);
+
+    // free sample and jack client
+
+    Sample_free(&s);
     JackClient_free(&jack_client);
 
     return 0;

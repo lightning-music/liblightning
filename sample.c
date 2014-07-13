@@ -9,6 +9,15 @@
 #include "sample.h"
 #include "types.h"
 
+/*
+ * TODO
+ * ====
+ * Need to have a static table for sample data
+ * so that loading the same sample twice would result in
+ * the initialization step for the second Sample_load just being
+ * a memcpy from the table.
+ */
+
 struct Sample {
     const char *path;
     pitch_t pitch;
@@ -16,7 +25,13 @@ struct Sample {
     channels_t channels;
     nframes_t frames;
     int samplerate;
+    // buffer to hold sample data
     sample_t *framebuf;
+    // track read position in file
+    nframes_t frames_read;
+    // provide a way to synchronize a thread on the
+    // `done` event
+    int is_done;
     pthread_cond_t done;
     pthread_mutex_t done_lock;
 };
@@ -61,12 +76,16 @@ Sample_load(const char *file,
     long total_frames = sf_readf_float(sf, s->framebuf, frames);
 
     while (total_frames < s->frames) {
-        total_frames += sf_readf_float(sf,
-                                       s->framebuf + (total_frames * s->channels),
-                                       frames);
+        total_frames +=                         \
+            sf_readf_float(sf,
+                           s->framebuf + (total_frames * s->channels),
+                           frames);
     }
 
     sf_close(sf);
+
+    s->is_done = 0;
+    pthread_mutex_lock(&s->done_lock);
 
     return s;
 }
@@ -105,6 +124,12 @@ Sample_samplerate(Sample samp) {
 }
 
 nframes_t
+Sample_frames_available(Sample samp) {
+    assert(samp);
+    return samp->frames - samp->frames_read;
+}
+
+nframes_t
 Sample_write_mono(Sample samp,
                   sample_t *ch1,
                   nframes_t frames) {
@@ -118,13 +143,84 @@ Sample_write_stereo(Sample samp,
                     sample_t *ch2,
                     nframes_t frames) {
     assert(samp);
+
+    long frame = 0;
+    long offset = samp->frames_read * samp->channels;
+
+    if (samp->is_done) {
+        return 0;
+    }
+
+    if (samp->frames_read < samp->frames - frames) {
+        // we have fill the whole buffer with sample data
+        switch (samp->channels) {
+            // fill stereo buffers with mono data
+        case 1:
+            for (frame = 0; frame < frames; frame++) {
+                ch1[frame] = ch2[frame] =                               \
+                    samp->framebuf[offset + (frame * samp->channels)];
+            }
+            break;
+        case 2:
+            // de-interleave
+            for (frame = 0; frame < frames; frame++) {
+                ch1[frame] =                                            \
+                    samp->framebuf[offset + (frame * samp->channels)];
+                ch2[frame] =                                            \
+                    samp->framebuf[offset + (frame * samp->channels) + 1];
+            }
+            break;
+        }
+
+        samp->frames_read += frames;
+    } else {
+        // read the remaining samples, mark the sample as done,
+        // and fill the rest of the buffer with zeroes
+        long frames_available = samp->frames - samp->frames_read;
+
+        switch (samp->channels) {
+            // fill stereo buffers with mono data
+        case 1:
+            for (frame = 0; frame < frames_available; frame++) {
+                ch1[frame] = ch2[frame] =                               \
+                    samp->framebuf[offset + (frame * samp->channels)];
+            }
+            break;
+        case 2:
+            // de-interleave
+            for (frame = 0; frame < frames_available; frame++) {
+                ch1[frame] =                                            \
+                    samp->framebuf[offset + (frame * samp->channels)];
+                ch2[frame] =                                            \
+                    samp->framebuf[offset + (frame * samp->channels) + 1];
+            }
+            break;
+        }
+
+        for ( ; frame < frames; frame++) {
+            ch1[frame] = ch2[frame] = 0.0f;
+        }
+
+        samp->frames_read += frames_available;
+        samp->is_done = 1;
+        // note that done_lock was locked in Sample_load
+        pthread_cond_broadcast(&samp->done);
+    }
+
     return 0;
+}
+
+int
+Sample_is_done(Sample samp) {
+    assert(samp);
+    return samp->is_done;
 }
 
 int
 Sample_wait(Sample samp) {
     assert(samp);
-    return 0;
+    return pthread_cond_wait(&samp->done,
+                             &samp->done_lock);
 }
 
 /**
@@ -133,4 +229,9 @@ Sample_wait(Sample samp) {
 void
 Sample_free(Sample *samp) {
     assert(samp && *samp);
+
+    pthread_cond_destroy(&(*samp)->done);
+    pthread_mutex_destroy(&(*samp)->done_lock);
+
+    FREE((*samp)->framebuf);
 }
