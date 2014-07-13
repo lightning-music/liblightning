@@ -11,7 +11,8 @@
 
 // jack realtime callback
 static int
-audio_callback(sample_t *buf,
+audio_callback(sample_t *ch1,
+               sample_t *ch2,
                nframes_t frames,
                void *data) {
     return 0;

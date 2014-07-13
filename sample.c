@@ -11,6 +11,8 @@
 
 struct Sample {
     const char *path;
+    pitch_t pitch;
+    gain_t gain;
     channels_t channels;
     nframes_t frames;
     int samplerate;
@@ -23,7 +25,9 @@ struct Sample {
  * Load an audio sample.
  */
 Sample
-Sample_load(const char *file) {
+Sample_load(const char *file,
+            pitch_t pitch,
+            gain_t gain) {
     Sample s;
     NEW(s);
 
@@ -35,6 +39,8 @@ Sample_load(const char *file) {
         exit(EXIT_FAILURE);
     }
 
+    s->pitch = pitch;
+    s->gain = gain;
     s->frames = sfinfo.frames;
     s->channels = sfinfo.channels;
     s->samplerate = sfinfo.samplerate;
@@ -74,6 +80,12 @@ Sample_path(Sample samp) {
     return samp->path;
 }
 
+channels_t
+Sample_num_channels(Sample samp) {
+    assert(samp);
+    return samp->channels;
+}
+
 /**
  * Number of frames in the audio sample.
  */
@@ -87,9 +99,32 @@ Sample_num_frames(Sample samp) {
  * Sample rate of the audio sample.
  */
 int
-Sample_sample_rate(Sample samp) {
+Sample_samplerate(Sample samp) {
     assert(samp);
     return samp->samplerate;
+}
+
+nframes_t
+Sample_write_mono(Sample samp,
+                  sample_t *ch1,
+                  nframes_t frames) {
+    assert(samp);
+    return 0;
+}
+
+nframes_t
+Sample_write_stereo(Sample samp,
+                    sample_t *ch1,
+                    sample_t *ch2,
+                    nframes_t frames) {
+    assert(samp);
+    return 0;
+}
+
+int
+Sample_wait(Sample samp) {
+    assert(samp);
+    return 0;
 }
 
 /**

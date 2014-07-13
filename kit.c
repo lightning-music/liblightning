@@ -21,7 +21,6 @@ struct Kit {
 Kit
 Kit_load(const char *dir,
          JackClient jack_client) {
-    int i;
     Kit kit;
     NEW(kit);
 
@@ -64,7 +63,7 @@ Kit_load(const char *dir,
 
         sprintf(sample_path, "%s/%s", dir, f);
 
-        kit->samples[file_index] = Sample_load(sample_path);
+        kit->samples[file_index] = Sample_load(sample_path, 1.0f, 1.0f);
 
         file_index++;
     }

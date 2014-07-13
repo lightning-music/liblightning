@@ -137,8 +137,10 @@ JackClient_init(sample_data_callback callback,
     return client;
 }
 
+// FIXME
 int
 JackClient_playback_ports(JackClient jack) {
+    return 2;
 }
 
 void

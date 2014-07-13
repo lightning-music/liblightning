@@ -9,7 +9,9 @@ typedef struct Sample *Sample;
  * Load and initialize a new Sample object.
  */
 Sample
-Sample_load(const char *file);
+Sample_load(const char *file,
+            pitch_t pitch,
+            gain_t gain);
 
 /**
  * Get the path this sample was loaded from.
@@ -33,14 +35,15 @@ Sample_num_frames(Sample samp);
  * Get the sample rate of the Sample.
  */
 int
-Sample_sample_rate(Sample samp);
+Sample_samplerate(Sample samp);
 
 /**
  * Write sample data to a mono output buffer.
  * Returns the number of frames written.
  */
 nframes_t
-Sample_write_mono(sample_t *ch1,
+Sample_write_mono(Sample samp,
+                  sample_t *ch1,
                   nframes_t frames);
 
 /**
@@ -48,7 +51,8 @@ Sample_write_mono(sample_t *ch1,
  * Returns the number of frames written.
  */
 nframes_t
-Sample_write_stereo(sample_t *ch1,
+Sample_write_stereo(Sample samp,
+                    sample_t *ch1,
                     sample_t *ch2,
                     nframes_t frames);
 
@@ -56,7 +60,7 @@ Sample_write_stereo(sample_t *ch1,
  * Make current thread wait for the sample to finish playing.
  */
 int
-Sample_wait();
+Sample_wait(Sample samp);
 
 /**
  * Free resources associated with a Sample.

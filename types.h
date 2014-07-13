@@ -7,6 +7,16 @@
 #define SAMPLE_SIZE sizeof(sample_t)
 
 /**
+ * Gain type float in [0, 1]
+ */
+typedef float gain_t;
+
+/**
+ * Pitch type
+ */
+typedef float pitch_t;
+
+/**
  * default sample size
  */
 typedef jack_default_audio_sample_t sample_t;
