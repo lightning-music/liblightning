@@ -1,5 +1,7 @@
 #
 # simplify
+# Easily make sample-based music on Linux
+#
 # Brian Sorahan 2014
 #
 GTK_FLAGS := $(shell pkg-config --cflags --libs gtk+-2.0)
@@ -19,7 +21,9 @@ EXAMPLES := packbox table-pack simple_client \
 
 EXAMPLES := $(addprefix examples/,$(EXAMPLES))
 
-all .DEFAULT: $(PROGS) $(EXAMPLES)
+all .DEFAULT: $(PROGS)
+
+examples: $(EXAMPLES)
 
 simplify: simplify.c                          \
           kit.o kit.h                         \
