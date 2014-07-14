@@ -1,11 +1,11 @@
 #include <assert.h>
-#include <pthread.h>
 #include <sndfile.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "clip.h"
+#include "event.h"
 #include "mem.h"
 #include "sample.h"
 #include "types.h"
@@ -39,8 +39,7 @@ struct Sample {
     // provide a way to synchronize a thread on the
     // `done` event
     int flags;
-    pthread_cond_t done;
-    pthread_mutex_t done_lock;
+    Event done_event;
 };
 
 // bit flag functions
@@ -104,8 +103,7 @@ Sample_load(const char *file,
     s->channels = sfinfo.channels;
     s->samplerate = sfinfo.samplerate;
 
-    pthread_cond_init(&s->done, NULL);
-    pthread_mutex_init(&s->done_lock, NULL);
+    s->done_event = Event_init(NULL);
 
     s->path = file;
 
@@ -129,7 +127,6 @@ Sample_load(const char *file,
     sf_close(sf);
 
     s->flags = SAMPLE_NONE;
-    pthread_mutex_lock(&s->done_lock);
 
     return s;
 }
@@ -241,7 +238,7 @@ Sample_write_stereo(Sample samp,
         samp->frames_read += frames_available;
         set_done(samp);
         // notify that we just finished reading this sample
-        pthread_cond_broadcast(&samp->done);
+        Event_broadcast(samp->done_event);
     } else {
         samp->frames_read += frames_read;
     }
@@ -250,16 +247,9 @@ Sample_write_stereo(Sample samp,
 }
 
 int
-Sample_is_done(Sample samp) {
-    assert(samp);
-    return is_done(samp);
-}
-
-int
 Sample_wait(Sample samp) {
     assert(samp);
-    return pthread_cond_wait(&samp->done,
-                             &samp->done_lock);
+    return Event_wait(samp->done_event);
 }
 
 /**
@@ -268,9 +258,6 @@ Sample_wait(Sample samp) {
 void
 Sample_free(Sample *samp) {
     assert(samp && *samp);
-
-    pthread_cond_destroy(&(*samp)->done);
-    pthread_mutex_destroy(&(*samp)->done_lock);
-
+    Event_free(&(*samp)->done_event);
     FREE((*samp)->framebuf);
 }

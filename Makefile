@@ -31,11 +31,13 @@ simplify: simplify.c                          \
           mem.o mem.h                         \
           jack-client.o jack-client.h         \
           ringbuffer.o ringbuffer.h           \
+          event.o event.h                     \
           sample.o sample.h
 
 jack-client.o: ringbuffer.o mem.o
 ringbuffer.o: mem.o
-sample.o: mem.o
+sample.o: mem.o event.o
+event.o: mem.o
 
 examples/packbox: examples/packbox.c
 examples/table-pack: examples/table-pack.c
@@ -51,6 +53,7 @@ examples/play-sample: examples/play-sample.c   \
              clip.o clip.h                     \
              mem.o mem.h                       \
              ringbuffer.o ringbuffer.h         \
+             event.o event.h                   \
              sample.o sample.h                 \
              jack-client.o jack-client.h
 

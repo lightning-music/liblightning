@@ -63,12 +63,6 @@ Sample_write_stereo(Sample samp,
                     nframes_t frames);
 
 /**
- * Returns 0 if the sample is not done, non-zero otherwise.
- */
-int
-Sample_is_done(Sample samp);
-
-/**
  * Make current thread wait for the sample to finish playing.
  */
 int
