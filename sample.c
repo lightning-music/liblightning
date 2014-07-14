@@ -85,12 +85,18 @@ Sample_load(const char *file,
         exit(EXIT_FAILURE);
     }
 
-    // Set pitch to a very small number if it is 0
 
+
+    /* Set pitch to a very small number if it is 0
+       otherwise clip it to a given range and
+f       if it is negative set the REVERSED bit */
     if (pitch == 0.0) {
         s->pitch = 0.0001;
     } else {
         s->pitch = clip(pitch, -32.0f, 32.0f);
+        if (s->pitch < 0.0) {
+            set_reversed(s);
+        }
     }
 
     s->gain = clip(gain, 0.0f, 1.0f);
