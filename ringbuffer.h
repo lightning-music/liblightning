@@ -18,13 +18,13 @@ Ringbuffer_default();
  * Initialize a Ringbuffer with @a size frames for @a channels.
  */
 Ringbuffer
-Ringbuffer_init(size_t size, int channels);
+Ringbuffer_init(size_t size, channels_t channels);
 
 /**
  * Read @a len samples from @a rb into @a buf.
  * Returns the number of samples read.
  */
-sample_count_t
+nframes_t
 Ringbuffer_read(Ringbuffer rb,
                 sample_t *buf,
                 size_t len);
@@ -33,7 +33,7 @@ Ringbuffer_read(Ringbuffer rb,
  * Write @a len samples from @a buf to @a rb.
  * Returns the number of samples written.
  */
-sample_count_t
+nframes_t
 Ringbuffer_write(Ringbuffer rb,
                  sample_t *buf,
                  size_t len);

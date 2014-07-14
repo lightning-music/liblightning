@@ -29,7 +29,7 @@ typedef int channels_t;
 /**
  * sample count
  */
-typedef unsigned long sample_count_t;
+typedef double sample_count_t;
 
 /**
  * alias of jack_nframes_t (type used to represent sample frame counts)

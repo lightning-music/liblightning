@@ -16,7 +16,7 @@ Ringbuffer_default() {
 }
 
 Ringbuffer
-Ringbuffer_init(size_t size, int channels) {
+Ringbuffer_init(size_t size, channels_t channels) {
     Ringbuffer rb;
     NEW(rb);
 
@@ -27,7 +27,7 @@ Ringbuffer_init(size_t size, int channels) {
     return rb;
 }
 
-sample_count_t
+nframes_t
 Ringbuffer_read(Ringbuffer rb,
                 sample_t *buf,
                 size_t len) {
@@ -35,7 +35,7 @@ Ringbuffer_read(Ringbuffer rb,
     return jack_ringbuffer_read(rb->jrb, (void *) buf, len);
 }
 
-sample_count_t
+nframes_t
 Ringbuffer_write(Ringbuffer rb,
                  sample_t *buf,
                  size_t len) {

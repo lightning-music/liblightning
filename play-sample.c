@@ -12,9 +12,7 @@ audio_callback(sample_t *ch1,
                nframes_t frames,
                void *data) {
     Sample sample = (Sample) data;
-
     Sample_write_stereo(sample, ch1, ch2, frames);
-
     return 0;
 }
 

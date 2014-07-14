@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "clip.h"
 #include "mem.h"
 #include "sample.h"
 #include "types.h"
@@ -54,8 +55,8 @@ Sample_load(const char *file,
         exit(EXIT_FAILURE);
     }
 
-    s->pitch = pitch;
-    s->gain = gain;
+    s->pitch = clip(pitch, -32.0f, 32.0f);
+    s->gain = clip(gain, 0.0f, 1.0f);
     s->frames = sfinfo.frames;
     s->channels = sfinfo.channels;
     s->samplerate = sfinfo.samplerate;
@@ -145,54 +146,86 @@ Sample_write_stereo(Sample samp,
     assert(samp);
 
     long frame = 0;
+    long frames_read = 0;
+
+    // pitch-adjusted frame index
+    // will have to be cast before using to index into framebuf
+    sample_count_t pfi = 0.0;
+
+    // sample index
+    long si = 0;
+
+    // frame offset
     long offset = samp->frames_read * samp->channels;
 
     if (samp->is_done) {
         return 0;
     }
 
-    if (samp->frames_read < samp->frames - frames) {
-        // we have fill the whole buffer with sample data
+    if (samp->frames_read < samp->frames - (frames * samp->pitch)) {
+        // we can fill the whole buffer with sample data
         switch (samp->channels) {
-            // fill stereo buffers with mono data
         case 1:
+            // fill stereo buffers with mono data
             for (frame = 0; frame < frames; frame++) {
+                pfi += samp->pitch;
+                frames_read = (long) pfi;
+                si = frames_read * samp->channels;
+
                 ch1[frame] = ch2[frame] =                               \
-                    samp->framebuf[offset + (frame * samp->channels)];
+                    samp->framebuf[offset + si] * samp->gain;
             }
             break;
         case 2:
             // de-interleave
             for (frame = 0; frame < frames; frame++) {
+                pfi += samp->pitch;
+                frames_read = (long) pfi;
+                si = frames_read * samp->channels;
+
                 ch1[frame] =                                            \
-                    samp->framebuf[offset + (frame * samp->channels)];
+                    samp->framebuf[offset + si] * samp->gain;
+
                 ch2[frame] =                                            \
-                    samp->framebuf[offset + (frame * samp->channels) + 1];
+                    samp->framebuf[offset + si + 1] * samp->gain;
             }
             break;
         }
 
-        samp->frames_read += frames;
+        samp->frames_read += frames_read;
     } else {
         // read the remaining samples, mark the sample as done,
         // and fill the rest of the buffer with zeroes
         long frames_available = samp->frames - samp->frames_read;
 
         switch (samp->channels) {
-            // fill stereo buffers with mono data
         case 1:
+            // fill stereo buffers with mono data
             for (frame = 0; frame < frames_available; frame++) {
+                pfi += samp->pitch;
+                frames_read = (long) pfi;
+                si = frames_read * samp->channels;
+
                 ch1[frame] = ch2[frame] =                               \
-                    samp->framebuf[offset + (frame * samp->channels)];
+                    samp->framebuf[offset + si];
             }
             break;
         case 2:
             // de-interleave
             for (frame = 0; frame < frames_available; frame++) {
-                ch1[frame] =                                            \
-                    samp->framebuf[offset + (frame * samp->channels)];
-                ch2[frame] =                                            \
-                    samp->framebuf[offset + (frame * samp->channels) + 1];
+                pfi += samp->pitch;
+                frames_read = (long) pfi;
+                si = frames_read * samp->channels;
+
+                if (offset + si < samp->frames) {
+                    ch1[frame] =                                    \
+                        samp->framebuf[offset + si] * samp->gain;
+                    
+                    ch2[frame] =                                        \
+                        samp->framebuf[offset + si + 1] * samp->gain;
+                } else {
+                    ch1[frame] = ch2[frame] = 0.0f;
+                }
             }
             break;
         }

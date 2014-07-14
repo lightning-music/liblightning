@@ -19,6 +19,7 @@ all .DEFAULT: $(PROGS)
 
 simplify: simplify.c                          \
           kit.o kit.h                         \
+          clip.o clip.h                       \
           mem.o mem.h                         \
           jack-client.o jack-client.h         \
           ringbuffer.o ringbuffer.h           \
@@ -38,6 +39,7 @@ play-file: play-file.c                         \
            jack-client.o jack-client.h
 
 play-sample: play-sample.c                     \
+             clip.o clip.h                     \
              mem.o mem.h                       \
              ringbuffer.o ringbuffer.h         \
              sample.o sample.h                 \
