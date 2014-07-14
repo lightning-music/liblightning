@@ -87,9 +87,9 @@ Sample_load(const char *file,
 
 
 
-    /* Set pitch to a very small number if it is 0
+    /* Set pitch to a very small number if it is 0,
        otherwise clip it to a given range and
-f       if it is negative set the REVERSED bit */
+       if it is negative set the reversed bit */
     if (pitch == 0.0) {
         s->pitch = 0.0001;
     } else {
@@ -190,6 +190,12 @@ Sample_write_stereo(Sample samp,
 
     long frame = 0;
     long frames_read = 0;
+    long frames_available = samp->frames - samp->frames_read;
+
+    sample_t ch1samp, ch2samp;
+
+    // flag to indicate we need to signal end of sample
+    int hitend = 0;
 
     // pitch-adjusted frame index
     // will have to be cast before using to index into framebuf
@@ -205,82 +211,39 @@ Sample_write_stereo(Sample samp,
         return 0;
     }
 
-    if (samp->frames_read < samp->frames - (frames * samp->pitch)) {
-        // we can fill the whole buffer with sample data
-        switch (samp->channels) {
-        case 1:
-            // fill stereo buffers with mono data
-            for (frame = 0; frame < frames; frame++) {
-                pfi += samp->pitch;
-                frames_read = (long) pfi;
-                si = frames_read * samp->channels;
+    for (frame = 0; frame < frames; frame++) {
+        // nudge frame index and sample index
+        pfi += samp->pitch;
+        frames_read = (long) pfi;
+        si = frames_read * samp->channels;
 
-                ch1[frame] = ch2[frame] =                               \
-                    samp->framebuf[offset + si] * samp->gain;
+        if (offset + si < samp->frames) {
+            // sample values
+            ch1samp = samp->framebuf[offset + si] * samp->gain;
+            ch2samp = samp->framebuf[offset + si + 1] * samp->gain;
+
+            switch(samp->channels) {
+            case 1:
+                ch1[frame] = ch2[frame] = ch1samp;
+                break;
+            case 2:
+                ch1[frame] = ch1samp;
+                ch2[frame] = ch2samp;
+                break;
             }
-            break;
-        case 2:
-            // de-interleave
-            for (frame = 0; frame < frames; frame++) {
-                pfi += samp->pitch;
-                frames_read = (long) pfi;
-                si = frames_read * samp->channels;
-
-                ch1[frame] =                                            \
-                    samp->framebuf[offset + si] * samp->gain;
-
-                ch2[frame] =                                            \
-                    samp->framebuf[offset + si + 1] * samp->gain;
-            }
-            break;
-        }
-
-        samp->frames_read += frames_read;
-    } else {
-        // read the remaining samples, mark the sample as done,
-        // and fill the rest of the buffer with zeroes
-        long frames_available = samp->frames - samp->frames_read;
-
-        switch (samp->channels) {
-        case 1:
-            // fill stereo buffers with mono data
-            for (frame = 0; frame < frames_available; frame++) {
-                pfi += samp->pitch;
-                frames_read = (long) pfi;
-                si = frames_read * samp->channels;
-
-                ch1[frame] = ch2[frame] =                               \
-                    samp->framebuf[offset + si];
-            }
-            break;
-        case 2:
-            // de-interleave
-            for (frame = 0; frame < frames_available; frame++) {
-                pfi += samp->pitch;
-                frames_read = (long) pfi;
-                si = frames_read * samp->channels;
-
-                if (offset + si < samp->frames) {
-                    ch1[frame] =                                    \
-                        samp->framebuf[offset + si] * samp->gain;
-                    
-                    ch2[frame] =                                        \
-                        samp->framebuf[offset + si + 1] * samp->gain;
-                } else {
-                    ch1[frame] = ch2[frame] = 0.0f;
-                }
-            }
-            break;
-        }
-
-        for ( ; frame < frames; frame++) {
+        } else {
+            hitend = 1;
             ch1[frame] = ch2[frame] = 0.0f;
         }
+    }
 
+    if (hitend) {
         samp->frames_read += frames_available;
         set_done(samp);
-        // note that done_lock was locked in Sample_load
+        // notify that we just finished reading this sample
         pthread_cond_broadcast(&samp->done);
+    } else {
+        samp->frames_read += frames_read;
     }
 
     return 0;
