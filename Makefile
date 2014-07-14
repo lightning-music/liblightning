@@ -12,10 +12,14 @@ LDLIBS := $(GTK_FLAGS) $(JACK_FLAGS) $(SNDFILE_FLAGS) -lm
 
 .PHONY: all
 
-PROGS = simplify packbox table-pack simple_client \
+PROGS = simplify
+
+EXAMPLES := packbox table-pack simple_client \
         capture_client play-file play-sample
 
-all .DEFAULT: $(PROGS)
+EXAMPLES := $(addprefix examples/,$(EXAMPLES))
+
+all .DEFAULT: $(PROGS) $(EXAMPLES)
 
 simplify: simplify.c                          \
           kit.o kit.h                         \
@@ -29,16 +33,17 @@ jack-client.o: ringbuffer.o mem.o
 ringbuffer.o: mem.o
 sample.o: mem.o
 
-packbox: packbox.c
-table-pack: table-pack.c
-simple_client: simple_client.c
-capture_client: capture_client.c
-play-file: play-file.c                         \
+examples/packbox: examples/packbox.c
+examples/table-pack: examples/table-pack.c
+examples/simple_client: examples/simple_client.c
+examples/capture_client: examples/capture_client.c
+
+examples/play-file: examples/play-file.c       \
            mem.o mem.h                         \
            ringbuffer.o ringbuffer.h           \
            jack-client.o jack-client.h
 
-play-sample: play-sample.c                     \
+examples/play-sample: examples/play-sample.c   \
              clip.o clip.h                     \
              mem.o mem.h                       \
              ringbuffer.o ringbuffer.h         \
@@ -46,4 +51,4 @@ play-sample: play-sample.c                     \
              jack-client.o jack-client.h
 
 clean:
-	rm -rf $(PROGS) *~ *.o
+	rm -rf $(PROGS) $(EXAMPLES) *~ *.o

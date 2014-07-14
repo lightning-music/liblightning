@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "jack-client.h"
-#include "sample.h"
-#include "types.h"
+#include "../jack-client.h"
+#include "../sample.h"
+#include "../types.h"
 
 int
 audio_callback(sample_t *ch1,

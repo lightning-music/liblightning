@@ -10,6 +10,12 @@
 #include "sample.h"
 #include "types.h"
 
+enum {
+    SAMPLE_NONE,
+    SAMPLE_DONE,
+    SAMPLE_REVERSED
+} SampleFlags;
+
 /*
  * TODO
  * ====
@@ -32,10 +38,34 @@ struct Sample {
     nframes_t frames_read;
     // provide a way to synchronize a thread on the
     // `done` event
-    int is_done;
+    int flags;
     pthread_cond_t done;
     pthread_mutex_t done_lock;
 };
+
+// bit flag functions
+
+static inline int
+is_done(Sample samp) {
+    return samp->flags & SAMPLE_DONE;
+}
+
+static inline Sample
+set_done(Sample samp) {
+    samp->flags |= SAMPLE_DONE;
+    return samp;
+}
+
+static inline int
+is_reversed(Sample samp) {
+    return samp->flags & SAMPLE_REVERSED;
+}
+
+static inline Sample
+set_reversed(Sample samp) {
+    samp->flags |= SAMPLE_REVERSED;
+    return samp;
+}
 
 /**
  * Load an audio sample.
@@ -55,7 +85,14 @@ Sample_load(const char *file,
         exit(EXIT_FAILURE);
     }
 
-    s->pitch = clip(pitch, -32.0f, 32.0f);
+    // Set pitch to a very small number if it is 0
+
+    if (pitch == 0.0) {
+        s->pitch = 0.0001;
+    } else {
+        s->pitch = clip(pitch, -32.0f, 32.0f);
+    }
+
     s->gain = clip(gain, 0.0f, 1.0f);
     s->frames = sfinfo.frames;
     s->channels = sfinfo.channels;
@@ -85,7 +122,7 @@ Sample_load(const char *file,
 
     sf_close(sf);
 
-    s->is_done = 0;
+    s->flags = SAMPLE_NONE;
     pthread_mutex_lock(&s->done_lock);
 
     return s;
@@ -158,7 +195,7 @@ Sample_write_stereo(Sample samp,
     // frame offset
     long offset = samp->frames_read * samp->channels;
 
-    if (samp->is_done) {
+    if (is_done(samp)) {
         return 0;
     }
 
@@ -235,7 +272,7 @@ Sample_write_stereo(Sample samp,
         }
 
         samp->frames_read += frames_available;
-        samp->is_done = 1;
+        set_done(samp);
         // note that done_lock was locked in Sample_load
         pthread_cond_broadcast(&samp->done);
     }
@@ -246,7 +283,7 @@ Sample_write_stereo(Sample samp,
 int
 Sample_is_done(Sample samp) {
     assert(samp);
-    return samp->is_done;
+    return is_done(samp);
 }
 
 int

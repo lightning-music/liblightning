@@ -9,8 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "jack-client.h"
-#include "types.h"
+#include "../jack-client.h"
+#include "../types.h"
 
 typedef struct FilePlayer {
     // TODO: get rid of sf and sfinfo
