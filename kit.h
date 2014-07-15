@@ -25,7 +25,7 @@ Kit_load(const char *dir);
 /**
  * Return the number of samples successfully loaded.
  */
-unsigned int
+int
 Kit_num_samples(Kit kit);
 
 /**
