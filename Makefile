@@ -12,7 +12,10 @@ CC=gcc
 CFLAGS := -Wall -g $(GTK_FLAGS)
 LDLIBS := $(GTK_FLAGS) $(JACK_FLAGS) $(SNDFILE_FLAGS) -lm
 
-.PHONY: all
+prefix=/usr/local
+bindir=$(prefix)/bin
+
+.PHONY: all install
 
 PROGS = lightning
 
@@ -25,7 +28,10 @@ all .DEFAULT: $(PROGS)
 
 examples: $(EXAMPLES)
 
-lightning: lightning.c                         \
+install: $(PROGS)
+	install $(PROGS) $(DESTDIR)$(bindir)
+
+lightning: lightning.c                        \
            kit.o kit.h                         \
            clip.o clip.h                       \
            mem.o mem.h                         \
