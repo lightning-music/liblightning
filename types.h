@@ -37,12 +37,20 @@ typedef double sample_count_t;
 typedef jack_nframes_t nframes_t;
 
 /**
- * callback for getting @a frames of sample data
+ * callback for getting @a frames of mono sample data
  * return 0 for success, nonzero for failure
  */
-typedef int (* sample_data_callback)(sample_t *ch1,
-                                     sample_t *ch2,
-                                     nframes_t frames,
-                                     void *client_data);
+typedef int (* MonoCallback)(sample_t *ch1,
+                             nframes_t frames,
+                             void *client_data);
+
+/**
+ * callback for getting @a frames of stereo sample data
+ * return 0 for success, nonzero for failure
+ */
+typedef int (* StereoCallback)(sample_t *ch1,
+                               sample_t *ch2,
+                               nframes_t frames,
+                               void *client_data);
 
 #endif

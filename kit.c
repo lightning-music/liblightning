@@ -12,15 +12,24 @@
 #include "kit.h"
 #include "mem.h"
 #include "sample.h"
+#include "types.h"
 
 struct Kit {
+    JackClient jack_client;
     Sample *samples;
     unsigned int num_samples;
 };
 
+int
+stereo_callback(sample_t *ch1,
+                sample_t *ch2,
+                nframes_t frames,
+                void *data) {
+    return 0;
+}
+
 Kit
-Kit_load(const char *dir,
-         JackClient jack_client) {
+Kit_load(const char *dir) {
     Kit kit;
     NEW(kit);
 
@@ -70,11 +79,9 @@ Kit_load(const char *dir,
 
     kit->num_samples = file_index;
 
-    // initialize samples
+    // initialize jack client
 
-    /* for (i = 0; i < file_index; i++) { */
-    /*     kit->samples[i] = Sample_load(files[file_index]); */
-    /* } */
+    
 
     return kit;
 }

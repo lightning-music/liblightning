@@ -1,10 +1,12 @@
+/**
+ * A kit is responsible for loading and playing samples.
+ */
 #ifndef KIT_H_INCLUDED
 #define KIT_H_INCLUDED
 
 #include "sample.h"
-#include "jack-client.h"
 
-/*
+/**
  * Maximum number of samples a kit can load.
  */
 #define MAX_SAMPLES 32
@@ -18,8 +20,7 @@ typedef struct Kit *Kit;
  * uses @a engine for audio playback
  */
 Kit
-Kit_load(const char *dir,
-         JackClient jack_client);
+Kit_load(const char *dir);
 
 /**
  * Return the number of samples successfully loaded.

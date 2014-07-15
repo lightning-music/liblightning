@@ -23,7 +23,8 @@ typedef struct JackClient *JackClient;
  * @client_data pointer to data passed to callback
  */
 JackClient
-JackClient_init(sample_data_callback callback,
+JackClient_init(MonoCallback mono_callback,
+                StereoCallback stereo_callback,
                 void *client_data);
 
 int

@@ -22,7 +22,8 @@ struct JackClient {
     jack_client_t *jack_client;
     jack_port_t *jack_output_port_1;
     jack_port_t *jack_output_port_2;
-    sample_data_callback callback;
+    MonoCallback mono_callback;
+    StereoCallback stereo_callback;
     Ringbuffer rb;
 };
 
@@ -52,16 +53,26 @@ process(jack_nframes_t nframes,
     sample_t *ch2 = \
         jack_port_get_buffer(client->jack_output_port_2, nframes);
 
-    // write data to the output buffer
+    // write data to the output buffer with registered callbacks
+    // TODO: use mono callback if there is only one playback port
 
-    return client->callback(ch1,
-                            ch2,
-                            (nframes_t) nframes,
-                            client->data);
+    if (client->stereo_callback != NULL) {
+        return client->stereo_callback(ch1,
+                                       ch2,
+                                       (nframes_t) nframes,
+                                       client->data);
+    } else if (client->mono_callback != NULL) {
+        return client->mono_callback(ch1,
+                                     (nframes_t) nframes,
+                                     client->data);
+    } else {
+        return 0;
+    }
 }
 
 JackClient
-JackClient_init(sample_data_callback callback,
+JackClient_init(MonoCallback mono_callback,
+                StereoCallback stereo_callback,
                 void *client_data) {
     JackClient client;
     NEW(client);
@@ -82,7 +93,8 @@ JackClient_init(sample_data_callback callback,
     // register realtime callback
 
     client->data = client_data;
-    client->callback = callback;
+    client->mono_callback = mono_callback;
+    client->stereo_callback = stereo_callback;
     jack_set_process_callback(client->jack_client, process, client);
 
     // register shutdown callback

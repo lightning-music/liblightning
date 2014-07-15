@@ -7,7 +7,7 @@
 #include "../types.h"
 
 int
-audio_callback(sample_t *ch1,
+stereo_callback(sample_t *ch1,
                sample_t *ch2,
                nframes_t frames,
                void *data) {
@@ -50,7 +50,8 @@ main(int argc, char **argv) {
     // initialize sample and jack client
 
     Sample s = Sample_load(f, pitch, gain);
-    JackClient jack_client = JackClient_init(audio_callback, s);
+    JackClient jack_client =                    \
+        JackClient_init(NULL, stereo_callback, s);
 
     // wait for sample to finish playing
 

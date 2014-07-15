@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
     // initialize jack client
 
     JackClient jack_client = \
-        JackClient_init(audio_callback, &fp);
+        JackClient_init(NULL, audio_callback, &fp);
 
     // wait to be done
     pthread_cond_wait(&fp.done, &fp.done_lock);
