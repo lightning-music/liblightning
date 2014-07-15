@@ -1,5 +1,5 @@
 #
-# simplify
+# lightning
 # Easily make sample-based music on Linux
 #
 # Brian Sorahan 2014
@@ -14,7 +14,7 @@ LDLIBS := $(GTK_FLAGS) $(JACK_FLAGS) $(SNDFILE_FLAGS) -lm
 
 .PHONY: all
 
-PROGS = simplify
+PROGS = lightning
 
 EXAMPLES := packbox table-pack simple_client \
         capture_client play-file play-sample
@@ -25,14 +25,14 @@ all .DEFAULT: $(PROGS)
 
 examples: $(EXAMPLES)
 
-simplify: simplify.c                          \
-          kit.o kit.h                         \
-          clip.o clip.h                       \
-          mem.o mem.h                         \
-          jack-client.o jack-client.h         \
-          ringbuffer.o ringbuffer.h           \
-          event.o event.h                     \
-          sample.o sample.h
+lightning: lightning.c                        \
+           kit.o kit.h                         \
+           clip.o clip.h                       \
+           mem.o mem.h                         \
+           jack-client.o jack-client.h         \
+           ringbuffer.o ringbuffer.h           \
+           event.o event.h                     \
+           sample.o sample.h
 
 jack-client.o: ringbuffer.o mem.o
 ringbuffer.o: mem.o
