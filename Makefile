@@ -1,6 +1,6 @@
 #
 # lightning
-# Easily make sample-based music on Linux
+# Make music on linux lightning fast!
 #
 # Brian Sorahan 2014
 #
@@ -25,13 +25,14 @@ all .DEFAULT: $(PROGS)
 
 examples: $(EXAMPLES)
 
-lightning: lightning.c                        \
+lightning: lightning.c                         \
            kit.o kit.h                         \
            clip.o clip.h                       \
            mem.o mem.h                         \
            jack-client.o jack-client.h         \
            ringbuffer.o ringbuffer.h           \
            event.o event.h                     \
+           mutex.o mutex.h                     \
            sample.o sample.h
 
 jack-client.o: ringbuffer.o mem.o
@@ -54,6 +55,7 @@ examples/play-sample: examples/play-sample.c   \
              mem.o mem.h                       \
              ringbuffer.o ringbuffer.h         \
              event.o event.h                   \
+             mutex.o mutex.h                   \
              sample.o sample.h                 \
              jack-client.o jack-client.h
 

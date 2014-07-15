@@ -7,6 +7,7 @@
 #include "clip.h"
 #include "event.h"
 #include "mem.h"
+#include "mutex.h"
 #include "sample.h"
 #include "types.h"
 
@@ -29,16 +30,18 @@ struct Sample {
     const char *path;
     pitch_t pitch;
     gain_t gain;
+    // channels, frames, and samplerate are pulled from SF_INFO
     channels_t channels;
     nframes_t frames;
     int samplerate;
     // buffer to hold sample data
     sample_t *framebuf;
-    // track read position in file
+    // track read position in file (guarded by mutex)
     nframes_t frames_read;
-    // provide a way to synchronize a thread on the
-    // `done` event
+    Mutex frames_read_mutex;
+    // flags
     int flags;
+    // provide a way to synchronize a thread on the `done` event
     Event done_event;
 };
 
@@ -64,6 +67,19 @@ static inline Sample
 set_reversed(Sample samp) {
     samp->flags |= SAMPLE_REVERSED;
     return samp;
+}
+
+/**
+ * Try to set frames_read
+ */
+static int
+set_frames_read(Sample samp, nframes_t val) {
+    if (0 == Mutex_trylock(samp->frames_read_mutex)) {
+        samp->frames_read = val;
+        return Mutex_unlock(samp->frames_read_mutex);
+    } else {
+        return -1;
+    }
 }
 
 /**
@@ -128,6 +144,9 @@ Sample_load(const char *file,
 
     s->flags = SAMPLE_NONE;
 
+    s->frames_read = 0;
+    s->frames_read_mutex = Mutex_init();
+
     return s;
 }
 
@@ -168,6 +187,12 @@ nframes_t
 Sample_frames_available(Sample samp) {
     assert(samp);
     return samp->frames - samp->frames_read;
+}
+
+int
+Sample_reset(Sample samp) {
+    assert(samp);
+    return set_frames_read(samp, 0);
 }
 
 nframes_t
@@ -235,12 +260,12 @@ Sample_write_stereo(Sample samp,
     }
 
     if (hitend) {
-        samp->frames_read += frames_available;
+        set_frames_read(samp, samp->frames_read + frames_available);
         set_done(samp);
         // notify that we just finished reading this sample
         Event_broadcast(samp->done_event);
     } else {
-        samp->frames_read += frames_read;
+        set_frames_read(samp, samp->frames_read + frames_read);
     }
 
     return 0;
@@ -258,6 +283,9 @@ Sample_wait(Sample samp) {
 void
 Sample_free(Sample *samp) {
     assert(samp && *samp);
+    // free the done event
     Event_free(&(*samp)->done_event);
+    // free the frames_read mutex
+    Mutex_free(&(*samp)->frames_read_mutex);
     FREE((*samp)->framebuf);
 }

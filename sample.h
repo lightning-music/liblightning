@@ -44,6 +44,12 @@ nframes_t
 Sample_frames_available(Sample samp);
 
 /**
+ * Reset the internal sample frame pointer.
+ */
+int
+Sample_reset(Sample samp);
+
+/**
  * Write sample data to a mono output buffer.
  * Returns the number of frames written.
  */
