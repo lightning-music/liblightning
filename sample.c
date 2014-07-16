@@ -39,6 +39,7 @@ struct Sample {
     // track read position in file (guarded by mutex)
     nframes_t frames_read;
     Mutex frames_read_mutex;
+    nframes_t total_frames_written;
     // flags
     int flags;
     // provide a way to synchronize a thread on the `done` event
@@ -146,6 +147,7 @@ Sample_load(const char *file,
 
     s->frames_read = 0;
     s->frames_read_mutex = Mutex_init();
+    s->total_frames_written = 0;
 
     return s;
 }
@@ -210,6 +212,7 @@ Sample_write_stereo(Sample samp,
                     nframes_t frames) {
     assert(samp);
 
+    int chans = (int) samp->channels;
     long frame = 0;
     long frames_read = 0;
     long frames_available = samp->frames - samp->frames_read;
@@ -227,7 +230,7 @@ Sample_write_stereo(Sample samp,
     long si = 0;
 
     // frame offset
-    long offset = samp->frames_read * samp->channels;
+    long offset = samp->frames_read * chans;
 
     if (is_done(samp)) {
         return 0;
@@ -237,14 +240,14 @@ Sample_write_stereo(Sample samp,
         // nudge frame index and sample index
         pfi += samp->pitch;
         frames_read = (long) pfi;
-        si = frames_read * samp->channels;
+        si = frames_read * chans;
 
-        if (offset + si < samp->frames) {
+        if (offset + si < (samp->frames * chans) - chans) {
             // sample values
             ch1samp = samp->framebuf[offset + si] * samp->gain;
             ch2samp = samp->framebuf[offset + si + 1] * samp->gain;
 
-            switch(samp->channels) {
+            switch(chans) {
             case 1:
                 ch1[frame] = ch2[frame] = ch1samp;
                 break;
@@ -259,16 +262,29 @@ Sample_write_stereo(Sample samp,
         }
     }
 
+    /* printf("frames - frames_read = %ld\n", */
+    /*        (long) (frames - frames_read)); */
+
     if (hitend) {
+        samp->total_frames_written += frames;
+        /* samp->frames_read += frames_available; */
         set_frames_read(samp, samp->frames_read + frames_available);
         set_done(samp);
         // notify that we just finished reading this sample
         Event_broadcast(samp->done_event);
     } else {
         set_frames_read(samp, samp->frames_read + frames_read);
+        samp->total_frames_written += frames;
+        /* samp->frames_read += frames_read; */
     }
 
     return 0;
+}
+
+nframes_t
+Sample_total_frames_written(Sample samp) {
+    assert(samp);
+    return samp->total_frames_written;
 }
 
 int

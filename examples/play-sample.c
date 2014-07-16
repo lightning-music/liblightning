@@ -57,6 +57,12 @@ main(int argc, char **argv) {
 
     Sample_wait(s);
 
+    printf("Sample_frames                   = %ld\n",
+           (long) Sample_num_frames(s));
+
+    printf("Sample_total_frames_written     = %ld\n",
+           (long) Sample_total_frames_written(s));
+
     // free sample and jack client
 
     Sample_free(&s);

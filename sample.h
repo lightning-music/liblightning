@@ -69,6 +69,13 @@ Sample_write_stereo(Sample samp,
                     nframes_t frames);
 
 /**
+ * Total number of frames that have been written in one of
+ * the audio callbacks.
+ */
+nframes_t
+Sample_total_frames_written(Sample samp);
+
+/**
  * Make current thread wait for the sample to finish playing.
  */
 int
