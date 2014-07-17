@@ -7,10 +7,12 @@
 GTK_FLAGS := $(shell pkg-config --cflags --libs gtk+-2.0)
 JACK_FLAGS := $(shell pkg-config --cflags --libs jack)
 SNDFILE_FLAGS := $(shell pkg-config --cflags --libs sndfile)
+SRC_FLAGS := $(shell pkg-config --cflags --libs samplerate)
 CPPFLAGS := -I/usr/include/gtk-2.0
 CC=gcc
 CFLAGS := -Wall -g $(GTK_FLAGS)
-LDLIBS := $(GTK_FLAGS) $(JACK_FLAGS) $(SNDFILE_FLAGS) -lm
+LDLIBS := $(GTK_FLAGS) $(JACK_FLAGS) $(SNDFILE_FLAGS) \
+          $(SRC_FLAGS) -lm
 
 prefix=/usr/local
 bindir=$(prefix)/bin

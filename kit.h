@@ -30,6 +30,7 @@ Kit_num_samples(Kit kit);
 
 /**
  * Return a list of the samples used in this kit.
+ * Should contain Kit_num_samples Sample's.
  */
 Sample *
 Kit_sample_list(Kit kit);
@@ -42,6 +43,21 @@ void
 Kit_play_sample(Kit kit,
                 Sample samp);
 
+/**
+ * Get a realtime callback that outputs 1 channel.
+ */
+MonoCallback
+Kit_get_mono_callback(Kit kit);
+
+/**
+ * Get a realtime callback that outputs 2 channels.
+ */
+StereoCallback
+Kit_get_stero_callback(Kit kit);
+
+/**
+ * Free the samples.
+ */
 void
 Kit_free(Kit *kit);
 

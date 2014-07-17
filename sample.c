@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <samplerate.h>
 #include <sndfile.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -26,6 +27,19 @@ enum {
  * a memcpy from the table.
  */
 
+/*
+ * TODO
+ * ====
+ * Dynamic sample rate conversion.
+ * jack-client is notified with a callback any time
+ * the server changes the output sample rate.
+ * Any samples that are currently playing will also need to
+ * be notified of such changes to ensure maximum audio quality.
+ * This would either be done with a callback or with an
+ * Event.
+ * I'm probably being too defensive at this stage in the game [bs].
+ */
+
 struct Sample {
     const char *path;
     pitch_t pitch;
@@ -44,6 +58,10 @@ struct Sample {
     int flags;
     // provide a way to synchronize a thread on the `done` event
     Event done_event;
+    /* internal sample rate converter state */
+    SRC_STATE *conv_state;
+    /* output sample rate used to convert */
+    double conv_src_ratio;
 };
 
 // bit flag functions
@@ -101,8 +119,6 @@ Sample_load(const char *file,
         exit(EXIT_FAILURE);
     }
 
-
-
     /* Set pitch to a very small number if it is 0,
        otherwise clip it to a given range and
        if it is negative set the reversed bit */
@@ -148,6 +164,19 @@ Sample_load(const char *file,
     s->frames_read = 0;
     s->frames_read_mutex = Mutex_init();
     s->total_frames_written = 0;
+
+    /* Initialize sample rate converter */
+
+    int src_error;
+    s->conv_state = src_new(SRC_SINC_BEST_QUALITY,
+                            s->channels,
+                            &src_error);
+
+    if (s->conv_state == NULL) {
+        fprintf(stderr, "Could not initialize sample rate "
+                "converter (ERR %d)\n", src_error);
+        exit(EXIT_FAILURE);
+    }
 
     return s;
 }
@@ -261,9 +290,6 @@ Sample_write_stereo(Sample samp,
             ch1[frame] = ch2[frame] = 0.0f;
         }
     }
-
-    /* printf("frames - frames_read = %ld\n", */
-    /*        (long) (frames - frames_read)); */
 
     if (hitend) {
         samp->total_frames_written += frames;

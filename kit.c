@@ -132,9 +132,16 @@ Kit_play_sample(Kit kit,
     assert(kit);
 }
 
-/**
- * Free the samples.
- */
+MonoCallback
+Kit_get_mono_callback(Kit kit) {
+    return mono_callback;
+}
+
+StereoCallback
+Kit_get_stero_callback(Kit kit) {
+    return stereo_callback;
+}
+
 void
 Kit_free(Kit *kit) {
     assert(kit && *kit);

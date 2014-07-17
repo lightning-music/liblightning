@@ -27,6 +27,14 @@ struct JackClient {
     Ringbuffer rb;
 };
 
+static int
+samplerate_callback(nframes_t sr,
+                    void *data) {
+    /* Notify client code that depends on the output
+       sample rate */
+    return 0;
+}
+
 /**
  * JACK shutdown callback
  */
@@ -97,6 +105,15 @@ JackClient_init(MonoCallback mono_callback,
     client->stereo_callback = stereo_callback;
     jack_set_process_callback(client->jack_client, process, client);
 
+    // register a callback for when jack changes the output
+    // sample rate
+    if (jack_set_sample_rate_callback(client->jack_client,
+                                      samplerate_callback,
+                                      client)) {
+        fprintf(stderr, "Could not register samplerate callback\n");
+        exit(EXIT_FAILURE);
+    }
+
     // register shutdown callback
 
     jack_on_shutdown(client->jack_client, jack_shutdown, NULL);
@@ -149,17 +166,49 @@ JackClient_init(MonoCallback mono_callback,
     return client;
 }
 
+nframes_t
+JackClient_samplerate(JackClient jack) {
+    assert(jack);
+    return jack_get_sample_rate(jack->jack_client);
+}
+
+nframes_t
+JackClient_buffersize(JackClient jack) {
+    assert(jack);
+    return jack_get_buffer_size(jack->jack_client);
+}
+
 // FIXME
 int
 JackClient_playback_ports(JackClient jack) {
     return 2;
 }
 
+/* How would the set_*_callback functions ever fail? */
+
+int
+JackClient_set_mono_callback(JackClient jack,
+                             MonoCallback mcb,
+                             void *data) {
+    assert(jack);
+    jack->mono_callback = mcb;
+    return 0;
+}
+
+int
+JackClient_set_stereo_callback(JackClient jack,
+                               StereoCallback scb,
+                               void *data) {
+    assert(jack);
+    jack->stereo_callback = scb;
+    return 0;
+}
+
 void
-JackClient_free(JackClient *client) {
-    assert(client && *client);
+JackClient_free(JackClient *jack) {
+    assert(jack && *jack);
     // close jack client
-    jack_client_close((*client)->jack_client);
-    FREE(*client);
+    jack_client_close((*jack)->jack_client);
+    FREE(*jack);
 }
 
