@@ -13,7 +13,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "hashicorp/precise64"
 
   # Install gtk, sndfile, and jack dev dependencies
-  config.vm.provision :shell, path: "install-deps.sh", args: "ubuntu"
+  config.vm.provision :shell, path: "provision.sh", args: "ubuntu"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs

@@ -16,7 +16,9 @@ fi
 case "$1" in
     ubuntu|debian)
         sudo apt-get update
-        sudo apt-get install -qq libsndfile1-dev libjack-dev libgtk2.0-dev
+        sudo apt-get install -qq libsndfile1-dev \
+            libjack-dev libgtk2.0-dev libsamplerate0-dev
+        cd /vagrant && make && make install
         ;;
     *)
         echo 1>&2 Unrecognized system: "$1"
