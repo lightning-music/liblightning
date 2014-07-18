@@ -14,7 +14,8 @@ typedef struct Stream *Stream;
  * be a passthru.
  */
 Stream
-Stream_init(nframes_t bufsize,
+Stream_init(nframes_t frames,
+            channels_t channels,
             StreamCallback callback,
             void *data);
 
@@ -31,6 +32,18 @@ Stream_process(Stream s,
                nframes_t inframes,
                nframes_t outframes,
                int *hitend);
+
+/**
+ * Return the buffer size in frames for a Stream.
+ */
+nframes_t
+Stream_frames(Stream s);
+
+/**
+ * Return the number of channels for a Stream.
+ */
+channels_t
+Stream_channels(Stream s);
 
 /**
  * Free a Stream resource

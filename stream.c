@@ -15,13 +15,16 @@ typedef enum {
 
 struct Stream {
     sample_t *buf;
-    nframes_t bufsize;
+    nframes_t frames;
+    channels_t channels;
     StreamCallback callback;
     STREAM_STATE state;
+    void *data;
 };
 
 Stream
-Stream_init(nframes_t bufsize,
+Stream_init(nframes_t frames,
+            channels_t channels,
             StreamCallback callback,
             void *data) {
     Stream s;
@@ -30,9 +33,11 @@ Stream_init(nframes_t bufsize,
     s->state = STREAM_INITIALIZING;
 
     s->callback = callback;
-    s->bufsize = bufsize;
-    s->buf = CALLOC(bufsize, SAMPLE_SIZE);
-    memset(s->buf, 0, bufsize);
+    s->frames = frames;
+    s->channels = channels;
+    s->buf = CALLOC(frames, SAMPLE_SIZE * channels);
+    memset(s->buf, 0, SAMPLE_SIZE * frames * channels);
+    s->data = data;
 
     s->state = STREAM_READY;
 
@@ -55,7 +60,7 @@ Stream_process(Stream s,
         return 0;
     }
 
-    frames = s->callback(in, out, inframes, outframes, NULL);
+    frames = s->callback(in, out, inframes, outframes, s->data);
 
     if (outframes != frames) {
         *hitend = 1;
@@ -63,6 +68,18 @@ Stream_process(Stream s,
     }
 
     return frames;
+}
+
+nframes_t
+Stream_frames(Stream s) {
+    assert(s);
+    return s->frames;
+}
+
+channels_t
+Stream_channels(Stream s) {
+    assert(s);
+    return s->channels;
 }
 
 void
