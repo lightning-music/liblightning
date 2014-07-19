@@ -93,11 +93,13 @@ process(jack_nframes_t nframes,
 
     JackClient client = (JackClient) arg;
 
+    /* return if the client is not ready for processing */
+
     if (! JackClient_is_processing(client)) {
         return 0;
     }
 
-    // setup output sample buffers
+    /* setup output sample buffers */
 
     sample_t *ch1 = \
         jack_port_get_buffer(client->jack_output_port_1, nframes);
@@ -105,8 +107,8 @@ process(jack_nframes_t nframes,
     sample_t *ch2 = \
         jack_port_get_buffer(client->jack_output_port_2, nframes);
 
-    // write data to the output buffer with registered callbacks
-    // TODO: use mono callback if there is only one playback port
+    /* write data to the output buffer with registered callbacks */
+    /* TODO: don't use stereo_callback if there is only one playback port */
 
     if (client->stereo_callback != NULL) {
         return client->stereo_callback(ch1,
@@ -271,7 +273,8 @@ JackClient_set_stereo_callback(JackClient jack,
 void
 JackClient_free(JackClient *jack) {
     assert(jack && *jack);
-    // close jack client
+    JackClient_set_state(*jack, JackClientState_Finished);
+    /* close jack client */
     jack_client_close((*jack)->jack_client);
     FREE(*jack);
 }
