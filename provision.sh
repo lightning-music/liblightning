@@ -14,20 +14,28 @@ function usage_and_exit {
     exit 1
 }
 
-if [ -z "$1" ]; then
-    usage_and_exit
-fi
+function provision {
+    local system_type="$1"; shift
 
-case "$1" in
-    ubuntu|debian)
-        sudo apt-get update
-        sudo apt-get install -qq libsndfile1-dev \
-            libjack-dev libgtk2.0-dev libsamplerate0-dev
-        cd /vagrant && make && make install
-        ;;
-    *)
-        echo 1>&2 Unrecognized system: "$1"
-        echo 1>&2
+    if [ -z "$system_type" ]; then
         usage_and_exit
-        ;;
-esac
+    fi
+
+    case "$system_type" in
+        ubuntu|debian)
+            # assume make is installed
+            sudo apt-get update
+            sudo apt-get install -qq libsndfile1-dev \
+                libjack-dev libgtk2.0-dev libsamplerate0-dev
+            ;;
+        *)
+            echo 1>&2 Unrecognized system: "$system_type"
+            echo 1>&2
+            usage_and_exit
+            ;;
+    esac
+
+    [ -d /vagrant ] && cd /vagrant && make && make install
+}
+
+provision "$@"
