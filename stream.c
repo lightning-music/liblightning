@@ -17,7 +17,8 @@ struct Stream {
     sample_t *buf;
     nframes_t frames;
     channels_t channels;
-    StreamCallback callback;
+    StreamCallbackMono mono_callback;
+    StreamCallbackStereo stereo_callback;
     STREAM_STATE state;
     void *data;
 };
@@ -25,14 +26,16 @@ struct Stream {
 Stream
 Stream_init(nframes_t frames,
             channels_t channels,
-            StreamCallback callback,
+            StreamCallbackMono mono_callback,
+            StreamCallbackStereo stereo_callback,
             void *data) {
     Stream s;
     NEW(s);
 
     s->state = STREAM_INITIALIZING;
 
-    s->callback = callback;
+    s->mono_callback = mono_callback;
+    s->stereo_callback = stereo_callback;
     s->frames = frames;
     s->channels = channels;
     s->buf = CALLOC(frames, SAMPLE_SIZE * channels);
@@ -45,25 +48,51 @@ Stream_init(nframes_t frames,
 }
 
 nframes_t
-Stream_process(Stream s,
-               sample_t *in,
-               sample_t *out,
-               nframes_t inframes,
-               nframes_t outframes,
-               int *hitend) {
+Stream_process_mono(Stream s,
+                    sample_t *in,
+                    sample_t *out,
+                    nframes_t inframes,
+                    nframes_t outframes,
+                    int *hitend) {
     assert(s);
     s->state = STREAM_PROCESSING;
 
     nframes_t frames;
 
-    if (s->callback == NULL) {
+    if (s->mono_callback == NULL) {
         return 0;
     }
 
-    frames = s->callback(in, out, inframes, outframes, s->data);
+    frames = s->mono_callback(in, out, inframes, outframes, hitend, s->data);
 
-    if (outframes != frames) {
-        *hitend = 1;
+    if (*hitend) {
+        s->state = STREAM_FINISHED;
+    }
+
+    return frames;
+}
+
+nframes_t
+Stream_process_stereo(Stream s,
+                      sample_t *in,
+                      sample_t *ch1,
+                      sample_t *ch2,
+                      nframes_t inframes,
+                      nframes_t outframes,
+                      int *hitend) {
+    assert(s);
+    s->state = STREAM_PROCESSING;
+
+    nframes_t frames;
+
+    if (s->stereo_callback == NULL) {
+        return 0;
+    }
+
+    frames = s->stereo_callback(in, ch1, ch2, inframes, outframes,
+                                hitend, s->data);
+
+    if (*hitend) {
         s->state = STREAM_FINISHED;
     }
 

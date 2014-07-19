@@ -69,6 +69,16 @@ Sample_write_stereo(Sample samp,
                     nframes_t frames);
 
 /**
+ * Write sample data to a stereo output buffers (uses streams).
+ * Returns the number of frames written.
+ */
+nframes_t
+Sample_write_stereo_stream(Sample samp,
+                           sample_t *ch1,
+                           sample_t *ch2,
+                           nframes_t frames);
+
+/**
  * Total number of frames that have been written in one of
  * the audio callbacks.
  */

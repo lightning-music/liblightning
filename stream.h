@@ -16,7 +16,8 @@ typedef struct Stream *Stream;
 Stream
 Stream_init(nframes_t frames,
             channels_t channels,
-            StreamCallback callback,
+            StreamCallbackMono mono_callback,
+            StreamCallbackStereo stereo_callback,
             void *data);
 
 /**
@@ -26,12 +27,27 @@ Stream_init(nframes_t frames,
  * then hitend will be > 0. Otherwise it will be 0.
  */
 nframes_t
-Stream_process(Stream s,
-               sample_t *in,
-               sample_t *out,
-               nframes_t inframes,
-               nframes_t outframes,
-               int *hitend);
+Stream_process_mono(Stream s,
+                    sample_t *in,
+                    sample_t *out,
+                    nframes_t inframes,
+                    nframes_t outframes,
+                    int *hitend);
+/**
+ * Process an input sample buffer and
+ * write data to an output sample buffer.
+ * If this function exhausts the input buffer,
+ * then hitend will be > 0. Otherwise it will be 0.
+ */
+nframes_t
+Stream_process_stereo(Stream s,
+                      sample_t *in,
+                      sample_t *ch1,
+                      sample_t *ch2,
+                      nframes_t inframes,
+                      nframes_t outframes,
+                      int *hitend);
+
 
 /**
  * Return the buffer size in frames for a Stream.

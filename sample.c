@@ -10,6 +10,7 @@
 #include "mem.h"
 #include "mutex.h"
 #include "sample.h"
+#include "stream.h"
 #include "types.h"
 
 enum {
@@ -62,6 +63,8 @@ struct Sample {
     SRC_STATE *conv_state;
     /* output sample rate used to convert */
     double conv_src_ratio;
+    /* stream used to pipe samples to jack output */
+    Stream stream;
 };
 
 // bit flag functions
@@ -99,6 +102,55 @@ set_frames_read(Sample samp, nframes_t val) {
     } else {
         return -1;
     }
+}
+
+nframes_t
+Sample_stream_stereo(sample_t *in,
+                     sample_t *ch1,
+                     sample_t *ch2,
+                     nframes_t inframes,
+                     nframes_t outframes,
+                     int *hitend,
+                     void *data) {
+    Sample samp = (Sample) data;
+
+    /* inframes seems superfluous because we just use
+       samp->frames_read */
+
+    nframes_t frame = 0;
+    nframes_t frames_read = samp->frames_read;
+    channels_t chans = samp->channels;
+    nframes_t offset = frames_read * chans;
+    nframes_t sampleIndex = 0;
+    sample_t ch1samp = 0.0;
+    sample_t ch2samp = 0.0;
+
+    if (is_done(samp)) {
+        return 0;
+    }
+
+    for (frame = 0; frame < outframes; frame++) {
+        if (offset + sampleIndex < (samp->frames * chans) - chans) {
+            // sample values
+            ch1samp = samp->framebuf[offset + sampleIndex] * samp->gain;
+            ch2samp = samp->framebuf[offset + sampleIndex + 1] * samp->gain;
+
+            switch(chans) {
+            case 1:
+                ch1[frame] = ch2[frame] = ch1samp;
+                break;
+            case 2:
+                ch1[frame] = ch1samp;
+                ch2[frame] = ch2samp;
+                break;
+            }
+       } else {
+            *hitend = 1;
+            ch1[frame] = ch2[frame] = 0.0f;
+        }
+    }
+
+    return frame;
 }
 
 /**
@@ -177,6 +229,12 @@ Sample_load(const char *file,
                 "converter (ERR %d)\n", src_error);
         exit(EXIT_FAILURE);
     }
+
+    s->stream = Stream_init(s->frames,
+                            s->channels,
+                            NULL,
+                            Sample_stream_stereo,
+                            s);
 
     return s;
 }
@@ -298,13 +356,45 @@ Sample_write_stereo(Sample samp,
         set_done(samp);
         // notify that we just finished reading this sample
         Event_broadcast(samp->done_event);
+        return frames_available;
     } else {
         set_frames_read(samp, samp->frames_read + frames_read);
         samp->total_frames_written += frames;
         /* samp->frames_read += frames_read; */
+        return frames;
     }
+}
 
-    return 0;
+nframes_t
+Sample_write_stereo_stream(Sample samp,
+                           sample_t *ch1,
+                           sample_t *ch2,
+                           nframes_t frames) {
+    int hitend;
+
+    nframes_t frames_available = samp->frames - samp->frames_read;
+
+    nframes_t frames_written =                  \
+        Stream_process_stereo(samp->stream,
+                              samp->framebuf,    /* input */
+                              ch1,               /* output1 */
+                              ch2,               /* output2 */
+                              frames_available,  /* input samples available */
+                              frames,            /* output samples desired */
+                              &hitend);
+
+    if (hitend) {
+        /* set_frames_read(samp, samp->frames_read + frames_available); */
+        set_done(samp);
+        // notify that we just finished reading this sample
+        Event_broadcast(samp->done_event);
+        return frames_available;
+    } else {
+        /* set_frames_read(samp, samp->frames_read + frames_read); */
+        /* samp->total_frames_written += frames; */
+        /* samp->frames_read += frames_read; */
+        return frames;
+    }
 }
 
 nframes_t

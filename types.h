@@ -57,10 +57,23 @@ typedef int (* StereoCallback)(sample_t *ch1,
  * Callback that allows us to customize the behavior
  * of streams.
  */
-typedef nframes_t (* StreamCallback)(sample_t *in,
-                                     sample_t *out,
-                                     nframes_t inframes,
-                                     nframes_t outframes,
-                                     void *data);
+typedef nframes_t (* StreamCallbackMono)(sample_t *in,
+                                         sample_t *out,
+                                         nframes_t inframes,
+                                         nframes_t outframes,
+                                         int *hitend,
+                                         void *data);
+
+/**
+ * Callback that allows us to customize the behavior
+ * of streams.
+ */
+typedef nframes_t (* StreamCallbackStereo)(sample_t *in,
+                                           sample_t *ch1,
+                                           sample_t *ch2,
+                                           nframes_t inframes,
+                                           nframes_t outframes,
+                                           int *hitend,
+                                           void *data);
 
 #endif

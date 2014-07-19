@@ -33,7 +33,7 @@ examples: $(EXAMPLES)
 install: $(PROGS)
 	install $(PROGS) $(DESTDIR)$(bindir)
 
-lightning: lightning.c                        \
+lightning: lightning.c                         \
            kit.o kit.h                         \
            clip.o clip.h                       \
            mem.o mem.h                         \
@@ -41,6 +41,7 @@ lightning: lightning.c                        \
            ringbuffer.o ringbuffer.h           \
            event.o event.h                     \
            mutex.o mutex.h                     \
+           stream.o stream.h                   \
            sample.o sample.h
 
 jack-client.o: ringbuffer.o mem.o
@@ -64,6 +65,7 @@ examples/play-sample: examples/play-sample.c   \
              ringbuffer.o ringbuffer.h         \
              event.o event.h                   \
              mutex.o mutex.h                   \
+             stream.o stream.h                 \
              sample.o sample.h                 \
              jack-client.o jack-client.h
 
