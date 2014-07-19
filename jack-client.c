@@ -37,31 +37,7 @@ struct JackClient {
     Mutex state_mutex;
 };
 
-static int
-samplerate_callback(nframes_t sr,
-                    void *data) {
-    /* Notify client code that depends on the output
-       sample rate */
-    return 0;
-}
-
-/**
- * JACK shutdown callback
- */
-void
-jack_shutdown(void *arg) {
-    fprintf(stderr, "JACK shutdown\n");
-    abort();
-}
-
-/**
- * JACK error callback
- */
-void
-jack_errors(const char *msg) {
-    fprintf(stderr, "%s\n", msg);
-    exit(EXIT_FAILURE);
-}
+/* state-handling functions */
 
 static int
 JackClient_set_state(JackClient client,
@@ -81,6 +57,35 @@ JackClient_is_processing(JackClient client) {
     return client->state == JackClientState_Processing;
 }
 
+/* called by JACK whenever the server's sample
+   rate changes */
+
+static int
+samplerate_callback(nframes_t sr,
+                    void *data) {
+    /* Notify client code that depends on the output
+       sample rate */
+    return 0;
+}
+
+/* JACK shutdown callback */
+/* Set a JackClient's state to finished */
+void
+jack_shutdown(void *arg) {
+    JackClient client = (JackClient) arg;
+    JackClient_set_state(client,
+                         JackClientState_Finished);
+}
+
+/**
+ * JACK error callback
+ */
+void
+jack_errors(const char *msg) {
+    fprintf(stderr, "%s\n", msg);
+    exit(EXIT_FAILURE);
+}
+
 /**
  * JACK process callback
  */
@@ -94,16 +99,6 @@ process(jack_nframes_t nframes,
         return 0;
     }
 
-    /* if (client->jack_output_port_1 == NULL) { */
-    /*     fprintf(stderr, "jack_output_port_2 was NULL\n"); */
-    /*     exit(EXIT_FAILURE); */
-    /* } */
-
-    /* if (client->jack_output_port_2 == NULL) { */
-    /*     fprintf(stderr, "jack_output_port_2 was NULL\n"); */
-    /*     exit(EXIT_FAILURE); */
-    /* } */
-
     // setup output sample buffers
 
     sample_t *ch1 = \
@@ -111,11 +106,6 @@ process(jack_nframes_t nframes,
 
     sample_t *ch2 = \
         jack_port_get_buffer(client->jack_output_port_2, nframes);
-
-    /* if (ch2 == NULL) { */
-    /*     fprintf(stderr, "ch2 buffer was NULL\n"); */
-    /*     exit(EXIT_FAILURE); */
-    /* } */
 
     // write data to the output buffer with registered callbacks
     // TODO: use mono callback if there is only one playback port
@@ -169,7 +159,7 @@ JackClient_init(MonoCallback mono_callback,
 
     /* register shutdown callback */
 
-    jack_on_shutdown(client->jack_client, jack_shutdown, NULL);
+    jack_on_shutdown(client->jack_client, jack_shutdown, client);
 
     /* register realtime callback */
 
@@ -242,11 +232,6 @@ JackClient_init(MonoCallback mono_callback,
         fprintf(stderr, "Could not set JackClient state to Processing\n");
         exit(EXIT_FAILURE);
     }
-
-    /* if (NULL == client->jack_output_port_2) { */
-    /*     fprintf(stderr, "wtf\n"); */
-    /*     exit(EXIT_FAILURE); */
-    /* } */
 
     return client;
 }
