@@ -13,7 +13,6 @@
 #include "jack-client.h"
 #include "mem.h"
 #include "mutex.h"
-#include "ringbuffer.h"
 #include "types.h"
 
 typedef enum {
@@ -31,7 +30,6 @@ struct JackClient {
     jack_port_t *jack_output_port_2;
     MonoCallback mono_callback;
     StereoCallback stereo_callback;
-    Ringbuffer rb;
     /* client state */
     JackClientState state;
     Mutex state_mutex;
@@ -139,10 +137,6 @@ JackClient_init(MonoCallback mono_callback,
         fprintf(stderr, "Could not set JackClient state to Initializing\n");
         exit(EXIT_FAILURE);
     }
-
-    /* initialize the ringbuffer */
-
-    client->rb = Ringbuffer_default();
 
     /* open jack client */
     
