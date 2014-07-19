@@ -39,6 +39,7 @@ stream_pipe(sample_t *in,
 
     frames2 = Stream_process(p->out, p->buf, out,
                              p->frames, outframes, &hitend);
+
     /* there is probably a better way to calculate the
        return value */
     return frames1;

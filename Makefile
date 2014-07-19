@@ -56,6 +56,7 @@ examples/capture_client: examples/capture_client.c
 examples/play-file: examples/play-file.c       \
            mem.o mem.h                         \
            ringbuffer.o ringbuffer.h           \
+           mutex.o mutex.h                     \
            jack-client.o jack-client.h
 
 examples/play-sample: examples/play-sample.c   \

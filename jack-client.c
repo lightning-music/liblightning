@@ -12,8 +12,15 @@
 
 #include "jack-client.h"
 #include "mem.h"
+#include "mutex.h"
 #include "ringbuffer.h"
 #include "types.h"
+
+typedef enum {
+    JackClientState_Initializing,
+    JackClientState_Processing,
+    JackClientState_Finished
+} JackClientState;
 
 struct JackClient {
     const char **ports;
@@ -25,6 +32,9 @@ struct JackClient {
     MonoCallback mono_callback;
     StereoCallback stereo_callback;
     Ringbuffer rb;
+    /* client state */
+    JackClientState state;
+    Mutex state_mutex;
 };
 
 static int
@@ -45,6 +55,33 @@ jack_shutdown(void *arg) {
 }
 
 /**
+ * JACK error callback
+ */
+void
+jack_errors(const char *msg) {
+    fprintf(stderr, "%s\n", msg);
+    exit(EXIT_FAILURE);
+}
+
+static int
+JackClient_set_state(JackClient client,
+                     JackClientState state) {
+    assert(client->state_mutex);
+    int result = Mutex_lock(client->state_mutex);
+    if (result) {
+        return result;
+    } else {
+        client->state = state;
+        return Mutex_unlock(client->state_mutex);
+    }
+}
+
+inline static int
+JackClient_is_processing(JackClient client) {
+    return client->state == JackClientState_Processing;
+}
+
+/**
  * JACK process callback
  */
 int
@@ -53,6 +90,20 @@ process(jack_nframes_t nframes,
 
     JackClient client = (JackClient) arg;
 
+    if (! JackClient_is_processing(client)) {
+        return 0;
+    }
+
+    /* if (client->jack_output_port_1 == NULL) { */
+    /*     fprintf(stderr, "jack_output_port_2 was NULL\n"); */
+    /*     exit(EXIT_FAILURE); */
+    /* } */
+
+    /* if (client->jack_output_port_2 == NULL) { */
+    /*     fprintf(stderr, "jack_output_port_2 was NULL\n"); */
+    /*     exit(EXIT_FAILURE); */
+    /* } */
+
     // setup output sample buffers
 
     sample_t *ch1 = \
@@ -60,6 +111,11 @@ process(jack_nframes_t nframes,
 
     sample_t *ch2 = \
         jack_port_get_buffer(client->jack_output_port_2, nframes);
+
+    /* if (ch2 == NULL) { */
+    /*     fprintf(stderr, "ch2 buffer was NULL\n"); */
+    /*     exit(EXIT_FAILURE); */
+    /* } */
 
     // write data to the output buffer with registered callbacks
     // TODO: use mono callback if there is only one playback port
@@ -85,11 +141,20 @@ JackClient_init(MonoCallback mono_callback,
     JackClient client;
     NEW(client);
 
-    // initialize the ringbuffer
+    /* initialize state mutex and set state to Initializing */
+
+    client->state_mutex = Mutex_init();
+
+    if (JackClient_set_state(client, JackClientState_Initializing)) {
+        fprintf(stderr, "Could not set JackClient state to Initializing\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* initialize the ringbuffer */
 
     client->rb = Ringbuffer_default();
 
-    // open jack client
+    /* open jack client */
     
     client->jack_client = jack_client_open("simplify", JackNullOption, NULL);
 
@@ -98,15 +163,23 @@ JackClient_init(MonoCallback mono_callback,
         exit(EXIT_FAILURE);
     }
 
-    // register realtime callback
+    /* register error callback */
+
+    jack_set_error_function(jack_errors);
+
+    /* register shutdown callback */
+
+    jack_on_shutdown(client->jack_client, jack_shutdown, NULL);
+
+    /* register realtime callback */
 
     client->data = client_data;
     client->mono_callback = mono_callback;
     client->stereo_callback = stereo_callback;
     jack_set_process_callback(client->jack_client, process, client);
 
-    // register a callback for when jack changes the output
-    // sample rate
+    /* register a callback for when jack changes the output
+       sample rate */
     if (jack_set_sample_rate_callback(client->jack_client,
                                       samplerate_callback,
                                       client)) {
@@ -114,16 +187,12 @@ JackClient_init(MonoCallback mono_callback,
         exit(EXIT_FAILURE);
     }
 
-    // register shutdown callback
-
-    jack_on_shutdown(client->jack_client, jack_shutdown, NULL);
-
     if (jack_activate(client->jack_client)) {
         fprintf(stderr, "Could not activate JACK client\n");
         exit(EXIT_FAILURE);
     }
 
-    // register output ports
+    /* register output ports */
 
     client->jack_output_port_1 = \
         jack_port_register(client->jack_client,
@@ -139,10 +208,15 @@ JackClient_init(MonoCallback mono_callback,
                            JackPortIsOutput,
                            0);
 
+    if (NULL == client->jack_output_port_2) {
+        fprintf(stderr, "wtf\n");
+        exit(EXIT_FAILURE);
+    }
+
     const char *playback1 = "system:playback_1";
     const char *playback2 = "system:playback_2";
 
-    // connect playback_1
+    /* connect playback_1 */
 
     if (jack_connect(client->jack_client,
                      jack_port_name(client->jack_output_port_1),
@@ -152,7 +226,8 @@ JackClient_init(MonoCallback mono_callback,
                 playback1);
         exit(EXIT_FAILURE);
     }
-    // connect playback_2
+
+    /* connect playback_2 */
 
     if (jack_connect(client->jack_client,
                      jack_port_name(client->jack_output_port_2),
@@ -162,6 +237,16 @@ JackClient_init(MonoCallback mono_callback,
                 playback2);
         exit(EXIT_FAILURE);
     }
+
+    if (JackClient_set_state(client, JackClientState_Processing)) {
+        fprintf(stderr, "Could not set JackClient state to Processing\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* if (NULL == client->jack_output_port_2) { */
+    /*     fprintf(stderr, "wtf\n"); */
+    /*     exit(EXIT_FAILURE); */
+    /* } */
 
     return client;
 }
@@ -178,7 +263,7 @@ JackClient_buffersize(JackClient jack) {
     return jack_get_buffer_size(jack->jack_client);
 }
 
-// FIXME
+/* FIXME */
 int
 JackClient_playback_ports(JackClient jack) {
     return 2;
