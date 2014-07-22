@@ -224,6 +224,8 @@ JackClient_init(MonoCallback mono_callback,
         exit(EXIT_FAILURE);
     }
 
+    /* set state to Processing */
+
     if (JackClient_set_state(client, JackClientState_Processing)) {
         fprintf(stderr, "Could not set JackClient state to Processing\n");
         exit(EXIT_FAILURE);

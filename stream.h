@@ -1,3 +1,33 @@
+/**
+ * Stream provides an abstraction to ease processing of sample
+ * buffers.
+ *
+ * History
+ * =======
+ * When I first started implementing the Sample
+ * interface I had never played with realtime audio
+ * on such a low level before.
+ * At first it was exciting just to be able to use
+ * the jack c api to stream sample data from memory to
+ * my dac.
+ * As soon as I could play back a file, though, I wanted to
+ * do more. The first thing I decided I would do was play
+ * files back at different speeds.
+ * I modified my play-sample example to accept a speed
+ * argument and modified my Sample implementation to
+ * play back at different speeds.
+ * This involved inserting some extra processing in
+ * between reading sample data from a buffer and feeding
+ * to my jack output port.
+ * This implementation worked well, and I was now more
+ * excited than before!
+ * I started experimenting with lots of different audio
+ * files I had been using (all from freesound.org), and
+ * soon discovered that there was a problem.
+ * When I tried to play files that had a different sample
+ * rate than the sr jack was using, the playback speed was
+ * being altered.
+ */
 #ifndef STREAM_H_INCLUDED
 #define STREAM_H_INCLUDED
 

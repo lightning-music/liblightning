@@ -71,8 +71,11 @@ typedef nframes_t (* StreamCallbackMono)(sample_t *in,
 typedef nframes_t (* StreamCallbackStereo)(sample_t *in,
                                            sample_t *ch1,
                                            sample_t *ch2,
+                                           /** available input frames */
                                            nframes_t inframes,
+                                           /** output frames desired */
                                            nframes_t outframes,
+                                           /** flag set when the input is exhausted */
                                            int *hitend,
                                            void *data);
 

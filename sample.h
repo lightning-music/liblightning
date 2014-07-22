@@ -11,7 +11,8 @@ typedef struct Sample *Sample;
 Sample
 Sample_load(const char *file,
             pitch_t pitch,
-            gain_t gain);
+            gain_t gain,
+            nframes_t output_samplerate);
 
 /**
  * Get the path this sample was loaded from.
@@ -68,9 +69,15 @@ Sample_write_stereo(Sample samp,
                     sample_t *ch2,
                     nframes_t frames);
 
+nframes_t
+Sample_write_stereo_src(Sample samp,
+                        sample_t *ch1,
+                        sample_t *ch2,
+                        nframes_t frames);
+
 /**
  * Write sample data to a stereo output buffers (uses streams).
- * Returns the number of frames written.
+ * Returns the number of frames consumed from the sample.
  */
 nframes_t
 Sample_write_stereo_stream(Sample samp,
