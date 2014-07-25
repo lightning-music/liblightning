@@ -42,7 +42,6 @@ lightning: lightning.c                         \
            ringbuffer.o ringbuffer.h           \
            event.o event.h                     \
            mutex.o mutex.h                     \
-           stream.o stream.h                   \
            src.o src.h                         \
            sample.o sample.h
 
@@ -69,7 +68,6 @@ examples/play-sample: examples/play-sample.c   \
              ringbuffer.o ringbuffer.h         \
              event.o event.h                   \
              mutex.o mutex.h                   \
-             stream.o stream.h                 \
              src.o src.h                       \
              sample.o sample.h                 \
              jack-client.o jack-client.h

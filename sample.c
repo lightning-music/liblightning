@@ -10,7 +10,6 @@
 #include "mem.h"
 #include "mutex.h"
 #include "sample.h"
-#include "stream.h"
 #include "types.h"
 
 typedef enum {
