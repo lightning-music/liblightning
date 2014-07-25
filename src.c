@@ -39,6 +39,7 @@ SRC_process(SRC src,
             int *end) {
     assert(src);
     SRC_DATA src_data;
+    int error;
 
     src_data.src_ratio = src_ratio;
 
@@ -55,7 +56,22 @@ SRC_process(SRC src,
     src_data.output_frames = data.output_frames;
     src_data.data_in = data.input;
     src_data.data_out = data.output;
-    return src_process(src->state, &src_data);
+    error = src_process(src->state, &src_data);
+
+    if (error) {
+        return error;
+    }
+
+    *input_frames_used = src_data.input_frames_used;
+    *output_frames_gen = src_data.output_frames_gen;
+
+    if (*output_frames_gen == 0 && src_data.end_of_input) {
+        *end = 1;
+    } else {
+        *end = 0;
+    }
+
+    return 0;
 }
 
 const char *

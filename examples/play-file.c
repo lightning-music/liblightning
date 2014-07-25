@@ -1,5 +1,6 @@
 /*
  * A working example of how to play samples with jack-client
+ * and src sample rate converter.
  */
 #include <assert.h>
 #include <pthread.h>
@@ -15,8 +16,9 @@
 #include "../types.h"
 
 typedef enum {
-    FP_UNSAFE,
-    FP_INITIALIZED
+    FP_INITIALIZING,
+    FP_PROCESSING,
+    FP_FINISHED
 } FP_STATE;
 
 typedef struct FilePlayer {
@@ -34,7 +36,7 @@ typedef struct FilePlayer {
     long length;
     // frames we've read
     long frames_read;
-    // buffer holding the entire sample
+    // sample data buffers
     sample_t **framebufs;
     // mutex and conditional variable
     // used to signal sample done
@@ -53,7 +55,7 @@ initialize_file_player(FilePlayer *fp,
                        const char *f,
                        nframes_t output_sample_rate) {
     assert(fp);
-    fp->state = FP_UNSAFE;
+    fp->state = FP_INITIALIZING;
     // initialize condition variable
     pthread_cond_init(&fp->done, NULL);
     pthread_mutex_init(&fp->done_lock, NULL);
@@ -70,20 +72,20 @@ initialize_file_player(FilePlayer *fp,
     // frames we have already read from the frame buffer
     fp->frames_read = 0;
     // allocate per-channel frame buffers
-    fp->framebufs = calloc(fp->channels, SAMPLE_SIZE);
+    fp->framebufs = calloc(fp->channels, sizeof(sample_t*));
     int i;
     for (i = 0; i < fp->channels; i++) {
-        fp->framebufs[i] = malloc(SAMPLE_SIZE * fp->frames);
+        fp->framebufs[i] = calloc(fp->frames, SAMPLE_SIZE);
     }
 
     assert(fp->framebufs);
-    // allocate the buffer for sf_read
+    /* allocate the buffer for sf_read */
     sample_t framebuf[ fp->channels * fp->frames ];
-    // fill frame buffer
+    /* fill frame buffer */
     int frames_to_read = 4096;
     long total_frames_read = sf_readf_float(sf, framebuf, frames_to_read);
     while (total_frames_read < fp->frames) {
-        // adjust buffer pointer
+        /* adjust buffer pointer */
         total_frames_read +=                    \
             sf_readf_float(sf,
                            framebuf + (total_frames_read * fp->channels),
@@ -95,11 +97,11 @@ initialize_file_player(FilePlayer *fp,
         exit(EXIT_FAILURE);
     }
 
-    // de-interleave
+    /* de-interleave */
     int j;
-    for (i = 0; i < fp->channels; i++) {
-        for (j = 0; j < fp->frames; j++) {
-            fp->framebufs[i][j] = framebuf[ j + i ];
+    for (j = 0; j < fp->frames; j++) {
+        for (i = 0; i < fp->channels; i++) {
+            fp->framebufs[i][j] = framebuf[ i + (j * fp->channels) ];
         }
     }
 
@@ -109,7 +111,7 @@ initialize_file_player(FilePlayer *fp,
     sf_close(sf);
     /* initialize sample rate converter */
     fp->src = SRC_init(2);
-    fp->state = FP_INITIALIZED;
+    fp->state = FP_PROCESSING;
 }
 
 /**
@@ -137,13 +139,12 @@ audio_callback(sample_t *ch1,
                void *data) {
     FilePlayer *fp = (FilePlayer *) data;
 
-    if (fp->state != FP_INITIALIZED) {
+    if (fp->state != FP_PROCESSING) {
         return 0;
     }
 
     nframes_t frames_read = fp->frames_read;
-    int channels = fp->channels;
-    long offset = frames_read * channels;
+    long offset = frames_read;
     AudioData audio_data;
     int end_of_input = 0;
 
@@ -151,6 +152,7 @@ audio_callback(sample_t *ch1,
     audio_data.output_frames = frames;
 
     /* process channel 1 */
+    
     audio_data.output = ch1;
     audio_data.input = &fp->framebufs[0][ offset ];
 
@@ -170,7 +172,29 @@ audio_callback(sample_t *ch1,
         exit(EXIT_FAILURE);
     }
 
-    if (end_of_input && output_frames_gen == 0) {
+    /* process channel 2 */
+
+    audio_data.output = ch2;
+    audio_data.input = &fp->framebufs[1][ offset ];
+
+    input_frames_used = 0;
+    output_frames_gen = 0;
+
+    error = SRC_process(fp->src,
+                        fp->src_ratio,
+                        audio_data,
+                        &input_frames_used,
+                        &output_frames_gen,
+                        &end_of_input);
+
+    if (error) {
+        fprintf(stderr, "Error in SRC_process: %s\n",
+                SRC_strerror(error));
+        exit(EXIT_FAILURE);
+    }
+
+    if (end_of_input) {
+        fp->state = FP_FINISHED;
         pthread_cond_broadcast(&fp->done);
     } else {
         fp->frames_read += input_frames_used;
