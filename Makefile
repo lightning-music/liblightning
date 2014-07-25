@@ -7,12 +7,13 @@
 GTK_FLAGS := $(shell pkg-config --cflags --libs gtk+-2.0)
 JACK_FLAGS := $(shell pkg-config --cflags --libs jack)
 SNDFILE_FLAGS := $(shell pkg-config --cflags --libs sndfile)
-SAMPLERATE=../libsamplerate-0.1.8
-CPPFLAGS := -I/usr/include/gtk-2.0 -I$(SAMPLERATE)/src
+# SAMPLERATE=../libsamplerate-0.1.8
+SRC_FLAGS := $(shell pkg-config --cflags --libs samplerate)
+CPPFLAGS := -I/usr/include/gtk-2.0
 CC=gcc
 CFLAGS := -Wall -g $(GTK_FLAGS)
 LDLIBS := $(GTK_FLAGS) $(JACK_FLAGS) $(SNDFILE_FLAGS) \
-          -L$(SAMPLERATE)/src/.libs -lsamplerate -lm
+          $(SRC_FLAGS) -lm
 
 prefix=/usr/local
 bindir=$(prefix)/bin
