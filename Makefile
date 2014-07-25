@@ -7,7 +7,7 @@
 GTK_FLAGS := $(shell pkg-config --cflags --libs gtk+-2.0)
 JACK_FLAGS := $(shell pkg-config --cflags --libs jack)
 SNDFILE_FLAGS := $(shell pkg-config --cflags --libs sndfile)
-SAMPLERATE=libsamplerate-0.1.8
+SAMPLERATE=../libsamplerate-0.1.8
 CPPFLAGS := -I/usr/include/gtk-2.0 -I$(SAMPLERATE)/src
 CC=gcc
 CFLAGS := -Wall -g $(GTK_FLAGS)
@@ -42,6 +42,7 @@ lightning: lightning.c                         \
            event.o event.h                     \
            mutex.o mutex.h                     \
            stream.o stream.h                   \
+           src.o src.h                         \
            sample.o sample.h
 
 jack-client.o: ringbuffer.o mem.o
@@ -58,6 +59,7 @@ examples/play-file: examples/play-file.c       \
            mem.o mem.h                         \
            ringbuffer.o ringbuffer.h           \
            mutex.o mutex.h                     \
+           src.o src.h                         \
            jack-client.o jack-client.h
 
 examples/play-sample: examples/play-sample.c   \
@@ -67,6 +69,7 @@ examples/play-sample: examples/play-sample.c   \
              event.o event.h                   \
              mutex.o mutex.h                   \
              stream.o stream.h                 \
+             src.o src.h                       \
              sample.o sample.h                 \
              jack-client.o jack-client.h
 

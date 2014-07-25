@@ -13,11 +13,17 @@
 #include "stream.h"
 #include "types.h"
 
-enum {
+typedef enum {
     SAMPLE_NONE,
     SAMPLE_DONE,
     SAMPLE_REVERSED
 } SampleFlags;
+
+typedef enum {
+    SampleState_Initializing,
+    SampleState_Processing,
+    SampleState_Finishing,
+} SampleState;
 
 /*
  * TODO
@@ -65,6 +71,9 @@ struct Sample {
     double conv_src_ratio;
     /* samplerate conversion ratio */
     double src_ratio;
+    /* sample state and associated mutex */
+    SampleState state;
+    Mutex state_mutex;
 };
 
 // bit flag functions
@@ -104,16 +113,43 @@ set_frames_read(Sample samp, nframes_t val) {
     }
 }
 
+int
+Sample_set_state(Sample samp,
+                 SampleState state) {
+    assert(samp->state_mutex);
+    int not_locked = Mutex_lock(samp->state_mutex);
+    if (not_locked) {
+        return not_locked;
+    } else {
+        samp->state = state;
+        return Mutex_unlock(samp->state_mutex);
+    }
+}
+
+static inline int
+Sample_is_processing(Sample samp) {
+    return samp->state == SampleState_Processing;
+}
+
 /**
  * Load an audio sample.
  */
 Sample
 Sample_load(const char *file,
             pitch_t pitch,
-            gain_t gain,
-            nframes_t output_samplerate) {
+            gain_t gain) {
     Sample s;
     NEW(s);
+
+    /* initialize state mutex and set state to Processing */
+
+    s->state_mutex = Mutex_init();
+    if (Sample_set_state(s, SampleState_Initializing)) {
+        fprintf(stderr, "Could not set Sample state to Initializing\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* open audio file */
 
     SF_INFO sfinfo;
     SNDFILE *sf = sf_open(file, SFM_READ, &sfinfo);
@@ -139,6 +175,8 @@ Sample_load(const char *file,
     s->frames = sfinfo.frames;
     s->channels = sfinfo.channels;
     s->samplerate = sfinfo.samplerate;
+
+    printf("file has %ld frames\n", s->frames);
 
     s->done_event = Event_init(NULL);
 
@@ -176,17 +214,18 @@ Sample_load(const char *file,
                             s->channels,
                             &src_error);
 
-    printf("initializing SRC_STATE\n");
-
     if (s->conv_state == NULL) {
         fprintf(stderr, "Could not initialize sample rate: %s\n",
                 src_strerror(src_error));
         exit(EXIT_FAILURE);
     }
 
-    printf("done initializing SRC_STATE\n");
-
-    s->src_ratio = ((double) output_samplerate) / ((double) s->samplerate);
+    if (Sample_set_state(s, SampleState_Processing)) {
+        fprintf(stderr, "Could not set Sample state to Processing\n");
+        exit(EXIT_FAILURE);
+    } else {
+        printf("set Sample state to Processing\n");
+    }
 
     return s;
 }
@@ -224,6 +263,16 @@ Sample_samplerate(Sample samp) {
     return samp->samplerate;
 }
 
+int
+Sample_samplerate_callback(nframes_t sr,
+                           void *arg) {
+    assert(arg);
+    Sample s = (Sample) arg;
+    printf("got new sample rate   = %ld\n", sr);
+    s->src_ratio = ((double) sr) / ((double) s->samplerate);
+    return 0;
+}
+
 nframes_t
 Sample_frames_available(Sample samp) {
     assert(samp);
@@ -250,6 +299,10 @@ Sample_write_stereo(Sample samp,
                     sample_t *ch2,
                     nframes_t frames) {
     assert(samp);
+
+    if (! Sample_is_processing(samp)) {
+        return 0;
+    }
 
     int chans = (int) samp->channels;
     long frame = 0;
@@ -325,6 +378,13 @@ Sample_write_stereo_src(Sample samp,
                         sample_t *ch1,
                         sample_t *ch2,
                         nframes_t frames) {
+    assert(samp);
+
+    if (! Sample_is_processing(samp)) {
+        printf("Sample is not processing\n");
+        return 0;
+    }
+
     SRC_DATA src;
     channels_t chans = samp->channels;
     nframes_t frames_read = samp->frames_read;
@@ -335,10 +395,13 @@ Sample_write_stereo_src(Sample samp,
     }
 
     src.input_frames = frames_available;
-    src.output_frames = frames / chans;
+    src.output_frames = frames;
     src.data_in = samp->framebuf + (frames_read * chans);
     /* TODO: de-interleave data to separate output buffers */
     src.data_out = ch1;
+
+    printf("src_ratio = %f\n", samp->src_ratio);
+
     src.src_ratio = samp->src_ratio;
 
     int conversion_error = src_process(samp->conv_state, &src);
@@ -347,14 +410,18 @@ Sample_write_stereo_src(Sample samp,
         exit(EXIT_FAILURE);
     }
 
+    printf("jack buffer size  = %ld\n", frames);
+    printf("frames_available = %ld\n", frames_available);
+    printf("input_frames_used = %ld\n", src.input_frames_used);
+    printf("output_frames_gen = %ld\n", src.output_frames_gen);
+
     if (src.end_of_input) {
+        printf("reached end of input\n");
         set_frames_read(samp, samp->frames);
         set_done(samp);
         // notify that we just finished reading this sample
         Event_broadcast(samp->done_event);
     } else {
-        printf("input_frames_used = %ld\n", src.input_frames_used);
-        printf("output_frames_gen = %ld\n", src.output_frames_gen);
         set_frames_read(samp, frames_read + src.input_frames_used);
     }
 

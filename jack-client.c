@@ -149,6 +149,19 @@ JackClient_init(MonoCallback mono_callback,
         exit(EXIT_FAILURE);
     }
 
+    client->data = client_data;
+    client->mono_callback = mono_callback;
+    client->stereo_callback = stereo_callback;
+
+    return client;
+}
+
+/**
+ * Register callbacks with JACK.
+ */
+int
+JackClient_setup_callbacks(JackClient client) {
+
     /* register error callback */
 
     jack_set_error_function(jack_errors);
@@ -159,9 +172,6 @@ JackClient_init(MonoCallback mono_callback,
 
     /* register realtime callback */
 
-    client->data = client_data;
-    client->mono_callback = mono_callback;
-    client->stereo_callback = stereo_callback;
     jack_set_process_callback(client->jack_client, process, client);
 
     /* register a callback for when jack changes the output
@@ -173,10 +183,25 @@ JackClient_init(MonoCallback mono_callback,
         exit(EXIT_FAILURE);
     }
 
-    if (jack_activate(client->jack_client)) {
-        fprintf(stderr, "Could not activate JACK client\n");
+    /* set state to Processing */
+
+    if (JackClient_set_state(client, JackClientState_Processing)) {
+        fprintf(stderr, "Could not set JackClient state to Processing\n");
         exit(EXIT_FAILURE);
     }
+
+    return 0;
+}
+
+int
+JackClient_activate(JackClient client) {
+    assert(client);
+    return jack_activate(client->jack_client);
+}
+
+int
+JackClient_setup_ports(JackClient client) {
+    assert(client);
 
     /* register output ports */
 
@@ -223,21 +248,22 @@ JackClient_init(MonoCallback mono_callback,
                 playback2);
         exit(EXIT_FAILURE);
     }
-
-    /* set state to Processing */
-
-    if (JackClient_set_state(client, JackClientState_Processing)) {
-        fprintf(stderr, "Could not set JackClient state to Processing\n");
-        exit(EXIT_FAILURE);
-    }
-
-    return client;
 }
 
 nframes_t
 JackClient_samplerate(JackClient jack) {
     assert(jack);
     return jack_get_sample_rate(jack->jack_client);
+}
+
+int
+JackClient_set_samplerate_callback(JackClient jack,
+                                   SampleRateCallback callback,
+                                   void *arg) {
+    assert(jack);
+    return jack_set_sample_rate_callback(jack->jack_client,
+                                         callback,
+                                         arg);
 }
 
 nframes_t

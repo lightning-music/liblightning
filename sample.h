@@ -11,8 +11,7 @@ typedef struct Sample *Sample;
 Sample
 Sample_load(const char *file,
             pitch_t pitch,
-            gain_t gain,
-            nframes_t output_samplerate);
+            gain_t gain);
 
 /**
  * Get the path this sample was loaded from.
@@ -37,6 +36,10 @@ Sample_num_frames(Sample samp);
  */
 int
 Sample_samplerate(Sample samp);
+
+int
+Sample_samplerate_callback(nframes_t sr,
+                           void *arg);
 
 /**
  * Return the number of samples available for reading.

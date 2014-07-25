@@ -49,19 +49,24 @@ main(int argc, char **argv) {
 
     // initialize sample and jack client
 
-    JackClient jack_client;
-    Sample s;
+    Sample s = Sample_load(f, pitch, gain);
 
-    jack_client =                                   \
-        JackClient_init(NULL, stereo_callback, s);
-
-    s = Sample_load(f, pitch, gain, JackClient_samplerate(jack_client));
+    JackClient jack_client = JackClient_init(NULL, stereo_callback, s);
 
     printf("samplerate                      = %ld\n",
            (long) Sample_samplerate(s));
 
     printf("jack samplerate                 = %d\n",
            JackClient_samplerate(jack_client));
+
+    /* register a callback for if the jack output sample
+       rate changes */
+
+    JackClient_set_samplerate_callback(jack_client,
+                                       Sample_samplerate_callback, s);
+
+    JackClient_activate(jack_client);
+    JackClient_setup_ports(jack_client);
 
     // wait for sample to finish playing
 

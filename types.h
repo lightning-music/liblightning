@@ -79,4 +79,18 @@ typedef nframes_t (* StreamCallbackStereo)(sample_t *in,
                                            int *hitend,
                                            void *data);
 
+typedef int (* SampleRateCallback)(nframes_t sr,
+                                   void *arg);
+
+typedef struct AudioData {
+    /* frames available from the input buffer */
+    nframes_t input_frames;
+    /* frames we should write to output buffer */
+    nframes_t output_frames;
+    /* input buffer */
+    sample_t *input;
+    /* output buffer */
+    sample_t *output;
+} AudioData;
+
 #endif

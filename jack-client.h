@@ -14,7 +14,7 @@
 
 /**
  * AudioEngine data structure.
-n */
+ */
 typedef struct JackClient *JackClient;
 
 /**
@@ -27,8 +27,22 @@ JackClient_init(MonoCallback mono_callback,
                 StereoCallback stereo_callback,
                 void *client_data);
 
+int
+JackClient_setup_callbacks(JackClient client);
+
+int
+JackClient_activate(JackClient client);
+
+int
+JackClient_setup_ports(JackClient client);
+
 nframes_t
 JackClient_samplerate(JackClient jack);
+
+int
+JackClient_set_samplerate_callback(JackClient jack,
+                                   SampleRateCallback callback,
+                                   void *arg);
 
 nframes_t
 JackClient_buffersize(JackClient jack);
