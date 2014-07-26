@@ -62,7 +62,6 @@ samplerate_callback(nframes_t sr,
                     void *data) {
     /* Notify client code that depends on the output
        sample rate */
-    printf("sample rate changed to %ld\n", sr);
     return 0;
 }
 
@@ -238,6 +237,15 @@ JackClient_setup_ports(JackClient client) {
                 playback2);
         exit(EXIT_FAILURE);
     }
+
+    return 0;
+}
+
+void
+JackClient_set_data(JackClient client,
+                    void *data) {
+    assert(client);
+    client->data = data;
 }
 
 nframes_t

@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <samplerate.h>
 #include <sndfile.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -10,13 +9,8 @@
 #include "mem.h"
 #include "mutex.h"
 #include "sample.h"
+#include "src.h"
 #include "types.h"
-
-typedef enum {
-    SAMPLE_NONE,
-    SAMPLE_DONE,
-    SAMPLE_REVERSED
-} SampleFlags;
 
 typedef enum {
     SampleState_Initializing,
@@ -54,76 +48,32 @@ struct Sample {
     channels_t channels;
     nframes_t frames;
     int samplerate;
-    // buffer to hold sample data
-    sample_t *framebuf;
+    // buffers to hold sample data (one per channel)
+    sample_t **framebufs;
     // track read position in file (guarded by mutex)
     nframes_t frames_read;
     Mutex frames_read_mutex;
     nframes_t total_frames_written;
-    // flags
-    int flags;
     // provide a way to synchronize a thread on the `done` event
     Event done_event;
-    /* internal sample rate converter state */
-    SRC_STATE *conv_state;
-    /* output sample rate used to convert */
-    double conv_src_ratio;
-    /* samplerate conversion ratio */
+    /* sample rate converters */
+    SRC *src;
     double src_ratio;
     /* sample state and associated mutex */
     SampleState state;
     Mutex state_mutex;
 };
 
-// bit flag functions
-
-static inline int
-is_done(Sample samp) {
-    return samp->flags & SAMPLE_DONE;
-}
-
-static inline Sample
-set_done(Sample samp) {
-    samp->flags |= SAMPLE_DONE;
-    return samp;
-}
-
-static inline int
-is_reversed(Sample samp) {
-    return samp->flags & SAMPLE_REVERSED;
-}
-
-static inline Sample
-set_reversed(Sample samp) {
-    samp->flags |= SAMPLE_REVERSED;
-    return samp;
-}
-
 /**
  * Try to set frames_read
  */
 static int
-set_frames_read(Sample samp, nframes_t val) {
-    if (0 == Mutex_trylock(samp->frames_read_mutex)) {
-        samp->frames_read = val;
-        return Mutex_unlock(samp->frames_read_mutex);
-    } else {
-        return -1;
-    }
-}
+set_frames_read(Sample samp,
+                nframes_t val);
 
 int
 Sample_set_state(Sample samp,
-                 SampleState state) {
-    assert(samp->state_mutex);
-    int not_locked = Mutex_lock(samp->state_mutex);
-    if (not_locked) {
-        return not_locked;
-    } else {
-        samp->state = state;
-        return Mutex_unlock(samp->state_mutex);
-    }
-}
+                 SampleState state);
 
 static inline int
 Sample_is_processing(Sample samp) {
@@ -136,7 +86,8 @@ Sample_is_processing(Sample samp) {
 Sample
 Sample_load(const char *file,
             pitch_t pitch,
-            gain_t gain) {
+            gain_t gain,
+            nframes_t output_samplerate) {
     Sample s;
     NEW(s);
 
@@ -165,65 +116,71 @@ Sample_load(const char *file,
         s->pitch = 0.0001;
     } else {
         s->pitch = clip(pitch, -32.0f, 32.0f);
-        if (s->pitch < 0.0) {
-            set_reversed(s);
-        }
     }
 
     s->gain = clip(gain, 0.0f, 1.0f);
     s->frames = sfinfo.frames;
     s->channels = sfinfo.channels;
     s->samplerate = sfinfo.samplerate;
-
-    printf("file has %ld frames\n", s->frames);
-
+    s->src_ratio = output_samplerate / (double) s->samplerate;
     s->done_event = Event_init(NULL);
-
     s->path = file;
 
-    // frame buffer contains n samples,
-    // where n = frames * channels
+    /* stereo buffers */
 
-    s->framebuf = CALLOC(s->frames * s->channels, SAMPLE_SIZE);
+    s->framebufs = CALLOC(2, sizeof(sample_t*));
+    s->framebufs[0] = CALLOC(s->frames, SAMPLE_SIZE);
+    s->framebufs[1] = CALLOC(s->frames, SAMPLE_SIZE);
 
-    // fill the frame buffer
+    /* read the file */
 
-    sf_count_t frames = 1024 * s->channels;
-    long total_frames = sf_readf_float(sf, s->framebuf, frames);
+    sample_t framebuf[ s->frames * s->channels ];
+    sf_count_t frames = (4096 / SAMPLE_SIZE) / s->channels;
+    long total_frames = sf_readf_float(sf, framebuf, frames);
 
     while (total_frames < s->frames) {
         total_frames +=                         \
             sf_readf_float(sf,
-                           s->framebuf + (total_frames * s->channels),
+                           framebuf + (total_frames * s->channels),
                            frames);
     }
 
     sf_close(sf);
 
-    s->flags = SAMPLE_NONE;
+    /* de-interleave data */
+
+    int i, j;
+    if (s->channels == 1) {
+        for (j = 0; j < s->frames; j++) {
+            s->framebufs[0][j] = s->framebufs[1][j] = framebuf[j];
+        }
+    } else if (s->channels == 2) {
+        for (j = 0; j < s->frames; j++) {
+            for (i = 0; i < s->channels; i++) {
+                s->framebufs[i][j] = framebuf[ (j * s->channels) + i ];
+            }
+        }
+    } else {
+        fprintf(stderr, "Unsupported number of channels (%d). "
+                "Only stereo and mono are supported.\n", s->channels);
+        exit(EXIT_FAILURE);
+    }
 
     s->frames_read = 0;
     s->frames_read_mutex = Mutex_init();
     s->total_frames_written = 0;
 
-    /* Initialize sample rate converter */
+    /* initialize sample rate converters */
 
-    int src_error = 0;
-    s->conv_state = src_new(SRC_SINC_BEST_QUALITY,
-                            s->channels,
-                            &src_error);
+    s->src = CALLOC(2, sizeof(SRC));
+    s->src[0] = SRC_init();
+    s->src[1] = SRC_init();
 
-    if (s->conv_state == NULL) {
-        fprintf(stderr, "Could not initialize sample rate: %s\n",
-                src_strerror(src_error));
-        exit(EXIT_FAILURE);
-    }
+    /* set state to processing */
 
     if (Sample_set_state(s, SampleState_Processing)) {
         fprintf(stderr, "Could not set Sample state to Processing\n");
         exit(EXIT_FAILURE);
-    } else {
-        printf("set Sample state to Processing\n");
     }
 
     return s;
@@ -267,7 +224,7 @@ Sample_samplerate_callback(nframes_t sr,
                            void *arg) {
     assert(arg);
     Sample s = (Sample) arg;
-    printf("got new sample rate   = %ld\n", sr);
+    /* printf("got new sample rate   = %ld\n", sr); */
     s->src_ratio = ((double) sr) / ((double) s->samplerate);
     return 0;
 }
@@ -296,69 +253,103 @@ Sample_write(Sample samp,
     }
 
     int chans = (int) samp->channels;
-    long frame = 0;
-    long frames_read = 0;
-    long frames_available = samp->frames - samp->frames_read;
+    long offset = samp->frames_read;
+    int end_of_input = 0;
+    int chan = 0;
+    int error = 0;
+    nframes_t input_frames_used = 0;
+    nframes_t output_frames_gen = 0;
+    AudioData audio_data;
 
-    sample_t ch1samp, ch2samp;
+    audio_data.input_frames = samp->frames - samp->frames_read;
+    audio_data.output_frames = frames;
 
-    // flag to indicate we need to signal end of sample
-    int hitend = 0;
+    for (chan = 0; chan < chans; chan++) {
+        audio_data.output = buffers[chan];
+        audio_data.input = &samp->framebufs[chan][offset];
 
-    // pitch-adjusted frame index
-    // will have to be cast before using to index into framebuf
-    sample_count_t pfi = 0.0;
+        input_frames_used = 0;
+        output_frames_gen = 0;
 
-    // sample index
-    long si = 0;
+        error = SRC_process(samp->src[chan], samp->src_ratio, audio_data,
+                            &input_frames_used, &output_frames_gen,
+                            &end_of_input);
 
-    // frame offset
-    long offset = samp->frames_read * chans;
-
-    if (is_done(samp)) {
-        return 0;
-    }
-
-    for (frame = 0; frame < frames; frame++) {
-        // nudge frame index and sample index
-        pfi += samp->pitch;
-        frames_read = (long) pfi;
-        si = frames_read * chans;
-
-        if (offset + si < (samp->frames * chans) - chans) {
-            // sample values
-            ch1samp = samp->framebuf[offset + si] * samp->gain;
-            ch2samp = samp->framebuf[offset + si + 1] * samp->gain;
-
-            switch(chans) {
-            case 1:
-                buffers[0][frame] = buffers[1][frame] = ch1samp;
-                break;
-            case 2:
-                buffers[0][frame] = ch1samp;
-                buffers[1][frame] = ch2samp;
-                break;
-            }
-        } else {
-            hitend = 1;
-            buffers[0][frame] = buffers[1][frame] = 0.0f;
+        if (error) {
+            fprintf(stderr, "Error in SRC_process: %s\n",
+                    SRC_strerror(error));
+            exit(EXIT_FAILURE);
         }
     }
 
-    if (hitend) {
-        samp->total_frames_written += frames;
-        /* samp->frames_read += frames_available; */
-        set_frames_read(samp, samp->frames_read + frames_available);
-        set_done(samp);
-        // notify that we just finished reading this sample
+    if (end_of_input) {
+        Sample_set_state(samp, SampleState_Finishing);
         Event_broadcast(samp->done_event);
-        return frames_available;
     } else {
-        set_frames_read(samp, samp->frames_read + frames_read);
-        samp->total_frames_written += frames;
-        /* samp->frames_read += frames_read; */
-        return frames;
+        samp->frames_read += input_frames_used;
     }
+
+    return 0;
+
+    /* sample_t ch1samp, ch2samp; */
+
+    /* // flag to indicate we need to signal end of sample */
+    /* int hitend = 0; */
+
+    /* // pitch-adjusted frame index */
+    /* // will have to be cast before using to index into framebuf */
+    /* sample_count_t pfi = 0.0; */
+
+    /* // sample index */
+    /* long si = 0; */
+
+    /* // frame offset */
+    /* long offset = samp->frames_read * chans; */
+
+    /* if (is_done(samp)) { */
+    /*     return 0; */
+    /* } */
+
+    /* for (frame = 0; frame < frames; frame++) { */
+    /*     // nudge frame index and sample index */
+    /*     pfi += samp->pitch; */
+    /*     frames_read = (long) pfi; */
+    /*     si = frames_read * chans; */
+
+    /*     if (offset + si < (samp->frames * chans) - chans) { */
+    /*         // sample values */
+    /*         ch1samp = samp->framebuf[offset + si] * samp->gain; */
+    /*         ch2samp = samp->framebuf[offset + si + 1] * samp->gain; */
+
+    /*         switch(chans) { */
+    /*         case 1: */
+    /*             buffers[0][frame] = buffers[1][frame] = ch1samp; */
+    /*             break; */
+    /*         case 2: */
+    /*             buffers[0][frame] = ch1samp; */
+    /*             buffers[1][frame] = ch2samp; */
+    /*             break; */
+    /*         } */
+    /*     } else { */
+    /*         hitend = 1; */
+    /*         buffers[0][frame] = buffers[1][frame] = 0.0f; */
+    /*     } */
+    /* } */
+
+    /* if (hitend) { */
+    /*     samp->total_frames_written += frames; */
+    /*     /\* samp->frames_read += frames_available; *\/ */
+    /*     set_frames_read(samp, samp->frames_read + frames_available); */
+    /*     set_done(samp); */
+    /*     // notify that we just finished reading this sample */
+    /*     Event_broadcast(samp->done_event); */
+    /*     return frames_available; */
+    /* } else { */
+    /*     set_frames_read(samp, samp->frames_read + frames_read); */
+    /*     samp->total_frames_written += frames; */
+    /*     /\* samp->frames_read += frames_read; *\/ */
+    /*     return frames; */
+    /* } */
 }
 
 nframes_t
@@ -378,10 +369,45 @@ Sample_wait(Sample samp) {
  */
 void
 Sample_free(Sample *samp) {
+    int i;
     assert(samp && *samp);
-    // free the done event
+    /* free the done event */
     Event_free(&(*samp)->done_event);
-    // free the frames_read mutex
+    /* free the sample rate converters */
+    SRC_free(&(*samp)->src[0]);
+    SRC_free(&(*samp)->src[1]);
+    FREE((*samp)->src);
+    /* free the frames_read mutex */
     Mutex_free(&(*samp)->frames_read_mutex);
-    FREE((*samp)->framebuf);
+    for (i = 0; i < (*samp)->channels; i++) {
+        FREE((*samp)->framebufs[i]);
+    }
+    FREE((*samp)->framebufs);
+    FREE(*samp);
+}
+
+/**
+ * Try to set frames_read
+ */
+static int
+set_frames_read(Sample samp, nframes_t val) {
+    if (0 == Mutex_trylock(samp->frames_read_mutex)) {
+        samp->frames_read = val;
+        return Mutex_unlock(samp->frames_read_mutex);
+    } else {
+        return -1;
+    }
+}
+
+int
+Sample_set_state(Sample samp,
+                 SampleState state) {
+    assert(samp->state_mutex);
+    int not_locked = Mutex_lock(samp->state_mutex);
+    if (not_locked) {
+        return not_locked;
+    } else {
+        samp->state = state;
+        return Mutex_unlock(samp->state_mutex);
+    }
 }

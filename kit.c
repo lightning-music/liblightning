@@ -20,26 +20,17 @@ struct Kit {
     unsigned int num_samples;
 };
 
-int
+static int
 audio_callback(sample_t **buffers,
                channels_t channels,
                nframes_t frames,
-               void *data) {
-    Kit kit = (Kit) data;
-    int i;
-
-    for (i = 0; i < kit->num_samples; i++) {
-        // fill buffers with sample data
-        Sample_write(kit->samples[i], buffers, channels, frames);
-    }
-
-    return 0;
-}
+               void *data);
 
 /* TODO: Kit should also spin up a thread that waits
    for sample trigger events */
 Kit
-Kit_load(const char *dir) {
+Kit_load(const char *dir,
+         nframes_t output_samplerate) {
     Kit kit;
     NEW(kit);
 
@@ -82,7 +73,8 @@ Kit_load(const char *dir) {
 
         sprintf(sample_path, "%s/%s", dir, f);
 
-        kit->samples[file_index] = Sample_load(sample_path, 1.0f, 1.0f);
+        kit->samples[file_index] = Sample_load(sample_path, 1.0f, 1.0f,
+                                               output_samplerate);
 
         file_index++;
     }
@@ -123,3 +115,20 @@ void
 Kit_free(Kit *kit) {
     assert(kit && *kit);
 }
+
+static int
+audio_callback(sample_t **buffers,
+               channels_t channels,
+               nframes_t frames,
+               void *data) {
+    Kit kit = (Kit) data;
+    int i;
+
+    for (i = 0; i < kit->num_samples; i++) {
+        // fill buffers with sample data
+        Sample_write(kit->samples[i], buffers, channels, frames);
+    }
+
+    return 0;
+}
+

@@ -29,7 +29,7 @@ main(int argc, char **argv) {
     pitch_t pitch = 1.0;
     gain_t gain = 1.0;
 
-    // require path to audio file
+    /* require path to audio file */
 
     if (argc < 2) {
         usage_and_exit(argv[0]);
@@ -37,7 +37,7 @@ main(int argc, char **argv) {
 
     f = argv[1];
 
-    // see if pitch and gain were provided
+    /* see if pitch and gain were provided */
 
     switch(argc) {
     case 4:
@@ -47,38 +47,28 @@ main(int argc, char **argv) {
         break;
     }
 
-    // initialize sample and jack client
+    /* initialize sample and jack client */
 
-    Sample s = Sample_load(f, pitch, gain);
+    JackClient jack_client = JackClient_init(stereo_callback, NULL);
 
-    JackClient jack_client = JackClient_init(stereo_callback, s);
+    Sample s = Sample_load(f, pitch, gain,
+                           JackClient_samplerate(jack_client));
 
-    printf("samplerate                      = %ld\n",
-           (long) Sample_samplerate(s));
-
-    printf("jack samplerate                 = %d\n",
-           JackClient_samplerate(jack_client));
+    JackClient_set_data(jack_client, s);
 
     /* register a callback for if the jack output sample
        rate changes */
 
-    JackClient_set_samplerate_callback(jack_client,
-                                       Sample_samplerate_callback, s);
+    JackClient_setup_callbacks(jack_client);
 
     JackClient_activate(jack_client);
     JackClient_setup_ports(jack_client);
 
-    // wait for sample to finish playing
+    /* wait for sample to finish playing */
 
     Sample_wait(s);
 
-    printf("Sample_frames                   = %ld\n",
-           (long) Sample_num_frames(s));
-
-    printf("Sample_total_frames_written     = %ld\n",
-           (long) Sample_total_frames_written(s));
-
-    // free sample and jack client
+    /* free sample and jack client */
 
     Sample_free(&s);
     JackClient_free(&jack_client);

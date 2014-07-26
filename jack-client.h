@@ -35,6 +35,10 @@ JackClient_activate(JackClient client);
 int
 JackClient_setup_ports(JackClient client);
 
+void
+JackClient_set_data(JackClient client,
+                    void *data);
+
 nframes_t
 JackClient_samplerate(JackClient jack);
 

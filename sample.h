@@ -11,7 +11,8 @@ typedef struct Sample *Sample;
 Sample
 Sample_load(const char *file,
             pitch_t pitch,
-            gain_t gain);
+            gain_t gain,
+            nframes_t output_samplerate);
 
 /**
  * Get the path this sample was loaded from.

@@ -5,6 +5,7 @@
 #define KIT_H_INCLUDED
 
 #include "sample.h"
+#include "types.h"
 
 /**
  * Maximum number of samples a kit can load.
@@ -20,7 +21,8 @@ typedef struct Kit *Kit;
  * uses @a engine for audio playback
  */
 Kit
-Kit_load(const char *dir);
+Kit_load(const char *dir,
+         nframes_t output_samplerate);
 
 /**
  * Return the number of samples successfully loaded.

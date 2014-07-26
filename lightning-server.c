@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "jack-client.h"
 #include "kit.h"
 #include "osc-server.h"
 #include "osc-types.h"
@@ -20,13 +21,31 @@ play_sample(const char *path,
             OscMessage msg,
             void *data);
 
+static int
+audio_callback(sample_t **buffers,
+               channels_t channels,
+               nframes_t frames,
+               void *data);
+
 int main(int argc, char **argv) {
+
+    JackClient jack_client = JackClient_init(audio_callback, NULL);
 
     /* setup kit */
 
     const char * default_kit = "kits/default";
 
-    Kit kit = Kit_load(default_kit);
+    Kit kit = Kit_load(default_kit, JackClient_samplerate(jack_client));
+
+    JackClient_set_data(jack_client, kit);
+
+    /* register a callback for if the jack output sample
+       rate changes */
+
+    JackClient_setup_callbacks(jack_client);
+
+    JackClient_activate(jack_client);
+    JackClient_setup_ports(jack_client);
 
     /* setup OSC server */
 
@@ -53,6 +72,10 @@ int main(int argc, char **argv) {
 
     Kit_free(&kit);
 
+    /* free jack client */
+
+    JackClient_free(&jack_client);
+
     return 0;
 }
 
@@ -72,5 +95,13 @@ play_sample(const char *path,
             void *data) {
     printf("path %s\n", path);
     printf("types %s\n", types);
+    return 0;
+}
+
+static int
+audio_callback(sample_t **buffers,
+               channels_t channels,
+               nframes_t frames,
+               void *data) {
     return 0;
 }

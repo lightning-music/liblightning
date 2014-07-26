@@ -38,6 +38,6 @@ OscServer_recv(OscServer srv) {
 void
 OscServer_free(OscServer *srv) {
     assert(srv && *srv);
-    lo_server_thread_free((*srv)->lo_server);
+    lo_server_free((*srv)->lo_server);
     FREE(*srv);
 }
