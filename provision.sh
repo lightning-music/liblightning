@@ -28,6 +28,9 @@ function provision {
             sudo apt-get install -qq libsndfile1-dev liblo-dev \
                 libjack-dev libgtk2.0-dev libsamplerate0-dev
             ;;
+        -h|--help)
+            usage_and_exit
+            ;;
         *)
             echo 1>&2 Unrecognized system: "$system_type"
             echo 1>&2
