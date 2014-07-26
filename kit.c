@@ -8,23 +8,15 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "jack-client.h"
 #include "kit.h"
 #include "mem.h"
 #include "sample.h"
 #include "types.h"
 
 struct Kit {
-    JackClient jack_client;
     Sample *samples;
     unsigned int num_samples;
 };
-
-static int
-audio_callback(sample_t **buffers,
-               channels_t channels,
-               nframes_t frames,
-               void *data);
 
 /* TODO: Kit should also spin up a thread that waits
    for sample trigger events */
@@ -81,10 +73,6 @@ Kit_load(const char *dir,
 
     kit->num_samples = file_index;
 
-    // initialize jack client
-
-    kit->jack_client = JackClient_init(audio_callback, kit);
-
     return kit;
 }
 
@@ -94,41 +82,37 @@ Kit_num_samples(Kit kit) {
     return kit->num_samples;
 }
 
-Sample *
-Kit_sample_list(Kit kit) {
-    assert(kit);
-    return kit->samples;
-}
-
 void
 Kit_play_sample(Kit kit,
-                Sample samp) {
+                int index) {
     assert(kit);
+    if (index >= kit->num_samples) {
+        fprintf(stderr, "index %d is greater than the number of samples "
+                "in kit\n", index);
+        exit(EXIT_FAILURE);
+    } else {
+        Sample_reset(kit->samples[index]);
+    }
 }
 
-AudioCallback
-Kit_get_audio_callback(Kit kit) {
-    return audio_callback;
+int
+Kit_write(Kit kit,
+          sample_t **buffers,
+          channels_t channels,
+          nframes_t frames) {
+    int i, sample_write_error;
+    for (i = 0; i < kit->num_samples; i++) {
+        // fill buffers with sample data
+        sample_write_error = \
+            Sample_write(kit->samples[i], buffers, channels, frames);
+        if (sample_write_error) {
+            return sample_write_error;
+        }
+    }
+    return 0;
 }
 
 void
 Kit_free(Kit *kit) {
     assert(kit && *kit);
 }
-
-static int
-audio_callback(sample_t **buffers,
-               channels_t channels,
-               nframes_t frames,
-               void *data) {
-    Kit kit = (Kit) data;
-    int i;
-
-    for (i = 0; i < kit->num_samples; i++) {
-        // fill buffers with sample data
-        Sample_write(kit->samples[i], buffers, channels, frames);
-    }
-
-    return 0;
-}
-

@@ -51,8 +51,8 @@ struct Sample {
     // buffers to hold sample data (one per channel)
     sample_t **framebufs;
     // track read position in file (guarded by mutex)
-    nframes_t frames_read;
-    Mutex frames_read_mutex;
+    nframes_t framep;
+    Mutex framep_mutex;
     nframes_t total_frames_written;
     // provide a way to synchronize a thread on the `done` event
     Event done_event;
@@ -65,10 +65,10 @@ struct Sample {
 };
 
 /**
- * Try to set frames_read
+ * Try to set framep
  */
 static int
-set_frames_read(Sample samp,
+set_framep(Sample samp,
                 nframes_t val);
 
 int
@@ -112,6 +112,7 @@ Sample_load(const char *file,
     /* Set pitch to a very small number if it is 0,
        otherwise clip it to a given range and
        if it is negative set the reversed bit */
+
     if (pitch == 0.0) {
         s->pitch = 0.0001;
     } else {
@@ -166,8 +167,8 @@ Sample_load(const char *file,
         exit(EXIT_FAILURE);
     }
 
-    s->frames_read = 0;
-    s->frames_read_mutex = Mutex_init();
+    s->framep = 0;
+    s->framep_mutex = Mutex_init();
     s->total_frames_written = 0;
 
     /* initialize sample rate converters */
@@ -232,13 +233,15 @@ Sample_samplerate_callback(nframes_t sr,
 nframes_t
 Sample_frames_available(Sample samp) {
     assert(samp);
-    return samp->frames - samp->frames_read;
+    return samp->frames - samp->framep;
 }
 
 int
 Sample_reset(Sample samp) {
     assert(samp);
-    return set_frames_read(samp, 0);
+    /* set framep to 0 and state to Processing */
+    return set_framep(samp, 0) &&          \
+        Sample_set_state(samp, SampleState_Processing);
 }
 
 nframes_t
@@ -253,7 +256,7 @@ Sample_write(Sample samp,
     }
 
     int chans = (int) samp->channels;
-    long offset = samp->frames_read;
+    long offset = samp->framep;
     int end_of_input = 0;
     int chan = 0;
     int error = 0;
@@ -261,7 +264,7 @@ Sample_write(Sample samp,
     nframes_t output_frames_gen = 0;
     AudioData audio_data;
 
-    audio_data.input_frames = samp->frames - samp->frames_read;
+    audio_data.input_frames = samp->frames - samp->framep;
     audio_data.output_frames = frames;
 
     for (chan = 0; chan < chans; chan++) {
@@ -286,70 +289,10 @@ Sample_write(Sample samp,
         Sample_set_state(samp, SampleState_Finishing);
         Event_broadcast(samp->done_event);
     } else {
-        samp->frames_read += input_frames_used;
+        samp->framep += input_frames_used;
     }
 
     return 0;
-
-    /* sample_t ch1samp, ch2samp; */
-
-    /* // flag to indicate we need to signal end of sample */
-    /* int hitend = 0; */
-
-    /* // pitch-adjusted frame index */
-    /* // will have to be cast before using to index into framebuf */
-    /* sample_count_t pfi = 0.0; */
-
-    /* // sample index */
-    /* long si = 0; */
-
-    /* // frame offset */
-    /* long offset = samp->frames_read * chans; */
-
-    /* if (is_done(samp)) { */
-    /*     return 0; */
-    /* } */
-
-    /* for (frame = 0; frame < frames; frame++) { */
-    /*     // nudge frame index and sample index */
-    /*     pfi += samp->pitch; */
-    /*     frames_read = (long) pfi; */
-    /*     si = frames_read * chans; */
-
-    /*     if (offset + si < (samp->frames * chans) - chans) { */
-    /*         // sample values */
-    /*         ch1samp = samp->framebuf[offset + si] * samp->gain; */
-    /*         ch2samp = samp->framebuf[offset + si + 1] * samp->gain; */
-
-    /*         switch(chans) { */
-    /*         case 1: */
-    /*             buffers[0][frame] = buffers[1][frame] = ch1samp; */
-    /*             break; */
-    /*         case 2: */
-    /*             buffers[0][frame] = ch1samp; */
-    /*             buffers[1][frame] = ch2samp; */
-    /*             break; */
-    /*         } */
-    /*     } else { */
-    /*         hitend = 1; */
-    /*         buffers[0][frame] = buffers[1][frame] = 0.0f; */
-    /*     } */
-    /* } */
-
-    /* if (hitend) { */
-    /*     samp->total_frames_written += frames; */
-    /*     /\* samp->frames_read += frames_available; *\/ */
-    /*     set_frames_read(samp, samp->frames_read + frames_available); */
-    /*     set_done(samp); */
-    /*     // notify that we just finished reading this sample */
-    /*     Event_broadcast(samp->done_event); */
-    /*     return frames_available; */
-    /* } else { */
-    /*     set_frames_read(samp, samp->frames_read + frames_read); */
-    /*     samp->total_frames_written += frames; */
-    /*     /\* samp->frames_read += frames_read; *\/ */
-    /*     return frames; */
-    /* } */
 }
 
 nframes_t
@@ -377,8 +320,8 @@ Sample_free(Sample *samp) {
     SRC_free(&(*samp)->src[0]);
     SRC_free(&(*samp)->src[1]);
     FREE((*samp)->src);
-    /* free the frames_read mutex */
-    Mutex_free(&(*samp)->frames_read_mutex);
+    /* free the framep mutex */
+    Mutex_free(&(*samp)->framep_mutex);
     for (i = 0; i < (*samp)->channels; i++) {
         FREE((*samp)->framebufs[i]);
     }
@@ -387,13 +330,13 @@ Sample_free(Sample *samp) {
 }
 
 /**
- * Try to set frames_read
+ * Try to set framep
  */
 static int
-set_frames_read(Sample samp, nframes_t val) {
-    if (0 == Mutex_trylock(samp->frames_read_mutex)) {
-        samp->frames_read = val;
-        return Mutex_unlock(samp->frames_read_mutex);
+set_framep(Sample samp, nframes_t val) {
+    if (0 == Mutex_trylock(samp->framep_mutex)) {
+        samp->framep = val;
+        return Mutex_unlock(samp->framep_mutex);
     } else {
         return -1;
     }

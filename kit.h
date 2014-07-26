@@ -31,25 +31,21 @@ int
 Kit_num_samples(Kit kit);
 
 /**
- * Return a list of the samples used in this kit.
- * Should contain Kit_num_samples Sample's.
- */
-Sample *
-Kit_sample_list(Kit kit);
-
-/**
  * Play the audio sample using the given audio engine.
  * Uses the default audio engine if @a engine is NULL.
  */
 void
 Kit_play_sample(Kit kit,
-                Sample samp);
+                int index);
 
 /**
- * Get a realtime callback.
+ * Realtime callback.
  */
-AudioCallback
-Kit_get_audio_callback(Kit kit);
+int
+Kit_write(Kit kit,
+          sample_t **buffers,
+          channels_t channels,
+          nframes_t frames);
 
 /**
  * Free the samples.

@@ -103,5 +103,7 @@ audio_callback(sample_t **buffers,
                channels_t channels,
                nframes_t frames,
                void *data) {
+    Kit kit = (Kit) data;
+    Kit_write(kit, buffers, channels, frames);
     return 0;
 }
