@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <lo/lo_lowlevel.h>
-#include <lo/lo_serverthread.h>
 
 #include "mem.h"
 #include "osc-server.h"
