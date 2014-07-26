@@ -8,7 +8,6 @@ GTK_FLAGS := $(shell pkg-config --cflags --libs gtk+-2.0)
 JACK_FLAGS := $(shell pkg-config --cflags --libs jack)
 SNDFILE_FLAGS := $(shell pkg-config --cflags --libs sndfile)
 LIBLO_FLAGS := $(shell pkg-config --cflags --libs liblo)
-# SAMPLERATE=../libsamplerate-0.1.8
 SRC_FLAGS := $(shell pkg-config --cflags --libs samplerate)
 CPPFLAGS := -I/usr/include/gtk-2.0
 CC=gcc
@@ -43,6 +42,7 @@ lightning-server: lightning-server.c           \
                   ringbuffer.o ringbuffer.h    \
                   event.o event.h              \
                   mutex.o mutex.h              \
+                  osc-server.o osc-server.h    \
                   src.o src.h                  \
                   sample.o sample.h
 

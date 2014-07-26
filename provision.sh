@@ -25,7 +25,7 @@ function provision {
         ubuntu|debian)
             # assume make is installed
             sudo apt-get update
-            sudo apt-get install -qq libsndfile1-dev \
+            sudo apt-get install -qq libsndfile1-dev liblo-dev \
                 libjack-dev libgtk2.0-dev libsamplerate0-dev
             ;;
         *)
