@@ -7,12 +7,12 @@
 #include "../types.h"
 
 int
-stereo_callback(sample_t *ch1,
-               sample_t *ch2,
-               nframes_t frames,
-               void *data) {
+stereo_callback(sample_t **buffers,
+                channels_t channels,
+                nframes_t frames,
+                void *data) {
     Sample sample = (Sample) data;
-    Sample_write_stereo_src(sample, ch1, ch2, frames);
+    Sample_write(sample, buffers, channels, frames);
     return 0;
 }
 
@@ -51,7 +51,7 @@ main(int argc, char **argv) {
 
     Sample s = Sample_load(f, pitch, gain);
 
-    JackClient jack_client = JackClient_init(NULL, stereo_callback, s);
+    JackClient jack_client = JackClient_init(stereo_callback, s);
 
     printf("samplerate                      = %ld\n",
            (long) Sample_samplerate(s));

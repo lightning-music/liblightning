@@ -37,47 +37,13 @@ typedef double sample_count_t;
 typedef jack_nframes_t nframes_t;
 
 /**
- * callback for getting @a frames of mono sample data
+ * callback for getting @a frames of sample data
  * return 0 for success, nonzero for failure
  */
-typedef int (* MonoCallback)(sample_t *ch1,
-                             nframes_t frames,
-                             void *client_data);
-
-/**
- * callback for getting @a frames of stereo sample data
- * return 0 for success, nonzero for failure
- */
-typedef int (* StereoCallback)(sample_t *ch1,
-                               sample_t *ch2,
-                               nframes_t frames,
-                               void *client_data);
-
-/**
- * Callback that allows us to customize the behavior
- * of streams.
- */
-typedef nframes_t (* StreamCallbackMono)(sample_t *in,
-                                         sample_t *out,
-                                         nframes_t inframes,
-                                         nframes_t outframes,
-                                         int *hitend,
-                                         void *data);
-
-/**
- * Callback that allows us to customize the behavior
- * of streams.
- */
-typedef nframes_t (* StreamCallbackStereo)(sample_t *in,
-                                           sample_t *ch1,
-                                           sample_t *ch2,
-                                           /** available input frames */
-                                           nframes_t inframes,
-                                           /** output frames desired */
-                                           nframes_t outframes,
-                                           /** flag set when the input is exhausted */
-                                           int *hitend,
-                                           void *data);
+typedef int (* AudioCallback)(sample_t **bufs,
+                              channels_t channels,
+                              nframes_t frames,
+                              void *client_data);
 
 typedef int (* SampleRateCallback)(nframes_t sr,
                                    void *arg);

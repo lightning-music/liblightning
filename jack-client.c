@@ -28,8 +28,7 @@ struct JackClient {
     jack_client_t *jack_client;
     jack_port_t *jack_output_port_1;
     jack_port_t *jack_output_port_2;
-    MonoCallback mono_callback;
-    StereoCallback stereo_callback;
+    AudioCallback audio_callback;
     /* client state */
     JackClientState state;
     Mutex state_mutex;
@@ -100,33 +99,21 @@ process(jack_nframes_t nframes,
     }
 
     /* setup output sample buffers */
+    /* TODO: dynamically detect jack playback ports */
 
-    sample_t *ch1 = \
-        jack_port_get_buffer(client->jack_output_port_1, nframes);
+    sample_t **buffers = CALLOC(2, sizeof(sample_t*));
 
-    sample_t *ch2 = \
-        jack_port_get_buffer(client->jack_output_port_2, nframes);
+    buffers[0] = jack_port_get_buffer(client->jack_output_port_1, nframes);
+    buffers[1] = jack_port_get_buffer(client->jack_output_port_2, nframes);
 
     /* write data to the output buffer with registered callbacks */
     /* TODO: don't use stereo_callback if there is only one playback port */
 
-    if (client->stereo_callback != NULL) {
-        return client->stereo_callback(ch1,
-                                       ch2,
-                                       (nframes_t) nframes,
-                                       client->data);
-    } else if (client->mono_callback != NULL) {
-        return client->mono_callback(ch1,
-                                     (nframes_t) nframes,
-                                     client->data);
-    } else {
-        return 0;
-    }
+    return client->audio_callback(buffers, 2, (nframes_t) nframes, client->data);
 }
 
 JackClient
-JackClient_init(MonoCallback mono_callback,
-                StereoCallback stereo_callback,
+JackClient_init(AudioCallback audio_callback,
                 void *client_data) {
     JackClient client;
     NEW(client);
@@ -150,8 +137,7 @@ JackClient_init(MonoCallback mono_callback,
     }
 
     client->data = client_data;
-    client->mono_callback = mono_callback;
-    client->stereo_callback = stereo_callback;
+    client->audio_callback = audio_callback;
 
     return client;
 }
@@ -279,24 +265,6 @@ JackClient_playback_ports(JackClient jack) {
 }
 
 /* How would the set_*_callback functions ever fail? */
-
-int
-JackClient_set_mono_callback(JackClient jack,
-                             MonoCallback mcb,
-                             void *data) {
-    assert(jack);
-    jack->mono_callback = mcb;
-    return 0;
-}
-
-int
-JackClient_set_stereo_callback(JackClient jack,
-                               StereoCallback scb,
-                               void *data) {
-    assert(jack);
-    jack->stereo_callback = scb;
-    return 0;
-}
 
 void
 JackClient_free(JackClient *jack) {

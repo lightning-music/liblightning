@@ -54,39 +54,14 @@ int
 Sample_reset(Sample samp);
 
 /**
- * Write sample data to a mono output buffer.
+ * Write sample data to some buffers.
  * Returns the number of frames written.
  */
 nframes_t
-Sample_write_mono(Sample samp,
-                  sample_t *ch1,
-                  nframes_t frames);
-
-/**
- * Write sample data to a stereo output buffers.
- * Returns the number of frames written.
- */
-nframes_t
-Sample_write_stereo(Sample samp,
-                    sample_t *ch1,
-                    sample_t *ch2,
-                    nframes_t frames);
-
-nframes_t
-Sample_write_stereo_src(Sample samp,
-                        sample_t *ch1,
-                        sample_t *ch2,
-                        nframes_t frames);
-
-/**
- * Write sample data to a stereo output buffers (uses streams).
- * Returns the number of frames consumed from the sample.
- */
-nframes_t
-Sample_write_stereo_stream(Sample samp,
-                           sample_t *ch1,
-                           sample_t *ch2,
-                           nframes_t frames);
+Sample_write(Sample samp,
+             sample_t **buffers,
+             channels_t channels,
+             nframes_t frames);
 
 /**
  * Total number of frames that have been written in one of

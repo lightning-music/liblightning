@@ -1,4 +1,5 @@
-/*
+/**
+ * \file play-file.c
  * A working example of how to play samples with jack-client
  * and src sample rate converter.
  */
@@ -55,6 +56,7 @@ initialize_file_player(FilePlayer *fp,
                        const char *f,
                        nframes_t output_sample_rate) {
     assert(fp);
+    int i;
     fp->state = FP_INITIALIZING;
     // initialize condition variable
     pthread_cond_init(&fp->done, NULL);
@@ -71,12 +73,10 @@ initialize_file_player(FilePlayer *fp,
     fp->length = fp->frames * fp->channels;
     // frames we have already read from the frame buffer
     fp->frames_read = 0;
-    // allocate per-channel frame buffers
-    fp->framebufs = calloc(fp->channels, sizeof(sample_t*));
-    int i;
-    for (i = 0; i < fp->channels; i++) {
-        fp->framebufs[i] = calloc(fp->frames, SAMPLE_SIZE);
-    }
+    // allocate stereo frame buffers
+    fp->framebufs = calloc(2, sizeof(sample_t*));
+    fp->framebufs[0] = calloc(fp->frames, SAMPLE_SIZE);
+    fp->framebufs[1] = calloc(fp->frames, SAMPLE_SIZE);
 
     assert(fp->framebufs);
     /* allocate the buffer for sf_read */
@@ -97,12 +97,22 @@ initialize_file_player(FilePlayer *fp,
         exit(EXIT_FAILURE);
     }
 
-    /* de-interleave */
+    /* de-interleave if stereo, fill stereo buffers if mono */
     int j;
-    for (j = 0; j < fp->frames; j++) {
-        for (i = 0; i < fp->channels; i++) {
-            fp->framebufs[i][j] = framebuf[ i + (j * fp->channels) ];
+    if (fp->channels == 1) {
+        for (j = 0; j < fp->frames; j++) {
+            fp->framebufs[0][j] = fp->framebufs[1][j] = framebuf[j];
         }
+    } else if (fp->channels == 2) {
+        for (j = 0; j < fp->frames; j++) {
+            for (i = 0; i < fp->channels; i++) {
+                fp->framebufs[i][j] = framebuf[ i + (j * fp->channels) ];
+            }
+        }
+    } else {
+        fprintf(stderr, "Audio file has %d channels. "
+                "Only mono and stereo are currently supported.\n", fp->channels);
+        exit(EXIT_FAILURE);
     }
 
     /* lock the done mutex */
@@ -133,8 +143,8 @@ free_file_player(FilePlayer *fp) {
  * jack client realtime callback
  */
 static int
-audio_callback(sample_t *ch1,
-               sample_t *ch2,
+audio_callback(sample_t **buffers,
+               channels_t channels,
                nframes_t frames,
                void *data) {
     FilePlayer *fp = (FilePlayer *) data;
@@ -147,51 +157,55 @@ audio_callback(sample_t *ch1,
     long offset = frames_read;
     AudioData audio_data;
     int end_of_input = 0;
+    int chan = 0;
+    int error = 0;
+    nframes_t input_frames_used = 0;
+    nframes_t output_frames_gen = 0;
 
     audio_data.input_frames = fp->frames - frames_read;
     audio_data.output_frames = frames;
 
-    /* process channel 1 */
-    
-    audio_data.output = ch1;
-    audio_data.input = &fp->framebufs[0][ offset ];
+    for (chan = 0; chan < channels; chan++) {
+        audio_data.output = buffers[chan];
+        audio_data.input = &fp->framebufs[chan][offset];
 
-    nframes_t input_frames_used = 0;
-    nframes_t output_frames_gen = 0;
+        input_frames_used = 0;
+        output_frames_gen = 0;
 
-    int error = SRC_process(fp->src,
+        error = SRC_process(fp->src,
                             fp->src_ratio,
                             audio_data,
                             &input_frames_used,
                             &output_frames_gen,
                             &end_of_input);
 
-    if (error) {
-        fprintf(stderr, "Error in SRC_process: %s\n",
-                SRC_strerror(error));
-        exit(EXIT_FAILURE);
+        if (error) {
+            fprintf(stderr, "Error in SRC_process: %s\n",
+                    SRC_strerror(error));
+            exit(EXIT_FAILURE);
+        }
     }
 
     /* process channel 2 */
 
-    audio_data.output = ch2;
-    audio_data.input = &fp->framebufs[1][ offset ];
+    /* audio_data.output = ch2; */
+    /* audio_data.input = &fp->framebufs[1][ offset ]; */
 
-    input_frames_used = 0;
-    output_frames_gen = 0;
+    /* input_frames_used = 0; */
+    /* output_frames_gen = 0; */
 
-    error = SRC_process(fp->src,
-                        fp->src_ratio,
-                        audio_data,
-                        &input_frames_used,
-                        &output_frames_gen,
-                        &end_of_input);
+    /* error = SRC_process(fp->src, */
+    /*                     fp->src_ratio, */
+    /*                     audio_data, */
+    /*                     &input_frames_used, */
+    /*                     &output_frames_gen, */
+    /*                     &end_of_input); */
 
-    if (error) {
-        fprintf(stderr, "Error in SRC_process: %s\n",
-                SRC_strerror(error));
-        exit(EXIT_FAILURE);
-    }
+    /* if (error) { */
+    /*     fprintf(stderr, "Error in SRC_process: %s\n", */
+    /*             SRC_strerror(error)); */
+    /*     exit(EXIT_FAILURE); */
+    /* } */
 
     if (end_of_input) {
         fp->state = FP_FINISHED;
@@ -220,7 +234,7 @@ int main(int argc, char **argv) {
     // initialize jack client
 
     JackClient jack_client = \
-        JackClient_init(NULL, audio_callback, &fp);
+        JackClient_init(audio_callback, &fp);
 
     // initialize FilePlayer
 

@@ -21,33 +21,16 @@ struct Kit {
 };
 
 int
-mono_callback(sample_t *ch1,
-              nframes_t frames,
-              void *data) {
+audio_callback(sample_t **buffers,
+               channels_t channels,
+               nframes_t frames,
+               void *data) {
     Kit kit = (Kit) data;
     int i;
 
     for (i = 0; i < kit->num_samples; i++) {
         // fill buffers with sample data
-        Sample_write_mono(kit->samples[i],
-                          ch1, frames);
-    }
-
-    return 0;
-}
-
-int
-stereo_callback(sample_t *ch1,
-                sample_t *ch2,
-                nframes_t frames,
-                void *data) {
-    Kit kit = (Kit) data;
-    int i;
-
-    for (i = 0; i < kit->num_samples; i++) {
-        // fill buffers with sample data
-        Sample_write_stereo(kit->samples[i],
-                            ch1, ch2, frames);
+        Sample_write(kit->samples[i], buffers, channels, frames);
     }
 
     return 0;
@@ -108,8 +91,7 @@ Kit_load(const char *dir) {
 
     // initialize jack client
 
-    kit->jack_client =                          \
-        JackClient_init(NULL, stereo_callback, kit);
+    kit->jack_client = JackClient_init(audio_callback, kit);
 
     return kit;
 }
@@ -132,14 +114,9 @@ Kit_play_sample(Kit kit,
     assert(kit);
 }
 
-MonoCallback
-Kit_get_mono_callback(Kit kit) {
-    return mono_callback;
-}
-
-StereoCallback
-Kit_get_stero_callback(Kit kit) {
-    return stereo_callback;
+AudioCallback
+Kit_get_audio_callback(Kit kit) {
+    return audio_callback;
 }
 
 void

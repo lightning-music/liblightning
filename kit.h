@@ -44,16 +44,10 @@ Kit_play_sample(Kit kit,
                 Sample samp);
 
 /**
- * Get a realtime callback that outputs 1 channel.
+ * Get a realtime callback.
  */
-MonoCallback
-Kit_get_mono_callback(Kit kit);
-
-/**
- * Get a realtime callback that outputs 2 channels.
- */
-StereoCallback
-Kit_get_stero_callback(Kit kit);
+AudioCallback
+Kit_get_audio_callback(Kit kit);
 
 /**
  * Free the samples.
