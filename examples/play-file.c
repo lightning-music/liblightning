@@ -43,8 +43,8 @@ typedef struct FilePlayer {
     // used to signal sample done
     pthread_cond_t done;
     pthread_mutex_t done_lock;
-    // sample rate converter
-    SRC src;
+    // sample rate converters (1 per channel)
+    SRC *src;
     double src_ratio;
 } FilePlayer;
 
@@ -68,6 +68,8 @@ initialize_file_player(FilePlayer *fp,
     fp->channels = sfinfo.channels;
     fp->frames = sfinfo.frames;
     fp->samplerate = sfinfo.samplerate;
+    printf("using output sample rate %ld\n", output_sample_rate);
+    printf("fp->samplerate           %ld\n", fp->samplerate);
     fp->src_ratio = output_sample_rate / (double) fp->samplerate;
     // samples = frames * channels
     fp->length = fp->frames * fp->channels;
@@ -106,7 +108,7 @@ initialize_file_player(FilePlayer *fp,
     } else if (fp->channels == 2) {
         for (j = 0; j < fp->frames; j++) {
             for (i = 0; i < fp->channels; i++) {
-                fp->framebufs[i][j] = framebuf[ i + (j * fp->channels) ];
+                fp->framebufs[i][j] = framebuf[ (j * fp->channels) + i ];
             }
         }
     } else {
@@ -120,7 +122,10 @@ initialize_file_player(FilePlayer *fp,
     /* close file */
     sf_close(sf);
     /* initialize sample rate converter */
-    fp->src = SRC_init(2);
+    fp->src = calloc(2, sizeof(SRC));
+    fp->src[0] = SRC_init();
+    fp->src[1] = SRC_init();
+    /* set state to PROCESSING */
     fp->state = FP_PROCESSING;
 }
 
@@ -132,6 +137,10 @@ free_file_player(FilePlayer *fp) {
     assert(fp);
     // free condition variable
     pthread_cond_destroy(&fp->done);
+    /* free SRC's */
+    SRC_free(&fp->src[0]);
+    SRC_free(&fp->src[1]);
+    free(fp->src);
     // free frame buffer
     int i;
     for (i = 0; i < fp->channels; i++) {
@@ -172,11 +181,8 @@ audio_callback(sample_t **buffers,
         input_frames_used = 0;
         output_frames_gen = 0;
 
-        error = SRC_process(fp->src,
-                            fp->src_ratio,
-                            audio_data,
-                            &input_frames_used,
-                            &output_frames_gen,
+        error = SRC_process(fp->src[chan], fp->src_ratio, audio_data,
+                            &input_frames_used, &output_frames_gen,
                             &end_of_input);
 
         if (error) {
@@ -185,27 +191,6 @@ audio_callback(sample_t **buffers,
             exit(EXIT_FAILURE);
         }
     }
-
-    /* process channel 2 */
-
-    /* audio_data.output = ch2; */
-    /* audio_data.input = &fp->framebufs[1][ offset ]; */
-
-    /* input_frames_used = 0; */
-    /* output_frames_gen = 0; */
-
-    /* error = SRC_process(fp->src, */
-    /*                     fp->src_ratio, */
-    /*                     audio_data, */
-    /*                     &input_frames_used, */
-    /*                     &output_frames_gen, */
-    /*                     &end_of_input); */
-
-    /* if (error) { */
-    /*     fprintf(stderr, "Error in SRC_process: %s\n", */
-    /*             SRC_strerror(error)); */
-    /*     exit(EXIT_FAILURE); */
-    /* } */
 
     if (end_of_input) {
         fp->state = FP_FINISHED;
@@ -254,7 +239,7 @@ int main(int argc, char **argv) {
     free_file_player(&fp);
 
     // free jack client
-    
+
     JackClient_free(&jack_client);
 
     return 0;

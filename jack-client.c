@@ -62,6 +62,7 @@ samplerate_callback(nframes_t sr,
                     void *data) {
     /* Notify client code that depends on the output
        sample rate */
+    printf("sample rate changed to %ld\n", sr);
     return 0;
 }
 
@@ -103,8 +104,8 @@ process(jack_nframes_t nframes,
 
     sample_t **buffers = CALLOC(2, sizeof(sample_t*));
 
-    buffers[0] = jack_port_get_buffer(client->jack_output_port_1, nframes);
-    buffers[1] = jack_port_get_buffer(client->jack_output_port_2, nframes);
+    buffers[0] = jack_port_get_buffer( client->jack_output_port_1, nframes );
+    buffers[1] = jack_port_get_buffer( client->jack_output_port_2, nframes );
 
     /* write data to the output buffer with registered callbacks */
     /* TODO: don't use stereo_callback if there is only one playback port */
@@ -158,7 +159,10 @@ JackClient_setup_callbacks(JackClient client) {
 
     /* register realtime callback */
 
-    jack_set_process_callback(client->jack_client, process, client);
+    if (jack_set_process_callback(client->jack_client, process, client)) {
+        fprintf(stderr, "Could not register process callback\n");
+        exit(EXIT_FAILURE);
+    }
 
     /* register a callback for when jack changes the output
        sample rate */
