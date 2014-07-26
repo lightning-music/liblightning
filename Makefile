@@ -20,7 +20,7 @@ bindir=$(prefix)/bin
 
 .PHONY: all install
 
-PROGS = lightning-server
+PROGS = lightning-server lightning-client
 
 EXAMPLES := packbox table-pack simple_client \
         capture_client play-file play-sample
@@ -45,6 +45,8 @@ lightning-server: lightning-server.c           \
                   osc-server.o osc-server.h    \
                   src.o src.h                  \
                   sample.o sample.h
+
+lightning-client: lightning-client.c
 
 jack-client.o: ringbuffer.o mem.o
 ringbuffer.o: mem.o

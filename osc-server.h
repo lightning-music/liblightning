@@ -12,17 +12,15 @@ OscServer
 OscServer_init(const char *port,
                OscErrorHandler err_handler);
 
-int
-OscServer_start(OscServer srv);
-
 OscMethod
 OscServer_add_method(OscServer srv,
                      const char *path,
                      const char *typespec,
                      OscMethodHandler handler,
                      void *data);
+
 int
-OscServer_stop(OscServer srv);
+OscServer_recv(OscServer srv);
 
 void
 OscServer_free(OscServer *srv);
