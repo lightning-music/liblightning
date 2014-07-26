@@ -7,20 +7,21 @@
 GTK_FLAGS := $(shell pkg-config --cflags --libs gtk+-2.0)
 JACK_FLAGS := $(shell pkg-config --cflags --libs jack)
 SNDFILE_FLAGS := $(shell pkg-config --cflags --libs sndfile)
+LIBLO_FLAGS := $(shell pkg-config --cflags --libs liblo)
 # SAMPLERATE=../libsamplerate-0.1.8
 SRC_FLAGS := $(shell pkg-config --cflags --libs samplerate)
 CPPFLAGS := -I/usr/include/gtk-2.0
 CC=gcc
 CFLAGS := -Wall -g $(GTK_FLAGS)
 LDLIBS := $(GTK_FLAGS) $(JACK_FLAGS) $(SNDFILE_FLAGS) \
-          $(SRC_FLAGS) -lm
+          $(LIBLO_FLAGS) $(SRC_FLAGS) -lm
 
 prefix=/usr/local
 bindir=$(prefix)/bin
 
 .PHONY: all install
 
-PROGS = lightning
+PROGS = lightning-server
 
 EXAMPLES := packbox table-pack simple_client \
         capture_client play-file play-sample
@@ -34,16 +35,16 @@ examples: $(EXAMPLES)
 install: $(PROGS)
 	install $(PROGS) $(DESTDIR)$(bindir)
 
-lightning: lightning.c                         \
-           kit.o kit.h                         \
-           clip.o clip.h                       \
-           mem.o mem.h                         \
-           jack-client.o jack-client.h         \
-           ringbuffer.o ringbuffer.h           \
-           event.o event.h                     \
-           mutex.o mutex.h                     \
-           src.o src.h                         \
-           sample.o sample.h
+lightning-server: lightning-server.c           \
+                  kit.o kit.h                  \
+                  clip.o clip.h                \
+                  mem.o mem.h                  \
+                  jack-client.o jack-client.h  \
+                  ringbuffer.o ringbuffer.h    \
+                  event.o event.h              \
+                  mutex.o mutex.h              \
+                  src.o src.h                  \
+                  sample.o sample.h
 
 jack-client.o: ringbuffer.o mem.o
 ringbuffer.o: mem.o
