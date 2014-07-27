@@ -12,6 +12,7 @@
 #include "safe-list.h"
 #include "mem.h"
 #include "sample.h"
+#include "thread.h"
 #include "types.h"
 
 struct Kit {
@@ -22,7 +23,8 @@ struct Kit {
 };
 
 /* TODO: Kit should also spin up a thread that waits
-   for sample trigger events */
+   for sample done events and removes these samples from
+   the active list */
 Kit
 Kit_load(const char *dir,
          nframes_t output_samplerate) {
@@ -83,6 +85,9 @@ Kit_num_samples(Kit kit) {
     return kit->num_samples;
 }
 
+/**
+ * Add a sample to the active list and tell it to start playing.
+ */
 void
 Kit_play_sample(Kit kit,
                 int index) {

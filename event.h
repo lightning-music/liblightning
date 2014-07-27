@@ -10,6 +10,10 @@ int
 Event_wait(Event e);
 
 int
+Event_timedwait(Event e,
+                long ns);
+
+int
 Event_signal(Event e);
 
 int

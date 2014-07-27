@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <stddef.h>
+#include <time.h>
 
 #include "event.h"
 #include "mem.h"
@@ -36,6 +37,21 @@ Event_wait(Event e) {
     int result = pthread_cond_wait(&e->cond, &e->mutex);
     if (e->state != EventState_Ready) {
         return Event_wait(e);
+    } else {
+        return result;
+    }
+}
+
+int
+Event_timedwait(Event e,
+                long ns) {
+    assert(e);
+    e->state = EventState_NotReady;
+    struct timespec time;
+    time.tv_nsec = ns;
+    int result = pthread_cond_timedwait(&e->cond, &e->mutex, &time);
+    if (e->state != EventState_Ready) {
+        return Event_timedwait(e, ns);
     } else {
         return result;
     }
