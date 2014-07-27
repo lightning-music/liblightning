@@ -19,7 +19,7 @@ stereo_callback(sample_t **buffers,
 void
 usage_and_exit(char *prog) {
     printf("Usage\n");
-    printf("%s path/to/audio/file\n", prog);
+    printf("%s path/to/audio/file [pitch] [gain]\n", prog);
     exit(EXIT_FAILURE);
 }
 

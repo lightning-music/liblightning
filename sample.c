@@ -6,6 +6,7 @@
 
 #include "clip.h"
 #include "event.h"
+#include "gain.h"
 #include "mem.h"
 #include "mutex.h"
 #include "sample.h"
@@ -274,7 +275,9 @@ Sample_write(Sample samp,
         input_frames_used = 0;
         output_frames_gen = 0;
 
-        error = SRC_process(samp->src[chan], samp->src_ratio, audio_data,
+        error = SRC_process(samp->src[chan],
+                            samp->src_ratio / samp->pitch,
+                            audio_data,
                             &input_frames_used, &output_frames_gen,
                             &end_of_input);
 
@@ -283,6 +286,10 @@ Sample_write(Sample samp,
                     SRC_strerror(error));
             exit(EXIT_FAILURE);
         }
+
+        /* apply gain */
+
+        gain(samp->gain, buffers[chan], frames);
     }
 
     if (end_of_input) {

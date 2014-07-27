@@ -11,11 +11,14 @@
 #include "kit.h"
 #include "mem.h"
 #include "sample.h"
+#include "table.h"
 #include "types.h"
 
 struct Kit {
     Sample *samples;
     unsigned int num_samples;
+    /* cache samples */
+    Table cache;
 };
 
 /* TODO: Kit should also spin up a thread that waits

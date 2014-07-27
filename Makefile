@@ -43,6 +43,7 @@ lightning-server: lightning-server.c           \
                   event.o event.h              \
                   mutex.o mutex.h              \
                   osc-server.o osc-server.h    \
+                  gain.o gain.h                \
                   src.o src.h                  \
                   sample.o sample.h
 
@@ -50,8 +51,9 @@ lightning-client: lightning-client.c
 
 jack-client.o: ringbuffer.o mem.o
 ringbuffer.o: mem.o
-sample.o: mem.o event.o
+sample.o: mem.o event.o gain.o clip.o mutex.o src.o
 event.o: mem.o
+kit.o: table.o
 
 examples/packbox: examples/packbox.c
 examples/table-pack: examples/table-pack.c
@@ -72,6 +74,7 @@ examples/play-sample: examples/play-sample.c   \
              event.o event.h                   \
              mutex.o mutex.h                   \
              src.o src.h                       \
+             gain.o gain.h                     \
              sample.o sample.h                 \
              jack-client.o jack-client.h
 
