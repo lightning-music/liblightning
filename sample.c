@@ -136,7 +136,7 @@ Sample_load(const char *file,
 
     /* read the file */
 
-    sample_t framebuf[ s->frames * s->channels ];
+    sample_t *framebuf = ALLOC( s->frames * s->channels * SAMPLE_SIZE );
     sf_count_t frames = (4096 / SAMPLE_SIZE) / s->channels;
     long total_frames = sf_readf_float(sf, framebuf, frames);
 
@@ -167,6 +167,8 @@ Sample_load(const char *file,
                 "Only stereo and mono are supported.\n", s->channels);
         exit(EXIT_FAILURE);
     }
+
+    FREE(framebuf);
 
     s->framep = 0;
     s->framep_mutex = Mutex_init();

@@ -17,7 +17,7 @@ SRC_init() {
     NEW(src);
     /* initialize SRC_STATE */
     int error;
-    src->state = src_new(SRC_SINC_MEDIUM_QUALITY, 1, &error);
+    src->state = src_new(SRC_SINC_FASTEST, 1, &error);
     if (src->state == NULL) {
         fprintf(stderr, "Could not initialize sample rate converter: %s\n",
                 src_strerror(error));
