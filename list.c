@@ -4,11 +4,13 @@
 #include "list.h"
 #include "mem.h"
 
-typedef struct ListNode {
-    ListNode *prev;
-    ListNode *next;
+typedef struct ListNode *ListNode;
+
+struct ListNode {
+    ListNode prev;
+    ListNode next;
     void *value;
-} *ListNode;
+};
 
 struct List {
     ListNode head;
@@ -68,7 +70,7 @@ List_pop(List l,
         last->prev->next = l->tail;
         l->tail->prev = last->prev;
         *x = last->value;
-        ListNode_free(last);
+        ListNode_free(&last);
         l->length--;
     }
     return l;
@@ -103,7 +105,7 @@ List_unshift(List l,
         l->head->next = front->next;
         front->next->prev = l->head;
         *x = front->value;
-        ListNode_free(front);
+        ListNode_free(&front);
         l->length--;
     }
     return l;
@@ -121,7 +123,7 @@ List_remove(List l,
         for (p = l->head->next; p; p = p->next) {
             if (p->value == x) {
                 p->prev->next = p->next;
-                ListNode_free(p);
+                ListNode_free(&p);
                 break;
             }
         }
@@ -138,15 +140,15 @@ List_free(List *l) {
     ListNode p, q;
     for (p = (*l)->head->next; p; p = q) {
         q = p->next;
-        ListNode_free(p);
+        ListNode_free(&p);
     }
-    ListNode_free((*l)->head);
-    ListNode_free((*l)->tail);
+    ListNode_free(&(*l)->head);
+    ListNode_free(&(*l)->tail);
     FREE(*l);
 }
 
 static ListNode
-ListNode_init(void *value);
+ListNode_init(void *value) {
     ListNode node;
     NEW(node);
     node->value = value;

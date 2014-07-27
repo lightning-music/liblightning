@@ -35,6 +35,7 @@ install: $(PROGS)
 	install $(PROGS) $(DESTDIR)$(bindir)
 
 lightning-server: lightning-server.c           \
+                  list.o list.h                \
                   kit.o kit.h                  \
                   clip.o clip.h                \
                   table.o table.h              \
@@ -54,7 +55,7 @@ jack-client.o: ringbuffer.o mem.o
 ringbuffer.o: mem.o
 sample.o: mem.o event.o gain.o clip.o mutex.o src.o table.o
 event.o: mem.o
-kit.o: table.o
+kit.o: list.o
 
 examples/packbox: examples/packbox.c
 examples/table-pack: examples/table-pack.c
