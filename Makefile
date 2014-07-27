@@ -35,6 +35,7 @@ install: $(PROGS)
 	install $(PROGS) $(DESTDIR)$(bindir)
 
 lightning-server: lightning-server.c           \
+                  safe-list.o safe-list.h      \
                   list.o list.h                \
                   kit.o kit.h                  \
                   clip.o clip.h                \
@@ -54,6 +55,7 @@ lightning-client: lightning-client.c
 jack-client.o: ringbuffer.o mem.o
 ringbuffer.o: mem.o
 sample.o: mem.o event.o gain.o clip.o mutex.o src.o table.o
+safe-list.o: mem.o mutex.o list.o
 event.o: mem.o
 kit.o: list.o
 

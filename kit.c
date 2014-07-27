@@ -9,14 +9,14 @@
 #include <sys/types.h>
 
 #include "kit.h"
-#include "list.h"
+#include "safe-list.h"
 #include "mem.h"
 #include "sample.h"
 #include "types.h"
 
 struct Kit {
     /* actively playing Sample instances */
-    List active;
+    SafeList active;
     /* number of samples loaded */
     unsigned int num_samples;
 };
@@ -72,7 +72,7 @@ Kit_load(const char *dir,
 
     kit->num_samples = file_index;
 
-    kit->active = List_init();
+    kit->active = SafeList_init();
 
     return kit;
 }
