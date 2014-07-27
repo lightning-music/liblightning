@@ -49,10 +49,10 @@ nframes_t
 Sample_frames_available(Sample samp);
 
 /**
- * Reset the internal sample frame pointer.
+ * Enable the sample to start playing audio with Sample_write
  */
 int
-Sample_reset(Sample samp);
+Sample_play(Sample samp);
 
 /**
  * Write sample data to some buffers.

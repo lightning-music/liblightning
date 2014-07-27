@@ -16,7 +16,10 @@
 
 typedef enum {
     Initializing,
+    /* ready for processing */
+    Ready,
     Processing,
+    /* cleaning up after playing */
     Finishing,
 } State;
 
@@ -173,7 +176,7 @@ Sample_load_cached(Sample cached_sample,
     /* initialize sample rate converters */
 
     allocate_src(s);
-    Sample_set_state_or_exit(s, Processing);
+    Sample_set_state_or_exit(s, Ready);
 
     return s;
 }
@@ -265,15 +268,8 @@ Sample_load_new(const char *file,
     /* initialize sample rate converters */
 
     allocate_src(s);
-
-    /* cache sample and set state to processing */
-
     Sample_cache(s);
-
-    if (Sample_set_state(s, Processing)) {
-        fprintf(stderr, "Could not set Sample state to Processing\n");
-        exit(EXIT_FAILURE);
-    }
+    Sample_set_state_or_exit(s, Ready);
 
     return s;
 }
@@ -328,10 +324,10 @@ Sample_frames_available(Sample samp) {
 }
 
 int
-Sample_reset(Sample samp) {
+Sample_play(Sample samp) {
     assert(samp);
     /* set framep to 0 and state to Processing */
-    return set_framep(samp, 0) &&          \
+    return set_framep(samp, 0) &&               \
         Sample_set_state(samp, Processing);
 }
 

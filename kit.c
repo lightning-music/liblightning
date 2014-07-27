@@ -14,7 +14,6 @@
 #include "types.h"
 
 struct Kit {
-    Sample *samples;
     unsigned int num_samples;
 };
 
@@ -25,8 +24,7 @@ Kit_load(const char *dir,
          nframes_t output_samplerate) {
     Kit kit;
     NEW(kit);
-
-    /* TODO: better error-handling with errno */
+    /* TODO: better error-handling */
     /* read .kit */
     char kitfile_path[PATH_MAX];
     char sample_path[PATH_MAX];
@@ -45,9 +43,7 @@ Kit_load(const char *dir,
         printf("opened %s\n", kitfile_path);
     }
 
-    kit->samples = CALLOC(MAX_SAMPLES, sizeof(Sample));
-
-    printf("allocated sample buffer\n");
+    /* kit->samples = CALLOC(MAX_SAMPLES, sizeof(Sample)); */
 
     // read sample paths
     ssize_t read = 0;
@@ -65,8 +61,7 @@ Kit_load(const char *dir,
 
         sprintf(sample_path, "%s/%s", dir, f);
 
-        kit->samples[file_index] = Sample_load(sample_path, 1.0f, 1.0f,
-                                               output_samplerate);
+        Sample_load(sample_path, 1.0f, 1.0f, output_samplerate);
 
         file_index++;
     }
@@ -91,7 +86,7 @@ Kit_play_sample(Kit kit,
                 "in kit\n", index);
         exit(EXIT_FAILURE);
     } else {
-        Sample_reset(kit->samples[index]);
+        /* play sample */
     }
 }
 
@@ -100,15 +95,18 @@ Kit_write(Kit kit,
           sample_t **buffers,
           channels_t channels,
           nframes_t frames) {
-    int i, sample_write_error;
+    int i = 0;
+    int sample_write_error = 0;
+
     for (i = 0; i < kit->num_samples; i++) {
         // fill buffers with sample data
-        sample_write_error = \
-            Sample_write(kit->samples[i], buffers, channels, frames);
+        /* sample_write_error = \ */
+        /*     Sample_write(kit->samples[i], buffers, channels, frames); */
         if (sample_write_error) {
             return sample_write_error;
         }
     }
+
     return 0;
 }
 
