@@ -37,6 +37,7 @@ install: $(PROGS)
 lightning-server: lightning-server.c           \
                   kit.o kit.h                  \
                   clip.o clip.h                \
+                  table.o table.h              \
                   mem.o mem.h                  \
                   jack-client.o jack-client.h  \
                   ringbuffer.o ringbuffer.h    \
@@ -51,7 +52,7 @@ lightning-client: lightning-client.c
 
 jack-client.o: ringbuffer.o mem.o
 ringbuffer.o: mem.o
-sample.o: mem.o event.o gain.o clip.o mutex.o src.o
+sample.o: mem.o event.o gain.o clip.o mutex.o src.o table.o
 event.o: mem.o
 kit.o: table.o
 
@@ -75,6 +76,7 @@ examples/play-sample: examples/play-sample.c   \
              mutex.o mutex.h                   \
              src.o src.h                       \
              gain.o gain.h                     \
+             table.o table.h                   \
              sample.o sample.h                 \
              jack-client.o jack-client.h
 

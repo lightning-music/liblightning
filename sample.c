@@ -11,35 +11,14 @@
 #include "mutex.h"
 #include "sample.h"
 #include "src.h"
+#include "table.h"
 #include "types.h"
 
 typedef enum {
-    SampleState_Initializing,
-    SampleState_Processing,
-    SampleState_Finishing,
-} SampleState;
-
-/*
- * TODO
- * ====
- * Need to have a static table for sample data
- * so that loading the same sample twice would result in
- * the initialization step for the second Sample_load just being
- * a memcpy from the table.
- */
-
-/*
- * TODO
- * ====
- * Dynamic sample rate conversion.
- * jack-client is notified with a callback any time
- * the server changes the output sample rate.
- * Any samples that are currently playing will also need to
- * be notified of such changes to ensure maximum audio quality.
- * This would either be done with a callback or with an
- * Event.
- * I'm probably being too defensive at this stage in the game [bs].
- */
+    Initializing,
+    Processing,
+    Finishing,
+} State;
 
 struct Sample {
     const char *path;
@@ -61,24 +40,87 @@ struct Sample {
     SRC *src;
     double src_ratio;
     /* sample state and associated mutex */
-    SampleState state;
+    State state;
     Mutex state_mutex;
 };
+
+/* cache samples */
+static Table cache = NULL;
+
+static void
+Sample_cache(Sample samp) {
+    Table_put(cache, samp->path, samp);
+}
+
+/**
+ * Create a new sample and cache it
+ */
+static Sample
+Sample_load_new(const char *file,
+                pitch_t pitch,
+                gain_t gain,
+                nframes_t output_samplerate);
+
+/**
+ * Clone a cached sample. Pulls the cached data, but
+ * will play back with different pitch and gain.
+ */
+static Sample
+Sample_load_cached(Sample cached_sample,
+                   pitch_t pitch,
+                   gain_t gain,
+                   nframes_t output_samplerate);
+
+/* static utility functions */
+
+static void
+initialize_state(Sample s);
+
+static void
+allocate_frame_buffers(Sample s);
+
+static void
+copy_frame_buffers(Sample dest,
+                   Sample src);
+
+static void
+allocate_src(Sample s);
 
 /**
  * Try to set framep
  */
 static int
 set_framep(Sample samp,
-                nframes_t val);
+           nframes_t val);
 
-int
+static int
 Sample_set_state(Sample samp,
-                 SampleState state);
+                 State state);
+
+static void
+Sample_set_state_or_exit(Sample samp,
+                         State state);
+
+static const char *
+state_string(State state) {
+    switch(state) {
+    case Initializing:
+        return "Initializing";
+        break;
+    case Processing:
+        return "Processing";
+        break;
+    case Finishing:
+        return "Finishing";
+        break;
+    default:
+        assert(0);
+    }
+}
 
 static inline int
 Sample_is_processing(Sample samp) {
-    return samp->state == SampleState_Processing;
+    return samp->state == Processing;
 }
 
 /**
@@ -89,16 +131,64 @@ Sample_load(const char *file,
             pitch_t pitch,
             gain_t gain,
             nframes_t output_samplerate) {
+    if (cache == NULL) {
+        cache = Table_init(16, NULL, NULL);
+    }
+
+    Sample cached = (Sample) Table_get(cache, file);
+
+    if (NULL == cached) {
+        return Sample_load_new(file, pitch, gain, output_samplerate);
+    } else {
+        return Sample_load_cached(cached, pitch, gain, output_samplerate);
+    }
+}
+
+Sample
+Sample_load_cached(Sample cached_sample,
+                   pitch_t pitch,
+                   gain_t gain,
+                   nframes_t output_samplerate) {
     Sample s;
+
     NEW(s);
+    initialize_state(s);
+
+    s->gain = pitch;
+    s->pitch = gain;
+    s->frames = cached_sample->frames;
+    s->channels = cached_sample->channels;
+    s->samplerate = cached_sample->samplerate;
+    s->src_ratio = output_samplerate / (double) cached_sample->samplerate;
+    s->done_event = Event_init(NULL);
+    s->path = cached_sample->path;
+
+    allocate_frame_buffers(s);
+    copy_frame_buffers(s, cached_sample);
+
+    s->framep = 0;
+    s->framep_mutex = Mutex_init();
+    s->total_frames_written = 0;
+
+    /* initialize sample rate converters */
+
+    allocate_src(s);
+    Sample_set_state_or_exit(s, Processing);
+
+    return s;
+}
+
+Sample
+Sample_load_new(const char *file,
+                pitch_t pitch,
+                gain_t gain,
+                nframes_t output_samplerate) {
+    Sample s;
 
     /* initialize state mutex and set state to Processing */
 
-    s->state_mutex = Mutex_init();
-    if (Sample_set_state(s, SampleState_Initializing)) {
-        fprintf(stderr, "Could not set Sample state to Initializing\n");
-        exit(EXIT_FAILURE);
-    }
+    NEW(s);
+    initialize_state(s);
 
     /* open audio file */
 
@@ -130,9 +220,7 @@ Sample_load(const char *file,
 
     /* stereo buffers */
 
-    s->framebufs = CALLOC(2, sizeof(sample_t*));
-    s->framebufs[0] = CALLOC(s->frames, SAMPLE_SIZE);
-    s->framebufs[1] = CALLOC(s->frames, SAMPLE_SIZE);
+    allocate_frame_buffers(s);
 
     /* read the file */
 
@@ -176,13 +264,13 @@ Sample_load(const char *file,
 
     /* initialize sample rate converters */
 
-    s->src = CALLOC(2, sizeof(SRC));
-    s->src[0] = SRC_init();
-    s->src[1] = SRC_init();
+    allocate_src(s);
 
-    /* set state to processing */
+    /* cache sample and set state to processing */
 
-    if (Sample_set_state(s, SampleState_Processing)) {
+    Sample_cache(s);
+
+    if (Sample_set_state(s, Processing)) {
         fprintf(stderr, "Could not set Sample state to Processing\n");
         exit(EXIT_FAILURE);
     }
@@ -244,7 +332,7 @@ Sample_reset(Sample samp) {
     assert(samp);
     /* set framep to 0 and state to Processing */
     return set_framep(samp, 0) &&          \
-        Sample_set_state(samp, SampleState_Processing);
+        Sample_set_state(samp, Processing);
 }
 
 nframes_t
@@ -295,7 +383,7 @@ Sample_write(Sample samp,
     }
 
     if (end_of_input) {
-        Sample_set_state(samp, SampleState_Finishing);
+        Sample_set_state(samp, Finishing);
         Event_broadcast(samp->done_event);
     } else {
         samp->framep += input_frames_used;
@@ -351,9 +439,9 @@ set_framep(Sample samp, nframes_t val) {
     }
 }
 
-int
+static int
 Sample_set_state(Sample samp,
-                 SampleState state) {
+                 State state) {
     assert(samp->state_mutex);
     int not_locked = Mutex_lock(samp->state_mutex);
     if (not_locked) {
@@ -362,4 +450,50 @@ Sample_set_state(Sample samp,
         samp->state = state;
         return Mutex_unlock(samp->state_mutex);
     }
+}
+
+static void
+Sample_set_state_or_exit(Sample s,
+                         State state) {
+    if (Sample_set_state(s, state)) {
+        fprintf(stderr, "Could not set Sample state to %s\n",
+                state_string(state));
+        exit(EXIT_FAILURE);
+    }
+}
+
+static void
+initialize_state(Sample s) {
+    s->state_mutex = Mutex_init();
+    Sample_set_state_or_exit(s, Initializing);
+}
+
+static void
+allocate_frame_buffers(Sample s) {
+    s->framebufs = CALLOC(2, sizeof(sample_t*));
+    s->framebufs[0] = CALLOC(s->frames, SAMPLE_SIZE);
+    s->framebufs[1] = CALLOC(s->frames, SAMPLE_SIZE);
+}
+
+/**
+ * This function is used for loading cached samples.
+ * It doesn't matter if we use src or dest in the loop
+ * conditions.
+ */
+static void
+copy_frame_buffers(Sample dest,
+                   Sample src) {
+    int i, j;
+    for (j = 0; j < dest->frames; j++) {
+        for (i = 0; i < dest->channels; i++) {
+            dest->framebufs[i][j] = src->framebufs[i][j];
+        }
+    }
+}
+
+static void
+allocate_src(Sample s) {
+    s->src = CALLOC(2, sizeof(SRC));
+    s->src[0] = SRC_init();
+    s->src[1] = SRC_init();
 }
