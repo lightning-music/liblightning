@@ -1,4 +1,9 @@
+/* feature test macros
+   - sigaction */
+#define _POSIX_SOURCE
+
 #include <assert.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +13,30 @@
 #include "log.h"
 #include "osc-server.h"
 #include "osc-types.h"
+
+static Log log = NULL;
+
+static void
+signal_handler(int signum) {
+    if (signum == SIGINT) {
+        LOG(log, Info, "Received signal %d... Exiting\n", signum);
+        Log_free(&log);
+        exit(1);
+    } else {
+        exit(1);
+    }
+}
+
+static void
+setup_signal_handlers(void) {
+    struct sigaction old_action, new_action;
+    new_action.sa_handler = signal_handler;
+    sigemptyset(&new_action.sa_mask);
+    new_action.sa_flags = 0;
+    sigaction(SIGINT, NULL, &old_action);
+    if (old_action.sa_handler != SIG_IGN)
+        sigaction(SIGINT, &new_action, NULL);
+}
 
 void
 osc_error_handler(int num,
@@ -30,7 +59,9 @@ audio_callback(sample_t **buffers,
 
 int main(int argc, char **argv) {
 
-    LOG(7, "Welcome to %s!", "lightning");
+    setup_signal_handlers();
+    log = Log_init(NULL);
+    LOG(log, Info, "Welcome to %s!", "lightning");
 
     JackClient jack_client = JackClient_init(audio_callback, NULL);
 
@@ -78,6 +109,10 @@ int main(int argc, char **argv) {
     /* free jack client */
 
     JackClient_free(&jack_client);
+
+    /* free logger */
+
+    Log_free(&log);
 
     return 0;
 }

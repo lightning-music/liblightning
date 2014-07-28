@@ -7,6 +7,7 @@
 #include "clip.h"
 #include "event.h"
 #include "gain.h"
+#include "log.h"
 #include "mem.h"
 #include "mutex.h"
 #include "sample.h"
@@ -109,6 +110,9 @@ state_string(State state) {
     switch(state) {
     case Initializing:
         return "Initializing";
+        break;
+    case Ready:
+        return "Ready";
         break;
     case Processing:
         return "Processing";
@@ -330,8 +334,9 @@ Sample
 Sample_play(Sample samp) {
     assert(samp);
     /* set framep to 0 and state to Processing */
-    return set_framep(samp, 0) &&               \
-        Sample_set_state(samp, Processing);
+    set_framep(samp, 0);
+    Sample_set_state(samp, Processing);
+    return NULL;
 }
 
 nframes_t

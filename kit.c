@@ -1,3 +1,6 @@
+/* feature test macros */
+#define _GNU_SOURCE
+
 #include <assert.h>
 #include <linux/limits.h>
 #include <stddef.h>
