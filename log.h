@@ -27,6 +27,7 @@ lightning_log(Log log,
               const char *fmt,
               ...);
 
-#define LOG(log, level, fmt, args...) lightning_log(log, __FILE__, __LINE__, level, fmt, args)
+#define LOG(log, level, fmt, args...)                           \
+    lightning_log(log, __FILE__, __LINE__, level, fmt, args)
 
 #endif
