@@ -1,6 +1,7 @@
 #!/bin/bash
 
 SYSTEMS='ubuntu debian'
+APT=apt-get
 
 function usage_and_exit {
     echo 1>&2 'Usage:'
@@ -24,8 +25,8 @@ function provision {
     case "$system_type" in
         ubuntu|debian)
             # assume make is installed
-            sudo apt-get update
-            sudo apt-get install -qq libsndfile1-dev liblo-dev \
+            sudo $APT update
+            sudo $APT install -qq libsndfile1-dev liblo-dev \
                 libjack-dev libgtk2.0-dev libsamplerate0-dev
             ;;
         -h|--help)

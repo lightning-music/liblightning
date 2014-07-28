@@ -85,3 +85,4 @@ examples/play-sample: examples/play-sample.c   \
 
 clean:
 	rm -rf $(PROGS) $(EXAMPLES) *~ *.o
+	$(MAKE) -C test clean
