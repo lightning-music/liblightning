@@ -5,6 +5,7 @@
 
 #include "jack-client.h"
 #include "kit.h"
+#include "log.h"
 #include "osc-server.h"
 #include "osc-types.h"
 
@@ -28,6 +29,8 @@ audio_callback(sample_t **buffers,
                void *data);
 
 int main(int argc, char **argv) {
+
+    LOG(7, "Welcome to %s!", "lightning");
 
     JackClient jack_client = JackClient_init(audio_callback, NULL);
 

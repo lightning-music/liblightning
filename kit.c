@@ -1,7 +1,5 @@
 #include <assert.h>
-#include <limits.h>
-#include <pthread.h>
-#include <sndfile.h>
+#include <linux/limits.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +16,8 @@
 struct Kit {
     /* actively playing Sample instances */
     SafeList active;
+    /* loaded samples */
+    Sample *loaded;
     /* number of samples loaded */
     unsigned int num_samples;
 };
@@ -49,33 +49,25 @@ Kit_load(const char *dir,
         printf("opened %s\n", kitfile_path);
     }
 
-    /* kit->samples = CALLOC(MAX_SAMPLES, sizeof(Sample)); */
+    kit->loaded = CALLOC(MAX_SAMPLES, SAMPLE_SIZE);
 
-    // read sample paths
+    /* read sample paths */
     ssize_t read = 0;
     while (file_index < MAX_SAMPLES) {
         read = getline(&f, &path_max, kitfile);
-
         if (-1 == read) {
             break;
         }
-
-        // get rid of the newline
+        /* get rid of the newline */
         f[read - 1] = '\0';
-
         sample_path[0] = '\0';
-
         sprintf(sample_path, "%s/%s", dir, f);
-
-        Sample_load(sample_path, 1.0f, 1.0f, output_samplerate);
-
+        /*kit->loaded = */Sample_load(sample_path, 1.0f, 1.0f, output_samplerate);
         file_index++;
     }
 
     kit->num_samples = file_index;
-
     kit->active = SafeList_init();
-
     return kit;
 }
 

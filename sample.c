@@ -58,7 +58,7 @@ Sample_cache(Sample samp) {
 /**
  * Create a new sample and cache it
  */
-static Sample
+static int
 Sample_load_new(const char *file,
                 pitch_t pitch,
                 gain_t gain,
@@ -68,7 +68,7 @@ Sample_load_new(const char *file,
  * Clone a cached sample. Pulls the cached data, but
  * will play back with different pitch and gain.
  */
-static Sample
+static int
 Sample_load_cached(Sample cached_sample,
                    pitch_t pitch,
                    gain_t gain,
@@ -128,8 +128,11 @@ Sample_is_processing(Sample samp) {
 
 /**
  * Load an audio sample.
+ * Either loads actual sample data into the cache (for playing
+ * samples from memory) or loads a file descriptor (for
+ * playing from disk).
  */
-Sample
+int
 Sample_load(const char *file,
             pitch_t pitch,
             gain_t gain,
@@ -147,7 +150,7 @@ Sample_load(const char *file,
     }
 }
 
-Sample
+int
 Sample_load_cached(Sample cached_sample,
                    pitch_t pitch,
                    gain_t gain,
@@ -178,10 +181,10 @@ Sample_load_cached(Sample cached_sample,
     allocate_src(s);
     Sample_set_state_or_exit(s, Ready);
 
-    return s;
+    return 0;
 }
 
-Sample
+int
 Sample_load_new(const char *file,
                 pitch_t pitch,
                 gain_t gain,
@@ -271,7 +274,7 @@ Sample_load_new(const char *file,
     Sample_cache(s);
     Sample_set_state_or_exit(s, Ready);
 
-    return s;
+    return 0;
 }
 
 /**
@@ -323,7 +326,7 @@ Sample_frames_available(Sample samp) {
     return samp->frames - samp->framep;
 }
 
-int
+Sample
 Sample_play(Sample samp) {
     assert(samp);
     /* set framep to 0 and state to Processing */

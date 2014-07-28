@@ -51,6 +51,7 @@ main(int argc, char **argv) {
 
     JackClient jack_client = JackClient_init(stereo_callback, NULL);
 
+    /* FIXME: this is broken! */
     Sample s = Sample_load(f, pitch, gain,
                            JackClient_samplerate(jack_client));
 

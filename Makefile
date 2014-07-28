@@ -11,7 +11,7 @@ LIBLO_FLAGS := $(shell pkg-config --cflags --libs liblo)
 SRC_FLAGS := $(shell pkg-config --cflags --libs samplerate)
 CPPFLAGS := -I/usr/include/gtk-2.0
 CC=gcc
-CFLAGS := -Wall -g $(GTK_FLAGS)
+CFLAGS := -Wall -g $(GTK_FLAGS) -std=c99
 LDLIBS := $(GTK_FLAGS) $(JACK_FLAGS) $(SNDFILE_FLAGS) \
           $(LIBLO_FLAGS) $(SRC_FLAGS) -lm
 
@@ -37,6 +37,7 @@ install: $(PROGS)
 lightning-server: lightning-server.c           \
                   safe-list.o safe-list.h      \
                   list.o list.h                \
+                  log.o log.h                  \
                   kit.o kit.h                  \
                   clip.o clip.h                \
                   table.o table.h              \
@@ -72,6 +73,7 @@ examples/play-file: examples/play-file.c       \
            jack-client.o jack-client.h
 
 examples/play-sample: examples/play-sample.c   \
+             log.o log.h                       \
              clip.o clip.h                     \
              mem.o mem.h                       \
              ringbuffer.o ringbuffer.h         \

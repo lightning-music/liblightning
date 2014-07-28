@@ -8,7 +8,7 @@ typedef struct Sample *Sample;
 /**
  * Load and initialize a new Sample object.
  */
-Sample
+int
 Sample_load(const char *file,
             pitch_t pitch,
             gain_t gain,
@@ -49,9 +49,10 @@ nframes_t
 Sample_frames_available(Sample samp);
 
 /**
- * Enable the sample to start playing audio with Sample_write
+ * Play the sample.
+ * Internally this loads a new Sample object from the cache.
  */
-int
+Sample
 Sample_play(Sample samp);
 
 /**
