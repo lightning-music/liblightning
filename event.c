@@ -26,7 +26,6 @@ Event_init(void *val) {
     pthread_cond_init(&e->cond, NULL);
     e->state = EventState_NotReady;
     e->val = val;
-    pthread_mutex_lock(&e->mutex);
     return e;
 }
 
@@ -34,6 +33,7 @@ int
 Event_wait(Event e) {
     assert(e);
     e->state = EventState_NotReady;
+    pthread_mutex_lock(&e->mutex);
     int result = pthread_cond_wait(&e->cond, &e->mutex);
     if (e->state != EventState_Ready) {
         return Event_wait(e);
@@ -49,6 +49,7 @@ Event_timedwait(Event e,
     e->state = EventState_NotReady;
     struct timespec time;
     time.tv_nsec = ns;
+    pthread_mutex_lock(&e->mutex);
     int result = pthread_cond_timedwait(&e->cond, &e->mutex, &time);
     if (e->state != EventState_Ready) {
         return Event_timedwait(e, ns);

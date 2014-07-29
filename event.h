@@ -1,3 +1,9 @@
+/**
+ * Events are used for inter-thread synchronization
+ * Event_wait and Event_timedwait will block the calling
+ * thread until another thread calls Event_signal or
+ * Event_broadcast
+ */
 #ifndef EVENT_H_INCLUDED
 #define EVENT_H_INCLUDED
 

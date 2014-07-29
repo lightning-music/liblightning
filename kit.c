@@ -55,6 +55,7 @@ Kit_load(const char *dir,
     kit->loaded = CALLOC(MAX_SAMPLES, SAMPLE_SIZE);
 
     /* read sample paths */
+    Sample s = NULL;
     ssize_t read = 0;
     while (file_index < MAX_SAMPLES) {
         read = getline(&f, &path_max, kitfile);
@@ -65,7 +66,9 @@ Kit_load(const char *dir,
         f[read - 1] = '\0';
         sample_path[0] = '\0';
         sprintf(sample_path, "%s/%s", dir, f);
-        /*kit->loaded = */Sample_load(sample_path, 1.0f, 1.0f, output_samplerate);
+        /* cache sample data */
+        s = Sample_play(sample_path, 1.0f, 1.0f, output_samplerate);
+        Sample_free(&s);
         file_index++;
     }
 

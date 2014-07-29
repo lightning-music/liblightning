@@ -11,7 +11,7 @@ LIBLO_FLAGS := $(shell pkg-config --cflags --libs liblo)
 SRC_FLAGS := $(shell pkg-config --cflags --libs samplerate)
 CPPFLAGS := -I/usr/include/gtk-2.0
 CC=gcc
-CFLAGS := -Wall -Wextra -g $(GTK_FLAGS) -std=c99
+CFLAGS := -Wall -g $(GTK_FLAGS) -std=c99
 LDLIBS := $(GTK_FLAGS) $(JACK_FLAGS) $(SNDFILE_FLAGS) \
           $(LIBLO_FLAGS) $(SRC_FLAGS) -lm
 

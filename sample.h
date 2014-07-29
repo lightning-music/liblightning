@@ -6,10 +6,16 @@
 typedef struct Sample *Sample;
 
 /**
- * Load and initialize a new Sample object.
+ * Play a sample.
+ * This will either load cached sample data (fast) or
+ * read sample data from disk (slow).
+ * Reading sample data from disk should only happen the first
+ * time you load a particular sample. After that it should
+ * be cached and subsequent calls to Sample_play should
+ * be much faster.
  */
-int
-Sample_load(const char *file,
+Sample
+Sample_play(const char *file,
             pitch_t pitch,
             gain_t gain,
             nframes_t output_samplerate);
@@ -47,13 +53,6 @@ Sample_samplerate_callback(nframes_t sr,
  */
 nframes_t
 Sample_frames_available(Sample samp);
-
-/**
- * Play the sample.
- * Internally this loads a new Sample object from the cache.
- */
-Sample
-Sample_play(Sample samp);
 
 /**
  * Write sample data to some buffers.

@@ -24,16 +24,21 @@ struct Log {
     FILE *stream;
 };
 
+static Log default_logger = NULL;
+
 Log
 Log_init(FILE *stream) {
-    Log log;
-    NEW(log);
     if (stream != NULL) {
+        Log log;
+        NEW(log);
         log->stream = stream;
-    } else {
-        log->stream = fopen(logfile, "a+");
+        return log;
     }
-    return log;
+    if (default_logger == NULL) {
+        NEW(default_logger);
+        default_logger->stream = fopen(logfile, "a+");
+    }
+    return default_logger;
 }
 
 void

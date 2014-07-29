@@ -121,7 +121,8 @@ void
 osc_error_handler(int num,
                   const char *msg,
                   const char *where) {
-    fprintf(stderr, "[OSC Error] %s %s\n", where, msg);
+    Log log = Log_init(NULL);
+    LOG(log, Error, "[OSC Error %d] %s %s\n", num, where, msg);
 }
 
 int

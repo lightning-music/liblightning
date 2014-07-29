@@ -18,7 +18,6 @@
 typedef enum {
     Initializing,
     /* ready for processing */
-    Ready,
     Processing,
     /* cleaning up after playing */
     Finishing,
@@ -46,6 +45,8 @@ struct Sample {
     /* sample state and associated mutex */
     State state;
     Mutex state_mutex;
+    /* logger */
+    Log logger;
 };
 
 /* cache samples */
@@ -59,7 +60,7 @@ Sample_cache(Sample samp) {
 /**
  * Create a new sample and cache it
  */
-static int
+static Sample
 Sample_load_new(const char *file,
                 pitch_t pitch,
                 gain_t gain,
@@ -69,7 +70,7 @@ Sample_load_new(const char *file,
  * Clone a cached sample. Pulls the cached data, but
  * will play back with different pitch and gain.
  */
-static int
+static Sample
 Sample_load_cached(Sample cached_sample,
                    pitch_t pitch,
                    gain_t gain,
@@ -90,13 +91,6 @@ copy_frame_buffers(Sample dest,
 static void
 allocate_src(Sample s);
 
-/**
- * Try to set framep
- */
-static int
-set_framep(Sample samp,
-           nframes_t val);
-
 static int
 Sample_set_state(Sample samp,
                  State state);
@@ -110,9 +104,6 @@ state_string(State state) {
     switch(state) {
     case Initializing:
         return "Initializing";
-        break;
-    case Ready:
-        return "Ready";
         break;
     case Processing:
         return "Processing";
@@ -136,7 +127,7 @@ Sample_is_processing(Sample samp) {
  * samples from memory) or loads a file descriptor (for
  * playing from disk).
  */
-int
+static Sample
 Sample_load(const char *file,
             pitch_t pitch,
             gain_t gain,
@@ -145,16 +136,20 @@ Sample_load(const char *file,
         cache = Table_init(16, NULL, NULL);
     }
 
+    Log log = Log_init(NULL);
     Sample cached = (Sample) Table_get(cache, file);
+    Sample s;
 
     if (NULL == cached) {
-        return Sample_load_new(file, pitch, gain, output_samplerate);
+        LOG(log, Info, "%s was not cached", file);
+        s = Sample_load_new(file, pitch, gain, output_samplerate);
+        return Sample_load_cached(s, pitch, gain, output_samplerate);
     } else {
         return Sample_load_cached(cached, pitch, gain, output_samplerate);
     }
 }
 
-int
+static Sample
 Sample_load_cached(Sample cached_sample,
                    pitch_t pitch,
                    gain_t gain,
@@ -183,17 +178,18 @@ Sample_load_cached(Sample cached_sample,
     /* initialize sample rate converters */
 
     allocate_src(s);
-    Sample_set_state_or_exit(s, Ready);
 
-    return 0;
+    return s;
 }
 
-int
+static Sample
 Sample_load_new(const char *file,
                 pitch_t pitch,
                 gain_t gain,
                 nframes_t output_samplerate) {
     Sample s;
+
+    Log log = Log_init(NULL);
 
     /* initialize state mutex and set state to Processing */
 
@@ -206,8 +202,8 @@ Sample_load_new(const char *file,
     SNDFILE *sf = sf_open(file, SFM_READ, &sfinfo);
 
     if (sf == NULL) {
-        fprintf(stderr, "%s\n", sf_strerror(sf));
-        exit(EXIT_FAILURE);
+        LOG(log, Error, "%s\n", sf_strerror(sf));
+        return NULL;
     }
 
     /* Set pitch to a very small number if it is 0,
@@ -249,7 +245,8 @@ Sample_load_new(const char *file,
 
     /* de-interleave data */
 
-    int i, j;
+    int i;
+    unsigned int j;
     if (s->channels == 1) {
         for (j = 0; j < s->frames; j++) {
             s->framebufs[0][j] = s->framebufs[1][j] = framebuf[j];
@@ -261,9 +258,9 @@ Sample_load_new(const char *file,
             }
         }
     } else {
-        fprintf(stderr, "Unsupported number of channels (%d). "
-                "Only stereo and mono are supported.\n", s->channels);
-        exit(EXIT_FAILURE);
+        LOG(log, Error, "Unsupported number of channels (%d). "
+            "Only stereo and mono are supported.\n", s->channels);
+        return NULL;
     }
 
     FREE(framebuf);
@@ -276,9 +273,10 @@ Sample_load_new(const char *file,
 
     allocate_src(s);
     Sample_cache(s);
-    Sample_set_state_or_exit(s, Ready);
 
-    return 0;
+    LOG(log, Debug, "Sample_load_new: done loading %s", file);
+
+    return s;
 }
 
 /**
@@ -331,12 +329,20 @@ Sample_frames_available(Sample samp) {
 }
 
 Sample
-Sample_play(Sample samp) {
-    assert(samp);
+Sample_play(const char *file,
+            pitch_t pitch,
+            gain_t gain,
+            nframes_t output_samplerate) {
+    Log log = Log_init(NULL);
+    Sample s = Sample_load(file, pitch, gain, output_samplerate);
     /* set framep to 0 and state to Processing */
-    set_framep(samp, 0);
-    Sample_set_state(samp, Processing);
-    return NULL;
+    Sample_set_state(s, Processing);
+    if (s->done_event == NULL) {
+        LOG(log, Debug, "Sample_play: done_event was NULL when playing %s", file);
+    } else {
+        LOG(log, Debug, "Sample_play: done_event was not NULL when playing %s", file);
+    }
+    return s;
 }
 
 nframes_t
@@ -430,19 +436,6 @@ Sample_free(Sample *samp) {
     FREE(*samp);
 }
 
-/**
- * Try to set framep
- */
-static int
-set_framep(Sample samp, nframes_t val) {
-    if (0 == Mutex_trylock(samp->framep_mutex)) {
-        samp->framep = val;
-        return Mutex_unlock(samp->framep_mutex);
-    } else {
-        return -1;
-    }
-}
-
 static int
 Sample_set_state(Sample samp,
                  State state) {
@@ -487,7 +480,8 @@ allocate_frame_buffers(Sample s) {
 static void
 copy_frame_buffers(Sample dest,
                    Sample src) {
-    int i, j;
+    int i;
+    unsigned int j;
     for (j = 0; j < dest->frames; j++) {
         for (i = 0; i < dest->channels; i++) {
             dest->framebufs[i][j] = src->framebufs[i][j];
