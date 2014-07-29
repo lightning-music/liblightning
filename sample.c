@@ -45,8 +45,6 @@ struct Sample {
     /* sample state and associated mutex */
     State state;
     Mutex state_mutex;
-    /* logger */
-    Log logger;
 };
 
 /* cache samples */
@@ -293,15 +291,9 @@ Sample_play(const char *file,
             pitch_t pitch,
             gain_t gain,
             nframes_t output_samplerate) {
-    Log log = Log_init(NULL);
     Sample s = Sample_load(file, pitch, gain, output_samplerate);
     /* set framep to 0 and state to Processing */
     Sample_set_state(s, Processing);
-    if (s->done_event == NULL) {
-        LOG(log, Debug, "Sample_play: done_event was NULL when playing %s", file);
-    } else {
-        LOG(log, Debug, "Sample_play: done_event was not NULL when playing %s", file);
-    }
     return s;
 }
 
@@ -360,6 +352,16 @@ Sample_write(Sample samp,
     }
 
     return 0;
+}
+
+int
+Sample_done(Sample samp) {
+    int done = 0;
+    if (!Mutex_lock(samp->state_mutex)) {
+        done = samp->state == Finished;
+        Mutex_unlock(samp->state_mutex);
+    }
+    return done;
 }
 
 int

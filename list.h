@@ -4,13 +4,15 @@
 #ifndef LIST_H_INCLUDED
 #define LIST_H_INCLUDED
 
+typedef int (* Compare)(const void *x, const void *y);
+
 typedef struct List *List;
 
 /**
  * Initialize a new list
  */
 List
-List_init();
+List_init(Compare cmp);
 
 /**
  * Push a value onto the end of the list
@@ -39,6 +41,9 @@ List_shift(List l,
 List
 List_unshift(List l,
              void **x);
+
+unsigned
+List_length(List l);
 
 /**
  * Remove a particular node in the list

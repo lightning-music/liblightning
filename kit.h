@@ -36,7 +36,9 @@ Kit_num_samples(Kit kit);
  */
 void
 Kit_play_sample(Kit kit,
-                int index);
+                const char *file,
+                pitch_t pitch,
+                gain_t gain);
 
 /**
  * Realtime callback.

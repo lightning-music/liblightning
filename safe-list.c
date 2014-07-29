@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stddef.h>
 
 #include "list.h"
 #include "mem.h"
@@ -18,7 +19,7 @@ SafeList_init() {
     SafeList list;
     NEW(list);
     list->mutex = Mutex_init();
-    list->list = List_init();
+    list->list = List_init(NULL);
     return list;
 }
 

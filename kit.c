@@ -10,7 +10,7 @@
 #include <sys/types.h>
 
 #include "kit.h"
-#include "safe-list.h"
+#include "list.h"
 #include "mem.h"
 #include "sample.h"
 #include "thread.h"
@@ -18,11 +18,11 @@
 
 struct Kit {
     /* actively playing Sample instances */
-    SafeList active;
-    /* loaded samples */
-    Sample *loaded;
+    Sample active[MAX_SAMPLES];
     /* number of samples loaded */
     unsigned int num_samples;
+    /* output sample rate */
+    nframes_t output_samplerate;
 };
 
 /* TODO: Kit should also spin up a thread that waits
@@ -52,8 +52,6 @@ Kit_load(const char *dir,
         printf("opened %s\n", kitfile_path);
     }
 
-    kit->loaded = CALLOC(MAX_SAMPLES, SAMPLE_SIZE);
-
     /* read sample paths */
     Sample s = NULL;
     ssize_t read = 0;
@@ -73,7 +71,13 @@ Kit_load(const char *dir,
     }
 
     kit->num_samples = file_index;
-    kit->active = SafeList_init();
+    int i;
+    for (i = 0; i < MAX_SAMPLES; i++) {
+        kit->active[i] = NULL;
+    }
+
+    kit->output_samplerate = output_samplerate;
+    
     return kit;
 }
 
@@ -88,17 +92,43 @@ Kit_num_samples(Kit kit) {
  */
 void
 Kit_play_sample(Kit kit,
-                int index) {
+                const char *file,
+                pitch_t pitch,
+                gain_t gain) {
     assert(kit);
-    if (index >= kit->num_samples) {
-        fprintf(stderr, "index %d is greater than the number of samples "
-                "in kit\n", index);
-        exit(EXIT_FAILURE);
-    } else {
-        /* play sample */
+    Sample s = Sample_play(file, pitch, gain, kit->output_samplerate);
+    /* reached the end of the sample list
+       start looking for an empty slot from the beginning */
+    int i = 0;
+    while (kit->active[i] != NULL) ;
+    if (i == MAX_SAMPLES - 1) {
+        /* no available sample slots */
+        return;
     }
+    kit->active[i] = s;
 }
 
+/**
+ * Ideas for sample list management...
+ *
+ * kit loops through active list writing each of
+ * the samples to the sample buffers
+ *
+ * if any of these sample buffers reach the end of the sample
+ * they should be removed from the active list
+ *
+ * could implement this as a two-pass algorithm: kit first plays
+ * each of the samples, any that are done get added to a 'done' list
+ * then it frees all the samples on the done list
+ *
+ * either way this should all happen in the jack realtime thread
+ * because if we do it from a different thread we will have to
+ * start locking mutexes to keep data uncorrupted
+ *
+ * note that not reading samples from memory is not a fix for this
+ * problem because in that case the active list is actually pointing
+ * to a list of samples that are writing to ringbuffers
+ */
 int
 Kit_write(Kit kit,
           sample_t **buffers,
@@ -106,13 +136,22 @@ Kit_write(Kit kit,
           nframes_t frames) {
     int i = 0;
     int sample_write_error = 0;
+    unsigned num_active = List_length(kit->active);
 
-    for (i = 0; i < kit->num_samples; i++) {
-        // fill buffers with sample data
-        /* sample_write_error = \ */
-        /*     Sample_write(kit->samples[i], buffers, channels, frames); */
+    for (i = 0; i < MAX_SAMPLES; i++) {
+        if (kit->active[i] == NULL)
+            continue;
+
+        /* fill buffers with sample data */
+        sample_write_error =                                            \
+            Sample_write(kit->active[i], buffers, channels, frames);
+
         if (sample_write_error) {
             return sample_write_error;
+        } else if (Sample_done(kit->active[i])) {
+            /* remove from the active list and free the sample */
+            kit->active[i] = NULL;
+            Sample_free(kit->active[i]);
         }
     }
 
@@ -122,4 +161,5 @@ Kit_write(Kit kit,
 void
 Kit_free(Kit *kit) {
     assert(kit && *kit);
+    FREE(*kit);
 }

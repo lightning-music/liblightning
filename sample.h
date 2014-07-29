@@ -36,6 +36,9 @@ Sample_write(Sample samp,
              channels_t channels,
              nframes_t frames);
 
+int
+Sample_done(Sample samp);
+
 /**
  * Make current thread wait for the sample to finish playing.
  */

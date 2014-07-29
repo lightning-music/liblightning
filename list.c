@@ -16,6 +16,7 @@ struct List {
     ListNode head;
     ListNode tail;
     unsigned length;
+    Compare cmp;
 };
 
 static ListNode
@@ -24,13 +25,20 @@ ListNode_init(void *value);
 static void
 ListNode_free(ListNode *node);
 
+static int
+default_cmp(const void *x,
+            const void *y) {
+    return x == y;
+}
+
 /**
  * Initialize a new list
  */
 List
-List_init() {
+List_init(Compare cmp) {
     List l;
     NEW(l);
+    l->cmp = cmp == NULL ? default_cmp : cmp;
     l->head = ListNode_init(NULL);
     l->tail = ListNode_init(NULL);
     l->head->next = l->tail;
@@ -121,7 +129,7 @@ List_remove(List l,
     if (l->length) {
         ListNode p;
         for (p = l->head->next; p; p = p->next) {
-            if (p->value == x) {
+            if (l->cmp(p->value, x)) {
                 p->prev->next = p->next;
                 ListNode_free(&p);
                 break;
@@ -129,6 +137,12 @@ List_remove(List l,
         }
     }
     return l;
+}
+
+unsigned
+List_length(List l) {
+    assert(l);
+    return l->length;
 }
 
 /**
