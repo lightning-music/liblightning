@@ -20,7 +20,7 @@ typedef enum {
     /* ready for processing */
     Processing,
     /* cleaning up after playing */
-    Finishing,
+    Finished,
 } State;
 
 struct Sample {
@@ -108,8 +108,8 @@ state_string(State state) {
     case Processing:
         return "Processing";
         break;
-    case Finishing:
-        return "Finishing";
+    case Finished:
+        return "Finished";
         break;
     default:
         assert(0);
@@ -288,46 +288,6 @@ Sample_path(Sample samp) {
     return samp->path;
 }
 
-channels_t
-Sample_num_channels(Sample samp) {
-    assert(samp);
-    return samp->channels;
-}
-
-/**
- * Number of frames in the audio sample.
- */
-nframes_t
-Sample_num_frames(Sample samp) {
-    assert(samp);
-    return (nframes_t) samp->frames;
-}
-
-/**
- * Sample rate of the audio sample.
- */
-int
-Sample_samplerate(Sample samp) {
-    assert(samp);
-    return samp->samplerate;
-}
-
-int
-Sample_samplerate_callback(nframes_t sr,
-                           void *arg) {
-    assert(arg);
-    Sample s = (Sample) arg;
-    /* printf("got new sample rate   = %ld\n", sr); */
-    s->src_ratio = ((double) sr) / ((double) s->samplerate);
-    return 0;
-}
-
-nframes_t
-Sample_frames_available(Sample samp) {
-    assert(samp);
-    return samp->frames - samp->framep;
-}
-
 Sample
 Sample_play(const char *file,
             pitch_t pitch,
@@ -393,19 +353,13 @@ Sample_write(Sample samp,
     }
 
     if (end_of_input) {
-        Sample_set_state(samp, Finishing);
+        Sample_set_state(samp, Finished);
         Event_broadcast(samp->done_event);
     } else {
         samp->framep += input_frames_used;
     }
 
     return 0;
-}
-
-nframes_t
-Sample_total_frames_written(Sample samp) {
-    assert(samp);
-    return samp->total_frames_written;
 }
 
 int
