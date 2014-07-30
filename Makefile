@@ -41,8 +41,10 @@ lightning-server: lightning-server.c           \
                   kit.o kit.h                  \
                   clip.o clip.h                \
                   table.o table.h              \
+                  thread.o thread.h            \
                   mem.o mem.h                  \
                   jack-client.o jack-client.h  \
+                  realtime.o realtime.h        \
                   ringbuffer.o ringbuffer.h    \
                   event.o event.h              \
                   mutex.o mutex.h              \
@@ -76,7 +78,9 @@ examples/play-sample: examples/play-sample.c   \
              log.o log.h                       \
              clip.o clip.h                     \
              mem.o mem.h                       \
+             realtime.o realtime.h             \
              ringbuffer.o ringbuffer.h         \
+             thread.o thread.h                 \
              event.o event.h                   \
              mutex.o mutex.h                   \
              src.o src.h                       \

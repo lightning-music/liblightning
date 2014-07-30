@@ -346,7 +346,7 @@ Sample_write(Sample samp,
 
     if (end_of_input) {
         Sample_set_state(samp, Finished);
-        Event_broadcast(samp->done_event);
+        Event_broadcast(samp->done_event, NULL);
     } else {
         samp->framep += input_frames_used;
     }

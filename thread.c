@@ -26,6 +26,6 @@ Thread_create(ThreadFunction f,
 int
 Thread_join(Thread t) {
     assert(t);
-    return pthread_join(t->threadId);
+    return pthread_join(t->threadId, NULL);
 }
 

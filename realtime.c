@@ -20,6 +20,7 @@ Realtime_init() {
     Realtime rt;
     NEW(rt);
     rt->mutex = Mutex_init();
+    rt->state = Initializing;
     return rt;
 }
 
@@ -82,6 +83,6 @@ Realtime_is_finished(Realtime rt) {
 void
 Realtime_free(Realtime *rt) {
     assert(rt && *rt);
-    Mutex_free((*rt)->mutex);
+    Mutex_free(&(*rt)->mutex);
     FREE(*rt);
 }

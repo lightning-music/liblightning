@@ -9,21 +9,41 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "event.h"
 #include "kit.h"
 #include "list.h"
 #include "mem.h"
+#include "realtime.h"
+#include "ringbuffer.h"
 #include "sample.h"
 #include "thread.h"
 #include "types.h"
 
+typedef struct PlayThreadData {
+    Ringbuffer play_buffer;
+    Event play_event;
+} *PlayThreadData;
+
 struct Kit {
-    /* actively playing Sample instances */
-    Sample active[MAX_SAMPLES];
     /* number of samples loaded */
     unsigned int num_samples;
     /* output sample rate */
     nframes_t output_samplerate;
+    /* actively playing Sample instances */
+    Sample active[MAX_SAMPLES];
+    /* ringbuffer to hold samples that need to go in the active list */
+    Ringbuffer play_buffer;
+    /* event signalled when there are samples in the play buffer */
+    Event play_event;
+    /* thread that puts new samples in the ring buffer */
+    Thread play_thread;
+    /* guard against jack realtime thread using a kit
+       before it has been initialized*/
+    Realtime state;
 };
+
+void *
+play_new_samples(void *arg);
 
 /* TODO: Kit should also spin up a thread that waits
    for sample done events and removes these samples from
@@ -33,6 +53,7 @@ Kit_load(const char *dir,
          nframes_t output_samplerate) {
     Kit kit;
     NEW(kit);
+    kit->state = Realtime_init();
     /* TODO: better error-handling */
     /* read .kit */
     char kitfile_path[PATH_MAX];
@@ -77,6 +98,16 @@ Kit_load(const char *dir,
     }
 
     kit->output_samplerate = output_samplerate;
+
+    PlayThreadData play_thread_data;
+    NEW(play_thread_data);
+    kit->play_buffer = Ringbuffer_init(sizeof(Sample) * MAX_SAMPLES);
+    kit->play_event = Event_init();
+    play_thread_data->play_buffer = kit->play_buffer;
+    play_thread_data->play_event = kit->play_event;
+    kit->play_thread = Thread_create(play_new_samples, play_thread_data);
+
+    Realtime_set_processing(kit->state);
     
     return kit;
 }
@@ -136,7 +167,10 @@ Kit_write(Kit kit,
           nframes_t frames) {
     int i = 0;
     int sample_write_error = 0;
-    unsigned num_active = List_length(kit->active);
+
+    /* add any new samples */
+
+    /* write samples to output buffers */
 
     for (i = 0; i < MAX_SAMPLES; i++) {
         if (kit->active[i] == NULL)
@@ -151,7 +185,7 @@ Kit_write(Kit kit,
         } else if (Sample_done(kit->active[i])) {
             /* remove from the active list and free the sample */
             kit->active[i] = NULL;
-            Sample_free(kit->active[i]);
+            Sample_free(&kit->active[i]);
         }
     }
 
@@ -162,4 +196,18 @@ void
 Kit_free(Kit *kit) {
     assert(kit && *kit);
     FREE(*kit);
+}
+
+void *
+play_new_samples(void *arg)
+{
+    PlayThreadData data = (PlayThreadData) arg;
+    Event event = data->play_event;
+    Ringbuffer rb = data->play_buffer;
+
+    while (1) {
+        Event_wait(event);
+        Sample samp = (Sample) Event_value(event);
+        Ringbuffer_write(rb, (void *) samp, sizeof(Sample));
+    }
 }

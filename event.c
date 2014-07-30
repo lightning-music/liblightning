@@ -19,13 +19,13 @@ struct Event {
 };
 
 Event
-Event_init(void *val) {
+Event_init() {
     Event e;
     NEW(e);
     pthread_mutex_init(&e->mutex, NULL);
     pthread_cond_init(&e->cond, NULL);
     e->state = EventState_NotReady;
-    e->val = val;
+    e->val = NULL;
     return e;
 }
 
@@ -59,17 +59,23 @@ Event_timedwait(Event e,
 }
 
 int
-Event_signal(Event e) {
+Event_signal(Event e,
+             void *value) {
     assert(e);
     e->state = EventState_Ready;
-    return pthread_cond_signal(&e->cond);
+    e->val = value;
+    int result = pthread_cond_signal(&e->cond);
+    return result || pthread_mutex_unlock(&e->mutex);
 }
 
 int
-Event_broadcast(Event e) {
+Event_broadcast(Event e,
+                void *value) {
     assert(e);
     e->state = EventState_Ready;
-    return pthread_cond_broadcast(&e->cond);
+    e->val = value;
+    int result = pthread_cond_broadcast(&e->cond);
+    return result || pthread_mutex_unlock(&e->mutex);
 }
 
 void *
