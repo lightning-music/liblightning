@@ -293,7 +293,11 @@ Sample_play(const char *file,
             nframes_t output_samplerate) {
     Sample s = Sample_load(file, pitch, gain, output_samplerate);
     /* set framep to 0 and state to Processing */
-    Sample_set_state(s, Processing);
+    if (Sample_set_state(s, Processing)) {
+        fprintf(stderr, "could not set sample state to processing\n");
+    } else {
+        printf("set sample state to processing\n");
+    }
     return s;
 }
 
@@ -305,6 +309,7 @@ Sample_write(Sample samp,
     assert(samp);
 
     if (! Sample_is_processing(samp)) {
+        fprintf(stderr, "sample is not processing\n");
         return 0;
     }
 
@@ -345,6 +350,7 @@ Sample_write(Sample samp,
     }
 
     if (end_of_input) {
+        printf("sample finished\n");
         Sample_set_state(samp, Finished);
         Event_broadcast(samp->done_event, NULL);
     } else {
