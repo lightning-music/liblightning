@@ -21,8 +21,10 @@ int main(int argc, char **argv) {
     }
 
     lo_address addr = lo_address_new(NULL, "41068");
+    const char *path = "/lightning/kits/default/samples/0";
+    int sent = lo_send(addr, path, "ff", 1.0, 1.0);
 
-    if (lo_send(addr, "/lightning/kit/1/samples/1", "i", 1) == -1) {
+    if (sent == -1) {
         fprintf(stderr, "Could not send OSC message (%s)\n",
                 lo_address_errstr(addr));
         return EXIT_FAILURE;

@@ -356,12 +356,13 @@ Sample_write(Sample samp,
 
 int
 Sample_done(Sample samp) {
-    int done = 0;
-    if (!Mutex_lock(samp->state_mutex)) {
-        done = samp->state == Finished;
-        Mutex_unlock(samp->state_mutex);
-    }
-    return done;
+    /* int done = 0; */
+    /* if (!Mutex_lock(samp->state_mutex)) { */
+    /*     done = samp->state == Finished; */
+    /*     Mutex_unlock(samp->state_mutex); */
+    /* } */
+    /* return done; */
+    return samp->state == Finished;
 }
 
 int

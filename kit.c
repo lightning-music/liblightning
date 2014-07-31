@@ -95,7 +95,7 @@ Kit_load(const char *name,
         /* cache sample data */
         List_push(kit->loaded,
                   Sample_play(sample_path, 1.0f, 1.0f, output_samplerate));
-
+        printf("loaded sample %d: %s\n", file_index, sample_path);
         file_index++;
     }
 
@@ -115,7 +115,10 @@ Kit_load(const char *name,
     play_thread_data->play_event = kit->play_event;
     kit->play_thread = Thread_create(play_new_samples, play_thread_data);
 
-    Realtime_set_processing(kit->state);
+    if (Realtime_set_processing(kit->state)) {
+        fprintf(stderr, "Could not set kit state to processing\n");
+        exit(EXIT_FAILURE);
+    }
     
     return kit;
 }
@@ -168,9 +171,13 @@ Kit_write(Kit kit,
     int i = 0;
     int sample_write_error = 0;
 
+    if (!Realtime_is_processing(kit->state)) {
+        return 0;
+    }
+
     /* add any new samples */
 
-    Sample new = NULL;
+    Sample new;
     while (Ringbuffer_read(kit->play_buffer, (void *) new, sizeof(Sample))) {
         for ( ; i < MAX_SAMPLES; i++) {
             if (kit->active[i] == NULL) {
@@ -194,7 +201,12 @@ Kit_write(Kit kit,
 
         if (sample_write_error) {
             return sample_write_error;
-        } else if (Sample_done(kit->active[i])) {
+        } else {
+            /* printf("wrote sample to outputs\n"); */
+        }
+
+        if (Sample_done(kit->active[i])) {
+            /* printf("sample done\n"); */
             /* remove from the active list and free the sample */
             kit->active[i] = NULL;
             Sample_free(&kit->active[i]);
@@ -204,6 +216,9 @@ Kit_write(Kit kit,
     return 0;
 }
 
+/**
+ * callback used to free samples in List_map
+ */
 static void
 free_sample(void **x,
             void *data,
