@@ -10,6 +10,7 @@
 
 #include "jack-client.h"
 #include "kit.h"
+#include "list.h"
 #include "log.h"
 #include "osc-server.h"
 #include "osc-types.h"
@@ -57,8 +58,8 @@ audio_callback(sample_t **buffers,
                nframes_t frames,
                void *data);
 
-int main(int argc, char **argv) {
-
+int main(int argc, char **argv)
+{
     setup_signal_handlers();
     log = Log_init(NULL);
     LOG(log, Info, "Welcome to %s!", "lightning");
@@ -69,7 +70,9 @@ int main(int argc, char **argv) {
 
     const char * default_kit = "kits/default";
 
-    Kit kit = Kit_load(default_kit, JackClient_samplerate(jack_client));
+    Kit kit = Kit_load("default_kit",
+                       default_kit,
+                       JackClient_samplerate(jack_client));
 
     JackClient_set_data(jack_client, kit);
 

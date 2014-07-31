@@ -35,7 +35,8 @@ default_cmp(const void *x,
  * Initialize a new list
  */
 List
-List_init(Compare cmp) {
+List_init(Compare cmp)
+{
     List l;
     NEW(l);
     l->cmp = cmp == NULL ? default_cmp : cmp;
@@ -54,7 +55,8 @@ List_init(Compare cmp) {
  */
 List
 List_push(List l,
-          void *x) {
+          void *x)
+{
     assert(l);
     ListNode node = ListNode_init(x);
     ListNode last = l->tail->prev;
@@ -71,7 +73,8 @@ List_push(List l,
  */
 List
 List_pop(List l,
-         void **x) {
+         void **x)
+{
     assert(l);
     if (l->tail->prev != l->head) {
         ListNode last = l->tail->prev;
@@ -89,7 +92,8 @@ List_pop(List l,
  */
 List
 List_shift(List l,
-           void *x) {
+           void *x)
+{
     assert(l);
     ListNode node = ListNode_init(x);
     ListNode front = l->head->next;
@@ -106,7 +110,8 @@ List_shift(List l,
  */
 List
 List_unshift(List l,
-             void **x) {
+             void **x)
+{
     assert(l);
     if (l->head->next != l->tail) {
         ListNode front = l->head->next;
@@ -124,7 +129,8 @@ List_unshift(List l,
  */
 void *
 List_remove(List l,
-            void *x) {
+            void *x)
+{
     assert(l);
     if (l->length) {
         ListNode p;
@@ -139,17 +145,45 @@ List_remove(List l,
     return l;
 }
 
+void *
+List_at(List l,
+        int index)
+{
+    ListNode node;
+    int i = 0;
+    for (node = l->head->next; node != l->tail; node = node->next) {
+        if (i++ == index) return node->value;
+    }
+    return NULL;
+}
+
 unsigned
-List_length(List l) {
+List_length(List l)
+{
     assert(l);
     return l->length;
+}
+
+void
+List_map(List l,
+         MapFunction f,
+         void *data)
+{
+    assert(l);
+    assert(f);
+    ListNode node;
+    int i = 0;
+    for (node = l->head->next; node != l->tail; node = node->next) {
+        f(&node->value, data, i++);
+    }
 }
 
 /**
  * Free the resources allocated for a list
  */
 void
-List_free(List *l) {
+List_free(List *l)
+{
     assert(l && *l);
     ListNode p, q;
     for (p = (*l)->head->next; p; p = q) {
@@ -162,7 +196,8 @@ List_free(List *l) {
 }
 
 static ListNode
-ListNode_init(void *value) {
+ListNode_init(void *value)
+{
     ListNode node;
     NEW(node);
     node->value = value;
@@ -170,7 +205,8 @@ ListNode_init(void *value) {
 }
 
 static void
-ListNode_free(ListNode *node) {
+ListNode_free(ListNode *node)
+{
     assert(node && *node);
     FREE(node);
 }
