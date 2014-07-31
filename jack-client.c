@@ -129,7 +129,7 @@ JackClient_init(AudioCallback audio_callback,
 
     /* open jack client */
     
-    client->jack_client = jack_client_open("simplify", JackNullOption, NULL);
+    client->jack_client = jack_client_open("lightning", JackNullOption, NULL);
 
     if (client->jack_client == 0) {
         fprintf(stderr, "Jack server not running?\n");
