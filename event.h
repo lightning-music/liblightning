@@ -13,6 +13,9 @@ Event
 Event_init();
 
 int
+Event_lock(Event e);
+
+int
 Event_wait(Event e);
 
 int

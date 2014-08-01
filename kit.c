@@ -75,8 +75,6 @@ Kit_load(const char *name,
     if (NULL == kitfile) {
         fprintf(stderr, "Could not open %s\n", kitfile_path);
         exit(EXIT_FAILURE);
-    } else {
-        printf("opened %s\n", kitfile_path);
     }
 
     kit->loaded = List_init(NULL);
@@ -95,7 +93,6 @@ Kit_load(const char *name,
         /* cache sample data */
         List_push(kit->loaded,
                   Sample_play(sample_path, 1.0f, 1.0f, output_samplerate));
-        printf("loaded sample %d: %s\n", file_index, sample_path);
         file_index++;
     }
 
@@ -148,7 +145,7 @@ Kit_play_file(Kit kit,
 {
     assert(kit);
     Sample s = Sample_play(file, pitch, gain, kit->output_samplerate);
-    Event_signal(kit->play_event, s);
+    Event_broadcast(kit->play_event, s);
 }
 
 void
@@ -177,8 +174,9 @@ Kit_write(Kit kit,
 
     /* add any new samples */
 
-    Sample new;
-    while (Ringbuffer_read(kit->play_buffer, (void *) new, sizeof(Sample))) {
+    const size_t samp_size = sizeof(Sample);
+    Sample new = ALLOC(samp_size);
+    while (Ringbuffer_read(kit->play_buffer, (void *) &new, sizeof(Sample))) {
         for ( ; i < MAX_SAMPLES; i++) {
             if (kit->active[i] == NULL) {
                 /* assign to the open sample slot and read another
@@ -201,15 +199,12 @@ Kit_write(Kit kit,
 
         if (sample_write_error) {
             return sample_write_error;
-        } else {
-            /* printf("wrote sample to outputs\n"); */
         }
 
         if (Sample_done(kit->active[i])) {
-            /* printf("sample done\n"); */
             /* remove from the active list and free the sample */
-            kit->active[i] = NULL;
             Sample_free(&kit->active[i]);
+            kit->active[i] = NULL;
         }
     }
 
@@ -248,6 +243,6 @@ play_new_samples(void *arg)
     while (1) {
         Event_wait(event);
         Sample samp = (Sample) Event_value(event);
-        Ringbuffer_write(rb, (void *) samp, sizeof(Sample));
+        Ringbuffer_write(rb, (void *) &samp, sizeof(Sample));
     }
 }
