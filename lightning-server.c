@@ -7,9 +7,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "jack-client.h"
 #include "kit.h"
+#include "list.h"
 #include "log.h"
 #include "osc-server.h"
 #include "osc-types.h"
@@ -57,8 +59,8 @@ audio_callback(sample_t **buffers,
                nframes_t frames,
                void *data);
 
-int main(int argc, char **argv) {
-
+int main(int argc, char **argv)
+{
     setup_signal_handlers();
     log = Log_init(NULL);
     LOG(log, Info, "Welcome to %s!", "lightning");
@@ -69,7 +71,9 @@ int main(int argc, char **argv) {
 
     const char * default_kit = "kits/default";
 
-    Kit kit = Kit_load(default_kit, JackClient_samplerate(jack_client));
+    Kit kit = Kit_load("default",
+                       default_kit,
+                       JackClient_samplerate(jack_client));
 
     JackClient_set_data(jack_client, kit);
 
@@ -87,8 +91,8 @@ int main(int argc, char **argv) {
                                           &osc_error_handler);
 
     OscServer_add_method(osc_server,
-                         "/lightning/kit/1/samples/1",
-                         "i",
+                         "/lightning/kits/default/samples/0",
+                         "ff",
                          play_sample,
                          kit);
 
@@ -132,8 +136,14 @@ play_sample(const char *path,
             int argc,
             OscMessage msg,
             void *data) {
-    printf("path %s\n", path);
-    printf("types %s\n", types);
+    assert(0 == strcmp(types, "ff"));
+    assert(argc == 2);
+    Kit kit = (Kit) data;
+    float *pitch = (float *) argv[0];
+    float *gain = (float *) argv[1];
+    char *last_slash = rindex(path, '/');
+    int sample_index = atoi(last_slash + 1);
+    Kit_play_index(kit, sample_index, *pitch, *gain);
     return 0;
 }
 

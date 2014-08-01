@@ -19,21 +19,28 @@ struct Event {
 };
 
 Event
-Event_init(void *val) {
+Event_init() {
     Event e;
     NEW(e);
     pthread_mutex_init(&e->mutex, NULL);
     pthread_cond_init(&e->cond, NULL);
     e->state = EventState_NotReady;
-    e->val = val;
+    e->val = NULL;
     return e;
 }
 
 int
-Event_wait(Event e) {
+Event_lock(Event e)
+{
+    assert(e);
+    return pthread_mutex_lock(&e->mutex);
+}
+
+int
+Event_wait(Event e)
+{
     assert(e);
     e->state = EventState_NotReady;
-    pthread_mutex_lock(&e->mutex);
     int result = pthread_cond_wait(&e->cond, &e->mutex);
     if (e->state != EventState_Ready) {
         return Event_wait(e);
@@ -49,7 +56,6 @@ Event_timedwait(Event e,
     e->state = EventState_NotReady;
     struct timespec time;
     time.tv_nsec = ns;
-    pthread_mutex_lock(&e->mutex);
     int result = pthread_cond_timedwait(&e->cond, &e->mutex, &time);
     if (e->state != EventState_Ready) {
         return Event_timedwait(e, ns);
@@ -59,17 +65,41 @@ Event_timedwait(Event e,
 }
 
 int
-Event_signal(Event e) {
+Event_signal(Event e,
+             void *value) {
     assert(e);
-    e->state = EventState_Ready;
-    return pthread_cond_signal(&e->cond);
+    int fail = pthread_mutex_lock(&e->mutex);
+    if (!fail) {
+        e->state = EventState_Ready;
+        e->val = value;
+        fail = pthread_cond_signal(&e->cond);
+        if (!fail) {
+            return pthread_mutex_unlock(&e->mutex);
+        } else {
+            return fail;
+        }
+    } else {
+        return fail;
+    }
 }
 
 int
-Event_broadcast(Event e) {
+Event_broadcast(Event e,
+                void *value) {
     assert(e);
-    e->state = EventState_Ready;
-    return pthread_cond_broadcast(&e->cond);
+    int fail = pthread_mutex_lock(&e->mutex);
+    if (!fail) {
+        e->state = EventState_Ready;
+        e->val = value;
+        fail = pthread_cond_broadcast(&e->cond);
+        if (!fail) {
+            return pthread_mutex_unlock(&e->mutex);
+        } else {
+            return fail;
+        }
+    } else {
+        return fail;
+    }
 }
 
 void *

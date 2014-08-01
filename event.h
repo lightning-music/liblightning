@@ -10,7 +10,10 @@
 typedef struct Event *Event;
 
 Event
-Event_init(void *val);
+Event_init();
+
+int
+Event_lock(Event e);
 
 int
 Event_wait(Event e);
@@ -20,10 +23,12 @@ Event_timedwait(Event e,
                 long ns);
 
 int
-Event_signal(Event e);
+Event_signal(Event e,
+             void *value);
 
 int
-Event_broadcast(Event e);
+Event_broadcast(Event e,
+                void *value);
 
 void *
 Event_value(Event e);

@@ -11,33 +11,24 @@ struct Ringbuffer {
 };
 
 Ringbuffer
-Ringbuffer_default() {
-    return Ringbuffer_init(16384, 2);
-}
-
-Ringbuffer
-Ringbuffer_init(size_t size, channels_t channels) {
+Ringbuffer_init(size_t size) {
     Ringbuffer rb;
     NEW(rb);
-
-    size_t bytes = size * channels * SAMPLE_SIZE;
-
-    rb->jrb = jack_ringbuffer_create(bytes);
-
+    rb->jrb = jack_ringbuffer_create(size);
     return rb;
 }
 
-nframes_t
+size_t
 Ringbuffer_read(Ringbuffer rb,
-                sample_t *buf,
+                char *buf,
                 size_t len) {
     assert(rb);
     return jack_ringbuffer_read(rb->jrb, (void *) buf, len);
 }
 
-nframes_t
+size_t
 Ringbuffer_write(Ringbuffer rb,
-                 sample_t *buf,
+                 const char *buf,
                  size_t len) {
     assert(rb);
     return jack_ringbuffer_write(rb->jrb, (void *) buf, len);

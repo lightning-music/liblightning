@@ -5,6 +5,7 @@
 #define LIST_H_INCLUDED
 
 typedef int (* Compare)(const void *x, const void *y);
+typedef void (* MapFunction)(void **x, void *data, int index);
 
 typedef struct List *List;
 
@@ -42,6 +43,14 @@ List
 List_unshift(List l,
              void **x);
 
+/**
+ * Retreive the value at a particular index.
+ * O(n) time complexity, inefficient!
+ */
+void *
+List_at(List l,
+        int index);
+
 unsigned
 List_length(List l);
 
@@ -51,6 +60,14 @@ List_length(List l);
 void *
 List_remove(List l,
             void *x);
+
+/**
+ * Map a function over a list
+ */
+void
+List_map(List l,
+         MapFunction f,
+         void *data);
 
 /**
  * Free the resources allocated for a list

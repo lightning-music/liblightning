@@ -4,6 +4,7 @@
 #ifndef KIT_H_INCLUDED
 #define KIT_H_INCLUDED
 
+#include "list.h"
 #include "sample.h"
 #include "types.h"
 
@@ -21,7 +22,8 @@ typedef struct Kit *Kit;
  * uses @a engine for audio playback
  */
 Kit
-Kit_load(const char *dir,
+Kit_load(const char *name,
+         const char *dir,
          nframes_t output_samplerate);
 
 /**
@@ -31,14 +33,29 @@ int
 Kit_num_samples(Kit kit);
 
 /**
- * Play the audio sample using the given audio engine.
- * Uses the default audio engine if @a engine is NULL.
+ * Get the samples that are a part of this kit.
+ */
+List
+Kit_samples(Kit kit);
+
+/**
+ * Play an audio sample. Lookup with filename.
  */
 void
-Kit_play_sample(Kit kit,
-                const char *file,
-                pitch_t pitch,
-                gain_t gain);
+Kit_play_file(Kit kit,
+              const char *file,
+              pitch_t pitch,
+              gain_t gain);
+
+/**
+ * Play an audio sample. Lookup with index.
+ * Index will be relative to how the samples were loaded.
+ */
+void
+Kit_play_index(Kit kit,
+               int index,
+               pitch_t pitch,
+               gain_t gain);
 
 /**
  * Realtime callback.
