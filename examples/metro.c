@@ -17,31 +17,6 @@ usage(char *prog) {
     fprintf(stderr, "\n");
 }
 
-/**
- * Broken because I am not adding signals properly.
- * Next question is how to implement Kit signal summing.
- * Requires an aux buffer:
- * for all i in 0..n-1 aux[i] = buf1[i] + buf2[i]
- * One way to do this would be to have JackClient
- * allocate a certain number of sample buffers when
- * it is initialized that clients could check out to
- * use as auxiliary buffers for doing things like summing.
- * 
- * Kit will have to use two auxiliary buffers.
- * The first will be for storing the result of the
- * cumulative summing.
- * The second will be to collect the output of each active
- * sample.
- *
- * Could kit just allocate these buffers itself?
- * We could just allocate buffers that would each be able
- * to hold up to 2048 samples.
- *
- * The algorithm using this approach would be
- * Let each sample write to collect buffer,
- * and after each pass through the collect buffer,
- * sum it into sum buffer.
- */
 int main(int argc, char **argv) {
 
     if (argc < 2) {
