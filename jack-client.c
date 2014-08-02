@@ -3,12 +3,12 @@
  * see http://jackaudio.org
  */
 #include <assert.h>
+#include <jack/jack.h>
 #include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <jack/jack.h>
 
 #include "jack-client.h"
 #include "mem.h"

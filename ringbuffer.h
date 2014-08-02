@@ -14,6 +14,13 @@ Ringbuffer
 Ringbuffer_init(size_t size);
 
 /**
+ * Lock a ringbuffer's memory into RAM.
+ * Returns 0 on success, non-zero on failure.
+ */
+int
+Ringbuffer_mlock(Ringbuffer rb);
+
+/**
  * Read @a len samples from @a rb into @a buf.
  * Returns the number of samples read.
  */

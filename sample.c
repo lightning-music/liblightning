@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "clip.h"
 #include "event.h"
@@ -24,7 +25,7 @@ typedef enum {
 } State;
 
 struct Sample {
-    const char *path;
+    char *path;
     pitch_t pitch;
     gain_t gain;
     // channels, frames, and samplerate are pulled from SF_INFO
@@ -220,7 +221,13 @@ Sample_load_new(const char *file,
     s->samplerate = sfinfo.samplerate;
     s->src_ratio = output_samplerate / (double) s->samplerate;
     s->done_event = Event_init(NULL);
-    s->path = file;
+
+    /* copy string to path member */
+
+    size_t filename_bytes = strlen(file);
+    s->path = ALLOC(filename_bytes + 1);
+    memcpy(s->path, file, filename_bytes);
+    s->path[filename_bytes] = '\0';
 
     /* stereo buffers */
 
@@ -290,7 +297,8 @@ Sample
 Sample_play(const char *file,
             pitch_t pitch,
             gain_t gain,
-            nframes_t output_samplerate) {
+            nframes_t output_samplerate)
+{
     Sample s = Sample_load(file, pitch, gain, output_samplerate);
     /* set framep to 0 and state to Processing */
     if (Sample_set_state(s, Processing)) {

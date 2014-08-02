@@ -11,17 +11,26 @@ struct Ringbuffer {
 };
 
 Ringbuffer
-Ringbuffer_init(size_t size) {
+Ringbuffer_init(size_t size)
+{
     Ringbuffer rb;
     NEW(rb);
     rb->jrb = jack_ringbuffer_create(size);
     return rb;
 }
 
+int
+Ringbuffer_mlock(Ringbuffer rb)
+{
+    assert(rb);
+    return jack_ringbuffer_mlock(rb->jrb);
+}
+
 size_t
 Ringbuffer_read(Ringbuffer rb,
                 char *buf,
-                size_t len) {
+                size_t len)
+{
     assert(rb);
     return jack_ringbuffer_read(rb->jrb, (void *) buf, len);
 }
@@ -29,13 +38,15 @@ Ringbuffer_read(Ringbuffer rb,
 size_t
 Ringbuffer_write(Ringbuffer rb,
                  const char *buf,
-                 size_t len) {
+                 size_t len)
+{
     assert(rb);
     return jack_ringbuffer_write(rb->jrb, (void *) buf, len);
 }
 
 void
-Ringbuffer_free(Ringbuffer *rb) {
+Ringbuffer_free(Ringbuffer *rb)
+{
     assert(rb && *rb);
     jack_ringbuffer_free((*rb)->jrb);
     FREE(*rb);

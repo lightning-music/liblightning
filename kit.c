@@ -1,5 +1,5 @@
 /* feature test macros */
-#define _GNU_SOURCE
+#define _XOPEN_SOURCE 700
 
 #include <assert.h>
 #include <linux/limits.h>
@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <sys/types.h>
 
 #include "event.h"
@@ -18,6 +19,8 @@
 #include "sample.h"
 #include "thread.h"
 #include "types.h"
+
+#define ASSUMED_CHANNELS 2
 
 typedef struct PlayThreadData {
     Ringbuffer play_buffer;
@@ -43,6 +46,13 @@ struct Kit {
     /* guard against jack realtime thread using a kit
        before it has been initialized*/
     Realtime state;
+    /* sample pointer used to move new samples from play_buffer
+       to active */
+    Sample new_sample;
+    /* summing buffers */
+    sample_t **sum_bufs;
+    /* sample collecting buffers */
+    sample_t **collect_bufs;
 };
 
 void *
@@ -57,10 +67,37 @@ Kit_load(const char *name,
          nframes_t output_samplerate)
 {
     Kit kit;
+    int i = 0;
+
     NEW(kit);
     kit->name = name;
     kit->state = Realtime_init();
-    /* TODO: better error-handling */
+
+    /* allocate auxiliary buffers
+       each buffer will be able to hold 2048 samples
+       and will be mlock'ed into RAM
+       there is one per channel and we just assume stereo */
+
+    const size_t aux_buf_size = 2048;
+
+    kit->sum_bufs = CALLOC(ASSUMED_CHANNELS, sizeof(sample_t*));
+    kit->collect_bufs = CALLOC(ASSUMED_CHANNELS, sizeof(sample_t*));
+
+    for (i = 0; i < ASSUMED_CHANNELS; i++) {
+        kit->sum_bufs[i] = CALLOC(aux_buf_size, SAMPLE_SIZE);
+        kit->collect_bufs[i] = CALLOC(aux_buf_size, SAMPLE_SIZE);
+
+        if (0 != mlock(kit->sum_bufs[i], aux_buf_size * SAMPLE_SIZE)) {
+            fprintf(stderr, "Could not lock memory into RAM\n");
+            exit(EXIT_FAILURE);
+        }
+
+        if (0 != mlock(kit->collect_bufs[i], aux_buf_size * SAMPLE_SIZE)) {
+            fprintf(stderr, "Could not lock memory into RAM\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
     /* read .kit */
     char kitfile_path[PATH_MAX];
     char sample_path[PATH_MAX];
@@ -80,6 +117,7 @@ Kit_load(const char *name,
     kit->loaded = List_init(NULL);
 
     /* read sample paths */
+    Sample s;
     ssize_t read = 0;
     while (file_index < MAX_SAMPLES) {
         read = getline(&f, &path_max, kitfile);
@@ -91,13 +129,13 @@ Kit_load(const char *name,
         sample_path[0] = '\0';
         sprintf(sample_path, "%s/%s", dir, f);
         /* cache sample data */
-        List_push(kit->loaded,
-                  Sample_play(sample_path, 1.0f, 1.0f, output_samplerate));
+        s = Sample_play(sample_path, 1.0f, 1.0f, output_samplerate);
+        List_push(kit->loaded, s);
+                  
         file_index++;
     }
 
     kit->num_samples = file_index;
-    int i;
     for (i = 0; i < MAX_SAMPLES; i++) {
         kit->active[i] = NULL;
     }
@@ -107,10 +145,16 @@ Kit_load(const char *name,
     PlayThreadData play_thread_data;
     NEW(play_thread_data);
     kit->play_buffer = Ringbuffer_init(sizeof(Sample) * MAX_SAMPLES);
+    if (0 != Ringbuffer_mlock(kit->play_buffer)) {
+        fprintf(stderr, "Could not mlock ringbuffer\n");
+        exit(EXIT_FAILURE);
+    }
     kit->play_event = Event_init();
     play_thread_data->play_buffer = kit->play_buffer;
     play_thread_data->play_event = kit->play_event;
     kit->play_thread = Thread_create(play_new_samples, play_thread_data);
+
+    kit->new_sample = ALLOC(sizeof(Sample));
 
     if (Realtime_set_processing(kit->state)) {
         fprintf(stderr, "Could not set kit state to processing\n");
@@ -156,7 +200,8 @@ Kit_play_index(Kit kit,
 {
     assert(kit);
     Sample s = (Sample) List_at(kit->loaded, index);
-    Kit_play_file(kit, Sample_path(s), pitch, gain);
+    const char *path = Sample_path(s);
+    Kit_play_file(kit, path, pitch, gain);
 }
 
 int
@@ -166,28 +211,39 @@ Kit_write(Kit kit,
           nframes_t frames)
 {
     int i = 0;
+    int chan = 0;
+    int frame = 0;
     int sample_write_error = 0;
 
     if (!Realtime_is_processing(kit->state)) {
         return 0;
     }
 
-    /* add any new samples */
+    /* zero out sum buffers */
 
-    const size_t samp_size = sizeof(Sample);
-    Sample new = ALLOC(samp_size);
-    while (Ringbuffer_read(kit->play_buffer, (void *) &new, sizeof(Sample))) {
+    for (chan = 0; chan < channels; chan++) {
+        memset(kit->sum_bufs[chan], 0, frames * SAMPLE_SIZE);
+    }
+
+    /* add any new samples to the active list */
+
+    i = 0;
+    while (Ringbuffer_read(kit->play_buffer,
+                           (void *) &kit->new_sample,
+                           sizeof(Sample))) {
         for ( ; i < MAX_SAMPLES; i++) {
             if (kit->active[i] == NULL) {
                 /* assign to the open sample slot and read another
                    new sample from the ring buffer */
-                kit->active[i] = new;
+                kit->active[i] = kit->new_sample;
                 break;
             }
         }
     }
 
     /* write samples to output buffers */
+    /* TODO: sum the samples into the output buffers
+       instead of overwriting each time through the loop */
 
     for (i = 0; i < MAX_SAMPLES; i++) {
         if (kit->active[i] == NULL)
@@ -195,10 +251,16 @@ Kit_write(Kit kit,
 
         /* fill buffers with sample data */
         sample_write_error =                                            \
-            Sample_write(kit->active[i], buffers, channels, frames);
+            Sample_write(kit->active[i], kit->collect_bufs, channels, frames);
 
         if (sample_write_error) {
             return sample_write_error;
+        }
+
+        for (chan = 0; chan < ASSUMED_CHANNELS; chan++) {
+            for (frame = 0; frame < frames; frame++) {
+                kit->sum_bufs[chan][frame] += kit->collect_bufs[chan][frame];
+            }
         }
 
         if (Sample_done(kit->active[i])) {
@@ -206,6 +268,12 @@ Kit_write(Kit kit,
             Sample_free(&kit->active[i]);
             kit->active[i] = NULL;
         }
+    }
+
+    /* copy sum buffers to output buffers */
+
+    for (chan = 0; chan < channels; chan++) {
+        memcpy(buffers[chan], kit->sum_bufs[chan], frames * SAMPLE_SIZE);
     }
 
     return 0;

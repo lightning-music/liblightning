@@ -91,7 +91,8 @@ int main(int argc, char **argv)
                                           &osc_error_handler);
 
     OscServer_add_method(osc_server,
-                         "/lightning/kits/default/samples/0",
+                         NULL,
+                         /* "/lightning/kits/default/samples/\*", */
                          "ff",
                          play_sample,
                          kit);

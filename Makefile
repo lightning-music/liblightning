@@ -23,7 +23,7 @@ bindir=$(prefix)/bin
 PROGS = lightning-server lightning-client
 
 EXAMPLES := packbox table-pack simple_client \
-        capture_client play-file play-sample
+        capture_client play-file play-sample metro
 
 EXAMPLES := $(addprefix examples/,$(EXAMPLES))
 
