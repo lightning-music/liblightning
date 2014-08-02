@@ -90,5 +90,5 @@ examples/play-sample: examples/play-sample.c   \
              jack-client.o jack-client.h
 
 clean:
-	rm -rf $(PROGS) $(EXAMPLES) *~ *.o
+	rm -rf $(PROGS) $(EXAMPLES) *~ *.o examples/*~
 	$(MAKE) -C test clean
