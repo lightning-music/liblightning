@@ -1,51 +1,28 @@
-/* feature test macros
-   - sigaction */
-#define _POSIX_SOURCE
 
 #include <assert.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 
 #include "jack-client.h"
-#include "kit.h"
-#include "list.h"
+#include "lightning-server.h"
 #include "log.h"
+#include "mem.h"
 #include "osc-server.h"
 #include "osc-types.h"
+#include "samples.h"
 
-static Log log = NULL;
-
-static void
-signal_handler(int signum) {
-    if (signum == SIGINT) {
-        LOG(log, Info, "Received signal %d... Exiting\n", signum);
-        Log_free(&log);
-        exit(1);
-    } else {
-        exit(1);
-    }
-}
+struct LightningServer {
+    JackClient jack_client;
+    OscServer osc_server;
+    Samples samples;
+    int listenPort;
+    int broadcastPort;
+};
 
 static void
-setup_signal_handlers(void) {
-    struct sigaction old_action, new_action;
-    new_action.sa_handler = signal_handler;
-    sigemptyset(&new_action.sa_mask);
-    new_action.sa_flags = 0;
-    sigaction(SIGINT, NULL, &old_action);
-    if (old_action.sa_handler != SIG_IGN)
-        sigaction(SIGINT, &new_action, NULL);
-}
-
-void
 osc_error_handler(int num,
                   const char *msg,
                   const char *where);
-
-int
+static int
 play_sample(const char *path,
             const char *types,
             OscArgument **argv,
@@ -59,90 +36,102 @@ audio_callback(sample_t **buffers,
                nframes_t frames,
                void *data);
 
-int main(int argc, char **argv)
+/**
+ * Initialize jack_client and samples,
+ * and use samples as the data for the jack_client
+ * realtime callback.
+ */
+static void
+initialize_jack_client(LightningServer server);
+
+LightningServer
+LightningServer_init(const char *listenPort,
+                     const char *broadcastPort,
+                     const char *broadcastHost)
 {
-    setup_signal_handlers();
-    log = Log_init(NULL);
-    LOG(log, Info, "Welcome to %s!", "lightning");
-
-    JackClient jack_client = JackClient_init(audio_callback, NULL);
-
-    /* setup kit */
-
-    const char * default_kit = "kits/default";
-
-    Kit kit = Kit_load("default",
-                       default_kit,
-                       JackClient_samplerate(jack_client));
-
-    JackClient_set_data(jack_client, kit);
-
-    /* register a callback for if the jack output sample
-       rate changes */
-
-    JackClient_setup_callbacks(jack_client);
-
-    JackClient_activate(jack_client);
-    JackClient_setup_ports(jack_client);
+    LightningServer server;
+    NEW(server);
+    initialize_jack_client(server);
 
     /* setup OSC server */
 
-    OscServer osc_server = OscServer_init("41068",
-                                          &osc_error_handler);
+    server->osc_server = OscServer_init(listenPort,
+                                        &osc_error_handler);
 
-    OscServer_add_method(osc_server,
-                         "/lightning/kits/default/samples",
+    OscServer_add_method(server->osc_server,
+                         "/samples",
                          "iff",
                          play_sample,
-                         kit);
+                         server->samples);
 
-    /* OSC receive loop */
+    return server;
+}
 
-    while (1) {
-        OscServer_recv(osc_server);
-    }
+LightningServer
+LightningServer_multicast(const char *group,
+                          const char *listenPort,
+                          const char *broadcastPort,
+                          const char *broadcastHost)
+{
+    return NULL;
+}
 
-    /* free osc server */
+int
+LightningServer_listen_port(LightningServer server)
+{
+    assert(server);
+    return 0;
+}
 
-    OscServer_free(&osc_server);
-
-    /* free kit */
-
-    Kit_free(&kit);
-
-    /* free jack client */
-
-    JackClient_free(&jack_client);
-
-    /* free logger */
-
-    Log_free(&log);
-
+int
+LightningServer_broadcast_port(LightningServer server)
+{
+    assert(server);
     return 0;
 }
 
 void
+LightningServer_listen(LightningServer server)
+{
+    assert(server);
+    while (1) {
+        OscServer_recv(server->osc_server);
+    }
+}
+
+void
+LightningServer_free(LightningServer *server)
+{
+    assert(server && *server);
+    LightningServer s = *server;
+    Samples_free(&s->samples);
+    JackClient_free(&s->jack_client);
+}
+
+static void
 osc_error_handler(int num,
                   const char *msg,
-                  const char *where) {
+                  const char *where)
+{
     Log log = Log_init(NULL);
     LOG(log, Error, "[OSC Error %d] %s %s\n", num, where, msg);
 }
 
-int
+static int
 play_sample(const char *path,
             const char *types,
             OscArgument **argv,
             int argc,
             OscMessage msg,
-            void *data) {
+            void *data)
+{
     assert(0 == strcmp(types, "iff"));
     assert(argc == 3);
-    Kit kit = (Kit) data;
-    int *samp_idx = (int *) argv[0];
-    float *pitch = (float *) argv[2];
-    float *gain = (float *) argv[2];
-    Kit_play_index(kit, *samp_idx, *pitch, *gain);
+    /* Samples kit = (Kit) data; */
+    /* int *samp_idx = (int *) argv[0]; */
+    /* float *pitch = (float *) argv[2]; */
+    /* float *gain = (float *) argv[2]; */
+    /* Kit_play_index(kit, *samp_idx, *pitch, *gain); */
     return 0;
 }
 
@@ -150,8 +139,20 @@ static int
 audio_callback(sample_t **buffers,
                channels_t channels,
                nframes_t frames,
-               void *data) {
-    Kit kit = (Kit) data;
-    Kit_write(kit, buffers, channels, frames);
+               void *data)
+{
+    Samples samples = (Samples) data;
+    Samples_write(samples, buffers, channels, frames);
     return 0;
+}
+
+static void
+initialize_jack_client(LightningServer server)
+{
+    server->jack_client = JackClient_init(audio_callback, NULL);
+    server->samples = Samples_init(JackClient_samplerate(server->jack_client));
+    JackClient_set_data(server->jack_client, server->samples);
+    JackClient_setup_callbacks(server->jack_client);
+    JackClient_activate(server->jack_client);
+    JackClient_setup_ports(server->jack_client);
 }

@@ -48,33 +48,6 @@ struct Sample {
     Mutex state_mutex;
 };
 
-/* cache samples */
-static Table cache = NULL;
-
-static void
-Sample_cache(Sample samp) {
-    Table_put(cache, samp->path, samp);
-}
-
-/**
- * Create a new sample and cache it
- */
-static Sample
-Sample_load_new(const char *file,
-                pitch_t pitch,
-                gain_t gain,
-                nframes_t output_samplerate);
-
-/**
- * Clone a cached sample. Pulls the cached data, but
- * will play back with different pitch and gain.
- */
-static Sample
-Sample_load_cached(Sample cached_sample,
-                   pitch_t pitch,
-                   gain_t gain,
-                   nframes_t output_samplerate);
-
 /* static utility functions */
 
 static void
@@ -121,135 +94,65 @@ Sample_is_processing(Sample samp) {
 }
 
 /**
- * Load an audio sample.
- * Either loads actual sample data into the cache (for playing
- * samples from memory) or loads a file descriptor (for
- * playing from disk).
+ * Path to loaded file.
  */
-static Sample
-Sample_load(const char *file,
+const char *
+Sample_path(Sample samp) {
+    assert(samp);
+    return samp->path;
+}
+
+Sample
+Sample_init(const char *file,
             pitch_t pitch,
             gain_t gain,
-            nframes_t output_samplerate) {
-    if (cache == NULL) {
-        cache = Table_init(16, NULL, NULL);
-    }
-
+            nframes_t output_sr)
+{
+    Sample s;
     Log log = Log_init(NULL);
-    Sample cached = (Sample) Table_get(cache, file);
-    Sample s;
-
-    if (NULL == cached) {
-        LOG(log, Info, "%s was not cached", file);
-        s = Sample_load_new(file, pitch, gain, output_samplerate);
-        return Sample_load_cached(s, pitch, gain, output_samplerate);
-    } else {
-        return Sample_load_cached(cached, pitch, gain, output_samplerate);
-    }
-}
-
-static Sample
-Sample_load_cached(Sample cached_sample,
-                   pitch_t pitch,
-                   gain_t gain,
-                   nframes_t output_samplerate) {
-    Sample s;
-
-    NEW(s);
-    initialize_state(s);
-
-    s->gain = pitch;
-    s->pitch = gain;
-    s->frames = cached_sample->frames;
-    s->channels = cached_sample->channels;
-    s->samplerate = cached_sample->samplerate;
-    s->src_ratio = output_samplerate / (double) cached_sample->samplerate;
-    s->done_event = Event_init(NULL);
-    s->path = cached_sample->path;
-
-    allocate_frame_buffers(s);
-    copy_frame_buffers(s, cached_sample);
-
-    s->framep = 0;
-    s->framep_mutex = Mutex_init();
-    s->total_frames_written = 0;
-
-    /* initialize sample rate converters */
-
-    allocate_src(s);
-
-    return s;
-}
-
-static Sample
-Sample_load_new(const char *file,
-                pitch_t pitch,
-                gain_t gain,
-                nframes_t output_samplerate) {
-    Sample s;
-
-    Log log = Log_init(NULL);
-
     /* initialize state mutex and set state to Processing */
-
     NEW(s);
     initialize_state(s);
-
     /* open audio file */
-
     SF_INFO sfinfo;
     SNDFILE *sf = sf_open(file, SFM_READ, &sfinfo);
-
     if (sf == NULL) {
         LOG(log, Error, "%s\n", sf_strerror(sf));
         return NULL;
     }
-
     /* Set pitch to a very small number if it is 0,
        otherwise clip it to a given range and
        if it is negative set the reversed bit */
-
     if (pitch == 0.0) {
         s->pitch = 0.0001;
     } else {
         s->pitch = clip(pitch, -32.0f, 32.0f);
     }
-
     s->gain = clip(gain, 0.0f, 1.0f);
     s->frames = sfinfo.frames;
     s->channels = sfinfo.channels;
     s->samplerate = sfinfo.samplerate;
-    s->src_ratio = output_samplerate / (double) s->samplerate;
+    s->src_ratio = output_sr / (double) s->samplerate;
     s->done_event = Event_init(NULL);
-
     /* copy string to path member */
-
     size_t filename_bytes = strlen(file);
     s->path = ALLOC(filename_bytes + 1);
     memcpy(s->path, file, filename_bytes);
     s->path[filename_bytes] = '\0';
-
     /* stereo buffers */
-
     allocate_frame_buffers(s);
-
     /* read the file */
-
     sample_t *framebuf = ALLOC( s->frames * s->channels * SAMPLE_SIZE );
     sf_count_t frames = (4096 / SAMPLE_SIZE) / s->channels;
     long total_frames = sf_readf_float(sf, framebuf, frames);
-
     while (total_frames < s->frames) {
         total_frames +=                         \
             sf_readf_float(sf,
                            framebuf + (total_frames * s->channels),
                            frames);
     }
-
     sf_close(sf);
-
     /* de-interleave data */
-
     int i;
     unsigned int j;
     if (s->channels == 1) {
@@ -267,43 +170,40 @@ Sample_load_new(const char *file,
             "Only stereo and mono are supported.\n", s->channels);
         return NULL;
     }
-
     FREE(framebuf);
-
     s->framep = 0;
     s->framep_mutex = Mutex_init();
     s->total_frames_written = 0;
-
     /* initialize sample rate converters */
-
     allocate_src(s);
-    Sample_cache(s);
-
     LOG(log, Debug, "Sample_load_new: done loading %s", file);
-
     return s;
 }
 
-/**
- * Path to loaded file.
- */
-const char *
-Sample_path(Sample samp) {
-    assert(samp);
-    return samp->path;
-}
-
 Sample
-Sample_play(const char *file,
-            pitch_t pitch,
-            gain_t gain,
-            nframes_t output_samplerate)
+Sample_clone(Sample orig,
+             pitch_t pitch,
+             gain_t gain,
+             nframes_t output_sr)
 {
-    Sample s = Sample_load(file, pitch, gain, output_samplerate);
-    /* set framep to 0 and state to Processing */
-    if (Sample_set_state(s, Processing)) {
-        fprintf(stderr, "could not set sample state to processing\n");
-    }
+    Sample s;
+    NEW(s);
+    initialize_state(s);
+    s->gain = pitch;
+    s->pitch = gain;
+    s->frames = orig->frames;
+    s->channels = orig->channels;
+    s->samplerate = orig->samplerate;
+    s->src_ratio = output_sr / (double) orig->samplerate;
+    s->done_event = Event_init(NULL);
+    s->path = orig->path;
+    allocate_frame_buffers(s);
+    copy_frame_buffers(s, orig);
+    s->framep = 0;
+    s->framep_mutex = Mutex_init();
+    s->total_frames_written = 0;
+    /* initialize sample rate converters */
+    allocate_src(s);
     return s;
 }
 

@@ -15,7 +15,13 @@ typedef struct Sample *Sample;
  * be much faster.
  */
 Sample
-Sample_play(const char *file,
+Sample_init(const char *file,
+            pitch_t pitch,
+            gain_t gain,
+            nframes_t output_samplerate);
+
+Sample
+Sample_clone(Sample orig,
             pitch_t pitch,
             gain_t gain,
             nframes_t output_samplerate);

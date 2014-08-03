@@ -20,7 +20,7 @@ bindir=$(prefix)/bin
 
 .PHONY: all install
 
-PROGS = lightning-server lightning-client
+PROGS = lightning-engine lightning-client
 
 EXAMPLES := metro play-file play-sample 
 
@@ -33,23 +33,23 @@ examples: $(EXAMPLES)
 install: $(PROGS)
 	install $(PROGS) $(DESTDIR)$(bindir)
 
-lightning-server: lightning-server.c           \
-                  safe-list.o safe-list.h      \
-                  list.o list.h                \
-                  log.o log.h                  \
-                  kit.o kit.h                  \
-                  clip.o clip.h                \
-                  table.o table.h              \
-                  thread.o thread.h            \
-                  mem.o mem.h                  \
-                  jack-client.o jack-client.h  \
-                  realtime.o realtime.h        \
-                  ringbuffer.o ringbuffer.h    \
-                  event.o event.h              \
-                  mutex.o mutex.h              \
-                  osc-server.o osc-server.h    \
-                  gain.o gain.h                \
-                  src.o src.h                  \
+lightning-engine: lightning-engine.c                                \
+                  lightning-server.o lightning-server.h             \
+                  samples.o samples.h                               \
+                  list.o list.h                                     \
+                  log.o log.h                                       \
+                  clip.o clip.h                                     \
+                  table.o table.h                                   \
+                  thread.o thread.h                                 \
+                  mem.o mem.h                                       \
+                  jack-client.o jack-client.h                       \
+                  realtime.o realtime.h                             \
+                  ringbuffer.o ringbuffer.h                         \
+                  event.o event.h                                   \
+                  mutex.o mutex.h                                   \
+                  osc-server.o osc-server.h                         \
+                  gain.o gain.h                                     \
+                  src.o src.h                                       \
                   sample.o sample.h
 
 lightning-client: lightning-client.c
@@ -57,14 +57,8 @@ lightning-client: lightning-client.c
 jack-client.o: ringbuffer.o mem.o
 ringbuffer.o: mem.o
 sample.o: mem.o event.o gain.o clip.o mutex.o src.o table.o
-safe-list.o: mem.o mutex.o list.o
 event.o: mem.o
 kit.o: list.o
-
-examples/packbox: examples/packbox.c
-examples/table-pack: examples/table-pack.c
-examples/simple_client: examples/simple_client.c
-examples/capture_client: examples/capture_client.c
 
 examples/play-file: examples/play-file.c       \
            mem.o mem.h                         \
@@ -85,6 +79,7 @@ examples/play-sample: examples/play-sample.c   \
              src.o src.h                       \
              gain.o gain.h                     \
              table.o table.h                   \
+             samples.o samples.h               \
              sample.o sample.h                 \
              jack-client.o jack-client.h
 

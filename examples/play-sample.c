@@ -4,6 +4,7 @@
 
 #include "../jack-client.h"
 #include "../sample.h"
+#include "../samples.h"
 #include "../types.h"
 
 int
@@ -11,8 +12,8 @@ stereo_callback(sample_t **buffers,
                 channels_t channels,
                 nframes_t frames,
                 void *data) {
-    Sample sample = (Sample) data;
-    Sample_write(sample, buffers, channels, frames);
+    Samples samps = (Samples) data;
+    Samples_write(samps, buffers, channels, frames);
     return 0;
 }
 
@@ -51,10 +52,9 @@ main(int argc, char **argv) {
 
     JackClient jack_client = JackClient_init(stereo_callback, NULL);
 
-    Sample s = Sample_play(f, pitch, gain,
-                           JackClient_samplerate(jack_client));
+    Samples samps = Samples_init(JackClient_samplerate(jack_client));
 
-    JackClient_set_data(jack_client, s);
+    JackClient_set_data(jack_client, samps);
 
     /* register a callback for if the jack output sample
        rate changes */
@@ -63,6 +63,8 @@ main(int argc, char **argv) {
 
     JackClient_activate(jack_client);
     JackClient_setup_ports(jack_client);
+
+    Sample s = Samples_play(samps, f, pitch, gain);
 
     /* wait for sample to finish playing */
 
