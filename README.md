@@ -1,23 +1,33 @@
-lightning
+lightning-engine
 ===========
 
-Make music on linux lightning fast!
+lightning-engine is the audio sample playback engine of lightning.
 
-[![Build Status](https://travis-ci.org/briansorahan/lightning.svg?branch=master)](https://travis-ci.org/briansorahan/lightning)
+It is controlled with [OSC](4).
 
-lightning is composed of two components:
+[![Build Status](https://travis-ci.org/briansorahan/lightning-engine.svg?branch=master)](https://travis-ci.org/briansorahan/lightning-engine)
 
-- lightning-engine
-- lightning-control
+Build
+-----
 
-lightning-engine is responsible for playing audio samples.
-It does this with [jack](1), [libsndfile](2), and [libsamplerate](3).
-You can find documentation about the lightning-engine OSC interface [here](5).
+Prerequisites:
 
-lightning-control uses the OSC interface of lightning-engine and provides
-users with the ability to:
-- Organizing groups of samples into kits
-- Sequencing samples with patterns
+* [jack](1)
+* [libsndfile](2)
+* [libsamplerate](3).
+* [liblo](6)
+
+Usage
+-----
+
+Start the engine
+
+```shell
+$ lightning-engine --port 21000
+...
+```
+
+Then use the [OSC interface](5).
 
 ### Discussion & Issues
 
@@ -28,3 +38,4 @@ lightning-music@googlegroups.com
 [3]: http://www.mega-nerd.com/SRC/
 [4]: http://opensoundcontrol.org
 [5]: https://github.com/briansorahan/lightning/wiki/lightning-engine-OSC-interface
+[6]: http://liblo.sourceforge.net/
