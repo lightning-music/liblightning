@@ -58,7 +58,6 @@ jack-client.o: ringbuffer.o mem.o
 ringbuffer.o: mem.o
 sample.o: mem.o event.o gain.o clip.o mutex.o src.o table.o
 event.o: mem.o
-kit.o: list.o
 
 examples/play-file: examples/play-file.c       \
            mem.o mem.h                         \

@@ -127,11 +127,6 @@ play_sample(const char *path,
 {
     assert(0 == strcmp(types, "iff"));
     assert(argc == 3);
-    /* Samples kit = (Kit) data; */
-    /* int *samp_idx = (int *) argv[0]; */
-    /* float *pitch = (float *) argv[2]; */
-    /* float *gain = (float *) argv[2]; */
-    /* Kit_play_index(kit, *samp_idx, *pitch, *gain); */
     return 0;
 }
 

@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
     }
 
     lo_address addr = lo_address_new(NULL, "41068");
-    const char *path = "/lightning/kits/default/samples/2";
+    const char *path = "/samples";
     int sent = lo_send(addr, path, "ff", 1.0, 1.0);
 
     if (sent == -1) {
