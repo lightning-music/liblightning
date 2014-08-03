@@ -60,7 +60,7 @@ LightningServer_init(const char *listenPort,
 
     OscServer_add_method(server->osc_server,
                          "/samples",
-                         "iff",
+                         "ff",
                          play_sample,
                          server->samples);
 
@@ -125,8 +125,10 @@ play_sample(const char *path,
             OscMessage msg,
             void *data)
 {
-    assert(0 == strcmp(types, "iff"));
-    assert(argc == 3);
+    assert(0 == strcmp(types, "ff"));
+    assert(argc == 2);
+    printf("path=%s\n", path);
+    printf("types=%s\n", types);
     return 0;
 }
 
