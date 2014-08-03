@@ -91,9 +91,8 @@ int main(int argc, char **argv)
                                           &osc_error_handler);
 
     OscServer_add_method(osc_server,
-                         NULL,
-                         /* "/lightning/kits/default/samples/\*", */
-                         "ff",
+                         "/lightning/kits/default/samples",
+                         "iff",
                          play_sample,
                          kit);
 
@@ -137,14 +136,13 @@ play_sample(const char *path,
             int argc,
             OscMessage msg,
             void *data) {
-    assert(0 == strcmp(types, "ff"));
-    assert(argc == 2);
+    assert(0 == strcmp(types, "iff"));
+    assert(argc == 3);
     Kit kit = (Kit) data;
-    float *pitch = (float *) argv[0];
-    float *gain = (float *) argv[1];
-    char *last_slash = rindex(path, '/');
-    int sample_index = atoi(last_slash + 1);
-    Kit_play_index(kit, sample_index, *pitch, *gain);
+    int *samp_idx = (int *) argv[0];
+    float *pitch = (float *) argv[2];
+    float *gain = (float *) argv[2];
+    Kit_play_index(kit, *samp_idx, *pitch, *gain);
     return 0;
 }
 

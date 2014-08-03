@@ -27,18 +27,13 @@ int main(int argc, char **argv) {
     int sent;
     long ms = 1000;
     lo_address addr = lo_address_new(NULL, "41068");
-    const char *path0 = "/lightning/kits/default/samples/0";
-    const char *path1 = "/lightning/kits/default/samples/1";
-    const char *path2 = "/lightning/kits/default/samples/2";
-    
+    const char *path = "/lightning/kits/default/samples";
+
+    int sample_index = 0;
+    int max_samples = 4;
     while (1) {
-        /* sent = lo_send(addr, path0, "ff", 1.0, 1.0); */
-        /* if (sent == -1) { */
-        /*     fprintf(stderr, "Could not send OSC message (%s)\n", */
-        /*             lo_address_errstr(addr)); */
-        /*     return EXIT_FAILURE; */
-        /* } */
-        sent = lo_send(addr, path2, "ff", 1.0, 1.0);
+        sample_index = (sample_index + 1) % max_samples;
+        sent = lo_send(addr, path, "iff", sample_index, 1.0, 1.0);
         if (sent == -1) {
             fprintf(stderr, "Could not send OSC message (%s)\n",
                     lo_address_errstr(addr));
