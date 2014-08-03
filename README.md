@@ -27,7 +27,7 @@ $ lightning-engine --port 21000
 ...
 ```
 
-Then use the [OSC interface](5).
+Then use the [OSC interface](https://github.com/briansorahan/lightning-engine/wiki/lightning-engine-OSC-interface).
 
 ### Discussion & Issues
 
