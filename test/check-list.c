@@ -6,7 +6,7 @@
 
 START_TEST (check_List_init)
 {
-  List l = List_init();
+  List l = List_init(NULL);
   ck_assert_msg(l != NULL,
 		"List_init returns non-NULL");
 }
