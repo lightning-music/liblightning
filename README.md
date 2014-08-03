@@ -37,5 +37,5 @@ lightning-music@googlegroups.com
 [2]: http://www.mega-nerd.com/libsndfile/
 [3]: http://www.mega-nerd.com/SRC/
 [4]: http://opensoundcontrol.org
-[5]: https://github.com/briansorahan/lightning/wiki/lightning-engine-OSC-interface
+[5]: https://github.com/briansorahan/lightning-engine/wiki/lightning-engine-OSC-interface
 [6]: http://liblo.sourceforge.net/
