@@ -20,7 +20,9 @@ typedef struct LightningServer *LightningServer;
 LightningServer
 LightningServer_init(const char *listenPort,
                      const char *broadcastPort,
-                     const char *broadcastHost);
+                     const char *broadcastHost,
+                     int num_dirs,
+                     char **search_dirs);
 
 /**
  * Create a new lightning server that is part of a multicast group.

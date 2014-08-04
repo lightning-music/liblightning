@@ -47,7 +47,9 @@ initialize_jack_client(LightningServer server);
 LightningServer
 LightningServer_init(const char *listenPort,
                      const char *broadcastPort,
-                     const char *broadcastHost)
+                     const char *broadcastHost,
+                     int num_dirs,
+                     char **search_dirs)
 {
     LightningServer server;
     NEW(server);

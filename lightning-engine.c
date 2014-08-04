@@ -5,7 +5,9 @@
 #define _GNU_SOURCE
 
 #include <assert.h>
+#include <getopt.h>
 #include <signal.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,11 +16,82 @@
 
 #include "lightning-server.h"
 #include "log.h"
+#include "mem.h"
+
+extern char *optarg;
+extern int optind, opterr, optopt;
 
 static Log log = NULL;
 
 static void
-signal_handler(int signum) {
+signal_handler(int signum);
+
+static void
+setup_signal_handlers(void);
+
+static char **
+parse_search_dirs(char *str);
+
+int main(int argc, char * const argv[])
+{
+    enum Option {
+        OPTION_HOST,
+        OPTION_PORT,
+        OPTION_SEARCH_DIRS
+    };
+
+    char **search_dirs;
+    
+    setup_signal_handlers();
+    log = Log_init(NULL);
+    LOG(log, Info, "Welcome to %s!", "lightning");
+
+    int c = 0;
+    int option_index = 0;
+    struct option opts[] = {
+        {"host",            required_argument, 0,  OPTION_HOST},
+        {"port",            required_argument, 0,  OPTION_PORT},
+        {"search-dirs",     required_argument, 0,  OPTION_SEARCH_DIRS},
+        {0, 0, 0, 0}
+    };
+
+    while ((c = getopt_long(argc, argv, "h:p:s:", opts, &option_index)) != -1) {
+        switch(c) {
+        case OPTION_HOST:
+            break;
+        case OPTION_PORT:
+            break;
+        case OPTION_SEARCH_DIRS:
+            search_dirs = parse_search_dirs(optarg);
+            break;
+        }
+    }
+
+    int i = 0;
+    while (search_dirs[i++] != NULL) ;
+    LightningServer server =                                        \
+        LightningServer_init("41068", NULL, NULL, i, search_dirs);
+    LightningServer_listen(server);
+    LightningServer_free(&server);
+
+    /* free search dirs */
+
+    int num_dirs = i;
+    for (i = 0; i < num_dirs; i++) {
+        FREE(search_dirs[i]);
+    }
+    FREE(search_dirs);
+
+    /* free logger */
+
+    Log_free(&log);
+
+    return 0;
+}
+
+static void
+signal_handler(int signum)
+{
     if (signum == SIGINT) {
         LOG(log, Info, "Received signal %d... Exiting\n", signum);
         Log_free(&log);
@@ -39,21 +112,19 @@ setup_signal_handlers(void) {
         sigaction(SIGINT, &new_action, NULL);
 }
 
-int main(int argc, char **argv)
+static char **
+parse_search_dirs(char *str)
 {
-    setup_signal_handlers();
-    log = Log_init(NULL);
-    LOG(log, Info, "Welcome to %s!", "lightning");
-
-    LightningServer server = LightningServer_init("41068", NULL, NULL);
-
-    LightningServer_listen(server);
-
-    LightningServer_free(&server);
-
-    /* free logger */
-
-    Log_free(&log);
-
-    return 0;
+    const long limit = 32;
+    const char *delim = ":";
+    char **strings = CALLOC(limit, sizeof(char*));
+    char *c = strtok(str, delim);
+    int i = 0;
+    while (NULL != c) {
+        strings[i] = CALLOC(strlen(c) + 1, sizeof(char));
+        strings[i++] = c;
+        c = strtok(NULL, delim);
+    }
+    strings[i] = NULL;
+    return strings;
 }
