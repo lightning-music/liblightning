@@ -46,7 +46,6 @@ lightning-engine: lightning-engine.c                                \
                   event.o event.h                                   \
                   mutex.o mutex.h                                   \
                   osc-server.o osc-server.h                         \
-                  gain.o gain.h                                     \
                   src.o src.h                                       \
                   sample.o sample.h
 
@@ -74,7 +73,6 @@ examples/play-sample: examples/play-sample.c   \
              event.o event.h                   \
              mutex.o mutex.h                   \
              src.o src.h                       \
-             gain.o gain.h                     \
              table.o table.h                   \
              samples.o samples.h               \
              sample.o sample.h                 \

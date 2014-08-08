@@ -131,13 +131,16 @@ Samples_load(Samples samps,
              const char *path)
 {
     assert(samps);
+    printf("looking up %s in sample table\n", path);
     Sample cached = (Sample) Table_get(samps->tab, path);
     if (NULL == cached) {
         /* initialize and cache it */
         Sample samp = Sample_init(path, 1.0, 1.0, samps->output_sr);
+        printf("sample %s was not cached\n", Sample_path(samp));
         Table_put(samps->tab, path, samp);
         return samp;
     } else {
+        printf("returning cached sample %s\n", Sample_path(cached));
         return cached;
     }
 }
@@ -155,8 +158,11 @@ Samples_play(Samples samps,
              gain_t gain)
 {
     assert(samps);
+    printf("playing %s\n", path);
     Sample cached = Samples_load(samps, path);
+    printf("loaded %s\n", Sample_path(cached));
     Sample samp = Sample_clone(cached, pitch, gain, samps->output_sr);
+    printf("cloned %s\n", Sample_path(samp));
     Event_broadcast(samps->play_event, samp);
     return samp;
 }

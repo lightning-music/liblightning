@@ -8,7 +8,6 @@
 
 #include "clip.h"
 #include "event.h"
-#include "gain.h"
 #include "log.h"
 #include "mem.h"
 #include "mutex.h"
@@ -272,7 +271,7 @@ Sample_clone(Sample orig,
     s->framep_mutex = Mutex_init();
     s->total_frames_written = 0;
     /* initialize sample rate converters */
-    allocate_src(s);
+    /* allocate_src(s); */
     Sample_set_state_or_exit(s, Processing);
     return s;
 }
@@ -299,47 +298,35 @@ Sample_write(Sample samp,
         return 0;
     }
 
+    nframes_t len = samp->frames;
     int chans = (int) samp->channels;
-    long offset = samp->framep;
-    int end_of_input = 0;
+    nframes_t offset = samp->framep;
     int chan = 0;
-    int error = 0;
-    nframes_t input_frames_used = 0;
-    nframes_t output_frames_gen = 0;
-    AudioData audio_data;
+    int frame = 0;
+    int at_end = 0;
+    nframes_t frames_used = 0;
 
-    audio_data.input_frames = samp->frames - samp->framep;
-    audio_data.output_frames = frames;
-
-    for (chan = 0; chan < chans; chan++) {
-        audio_data.output = buffers[chan];
-        audio_data.input = &samp->framebufs[chan][offset];
-
-        input_frames_used = 0;
-        output_frames_gen = 0;
-
-        error = SRC_process(samp->src[chan],
-                            samp->src_ratio / samp->pitch,
-                            audio_data,
-                            &input_frames_used, &output_frames_gen,
-                            &end_of_input);
-
-        if (error) {
-            fprintf(stderr, "Error in SRC_process: %s\n",
-                    SRC_strerror(error));
-            exit(EXIT_FAILURE);
+    for (frame = 0; frame < frames; frame++) {
+        for (chan = 0; chan < chans; chan++) {
+            if (offset + frame < len) {
+                buffers[chan][frame] =                                  \
+                    samp->gain * samp->framebufs[chan][offset + frame];
+            } else {
+                at_end = 1;
+                buffers[chan][frame] = 0.0f;
+            }
+            /* gain(samp->gain, buffers[chan], frames); */
         }
-
-        /* apply gain */
-
-        gain(samp->gain, buffers[chan], frames);
+        if (!at_end) {
+            frames_used++;
+        }
     }
 
-    if (end_of_input) {
+    if (at_end) {
         Sample_set_state(samp, Finished);
         Event_broadcast(samp->done_event, NULL);
     } else {
-        samp->framep += input_frames_used;
+        samp->framep += frames_used;
     }
 
     return 0;
@@ -371,10 +358,6 @@ Sample_free(Sample *samp) {
     assert(samp && *samp);
     /* free the done event */
     Event_free(&(*samp)->done_event);
-    /* free the sample rate converters */
-    SRC_free(&(*samp)->src[0]);
-    SRC_free(&(*samp)->src[1]);
-    FREE((*samp)->src);
     /* free the framep mutex */
     Mutex_free(&(*samp)->framep_mutex);
     for (i = 0; i < (*samp)->channels; i++) {
