@@ -20,14 +20,10 @@ void
 Log_free(Log *log);
 
 void
-lightning_log(Log log,
-              const char *file,
-              long line,
-              LogLevel level,
-              const char *fmt,
-              ...);
+lightning_log(Log log, const char *file, long line,
+              LogLevel level, const char *fmt, ...);
 
-#define LOG(log, level, fmt, args...)                           \
-    lightning_log(log, __FILE__, __LINE__, level, fmt, args)
+#define LOG(level, fmt, args...)                           \
+    lightning_log(Log_init(NULL), __FILE__, __LINE__, level, fmt, args)
 
 #endif

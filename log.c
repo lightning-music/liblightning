@@ -42,19 +42,17 @@ Log_init(FILE *stream) {
 }
 
 void
-Log_free(Log *log) {
+Log_free(Log *log)
+{
     assert(log && *log);
     fclose((*log)->stream);
     FREE(*log);
 }
 
 void
-lightning_log(Log log,
-              const char *file,
-              long line,
-              LogLevel level,
-              const char *fmt,
-              ...) {
+lightning_log(Log log, const char *file, long line,
+              LogLevel level, const char *fmt, ...)
+{
     assert(log);
     va_list ap;
     char msg[4096];

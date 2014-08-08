@@ -115,8 +115,7 @@ osc_error_handler(int num,
                   const char *msg,
                   const char *where)
 {
-    Log log = Log_init(NULL);
-    LOG(log, Error, "[OSC Error %d] %s %s\n", num, where, msg);
+    LOG(Error, "[OSC Error %d] %s %s\n", num, where, msg);
 }
 
 static int

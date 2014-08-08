@@ -21,8 +21,6 @@
 extern char *optarg;
 extern int optind, opterr, optopt;
 
-static Log log = NULL;
-
 static void
 signal_handler(int signum);
 
@@ -43,8 +41,7 @@ int main(int argc, char * const argv[])
     char **search_dirs;
     
     setup_signal_handlers();
-    log = Log_init(NULL);
-    LOG(log, Info, "Welcome to %s!", "lightning");
+    LOG(Info, "Welcome to %s!", "lightning");
 
     int c = 0;
     int option_index = 0;
@@ -82,10 +79,6 @@ int main(int argc, char * const argv[])
     }
     FREE(search_dirs);
 
-    /* free logger */
-
-    Log_free(&log);
-
     return 0;
 }
 
@@ -93,8 +86,7 @@ static void
 signal_handler(int signum)
 {
     if (signum == SIGINT) {
-        LOG(log, Info, "Received signal %d... Exiting\n", signum);
-        Log_free(&log);
+        LOG(Info, "Received signal %d... Exiting\n", signum);
         exit(1);
     } else {
         exit(1);
