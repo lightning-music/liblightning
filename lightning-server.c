@@ -18,10 +18,21 @@ struct LightningServer {
     int broadcastPort;
 };
 
+/* OSC handlers */
+
 static void
 osc_error_handler(int num,
                   const char *msg,
                   const char *where);
+
+static int
+load_sample(const char *path,
+            const char *types,
+            OscArgument **argv,
+            int argc,
+            OscMessage msg,
+            void *data);
+
 static int
 play_sample(const char *path,
             const char *types,
@@ -30,6 +41,7 @@ play_sample(const char *path,
             OscMessage msg,
             void *data);
 
+/* realtime callback */
 static int
 audio_callback(sample_t **buffers,
                channels_t channels,
@@ -43,6 +55,12 @@ audio_callback(sample_t **buffers,
  */
 static void
 initialize_jack_client(LightningServer server);
+
+/**
+ * Setup OSC handlers
+ */
+static void
+setup_osc_handlers(LightningServer server);
 
 LightningServer
 LightningServer_init(const char *listenPort,
@@ -60,11 +78,7 @@ LightningServer_init(const char *listenPort,
     server->osc_server = OscServer_init(listenPort,
                                         &osc_error_handler);
 
-    OscServer_add_method(server->osc_server,
-                         "/samples",
-                         "ff",
-                         play_sample,
-                         server->samples);
+    setup_osc_handlers(server);
 
     return server;
 }
@@ -119,6 +133,22 @@ osc_error_handler(int num,
 }
 
 static int
+load_sample(const char *path,
+            const char *types,
+            OscArgument **argv,
+            int argc,
+            OscMessage msg,
+            void *data)
+{
+    assert(0 == strcmp(types, "s"));
+    assert(argc == 1);
+    Samples samps = (Samples) data;
+    const char *file = (const char *) argv[0];
+    Samples_load(samps, file);
+    return 0;
+}
+
+static int
 play_sample(const char *path,
             const char *types,
             OscArgument **argv,
@@ -126,10 +156,13 @@ play_sample(const char *path,
             OscMessage msg,
             void *data)
 {
-    assert(0 == strcmp(types, "ff"));
-    assert(argc == 2);
-    printf("path=%s\n", path);
-    printf("types=%s\n", types);
+    assert(0 == strcmp(types, "sff"));
+    assert(argc == 3);
+    Samples samps = (Samples) data;
+    const char *file = (const char *) argv[0];
+    pitch_t *pitch = (pitch_t *) argv[1];
+    gain_t *gain = (gain_t *) argv[2];
+    Samples_play(samps, file, *pitch, *gain);
     return 0;
 }
 
@@ -153,4 +186,22 @@ initialize_jack_client(LightningServer server)
     JackClient_setup_callbacks(server->jack_client);
     JackClient_activate(server->jack_client);
     JackClient_setup_ports(server->jack_client);
+}
+
+static void
+setup_osc_handlers(LightningServer server)
+{
+    /* Load Sample handler */
+    OscServer_add_method(server->osc_server,
+                         "/sample/load",
+                         "s",
+                         load_sample,
+                         server->samples);
+
+    /* Play Sample handler */
+    OscServer_add_method(server->osc_server,
+                         "/sample",
+                         "sff",
+                         play_sample,
+                         server->samples);
 }

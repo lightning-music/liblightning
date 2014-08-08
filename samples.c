@@ -126,6 +126,22 @@ Samples_init(nframes_t output_sr)
     return samps;
 }
 
+Sample
+Samples_load(Samples samps,
+             const char *path)
+{
+    assert(samps);
+    Sample cached = (Sample) Table_get(samps->tab, path);
+    if (NULL == cached) {
+        /* initialize and cache it */
+        Sample samp = Sample_init(path, 1.0, 1.0, samps->output_sr);
+        Table_put(samps->tab, path, samp);
+        return samp;
+    } else {
+        return cached;
+    }
+}
+
 /**
  * Get a new instance of the sample specified by path.
  * If the sample was not in the cache and had to be loaded from disk,
@@ -139,17 +155,8 @@ Samples_play(Samples samps,
              gain_t gain)
 {
     assert(samps);
-    Sample samp;
-    Sample cached = (Sample) Table_get(samps->tab, path);
-    if (NULL == cached) {
-        /* initialize and cache it */
-        samp = Sample_init(path, pitch, gain, samps->output_sr);
-        Table_put(samps->tab, path, samp);
-    } else {
-        /* clone it */
-        samp = Sample_clone(cached, pitch, gain, samps->output_sr);
-    }
-    /* broadcast it to play thread */
+    Sample cached = Samples_load(samps, path);
+    Sample samp = Sample_clone(cached, pitch, gain, samps->output_sr);
     Event_broadcast(samps->play_event, samp);
     return samp;
 }

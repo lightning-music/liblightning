@@ -237,9 +237,14 @@ Sample_init(const char *file,
     Sample_set_buffers(s, framebuf, output_sr);
 
     FREE(framebuf);
+
+    /* set frames member to the number of frames that are
+       actually in framebuf after resampling */
+    s->frames = output_frames;
     s->framep = 0;
     s->framep_mutex = Mutex_init();
     s->total_frames_written = 0;
+    Sample_set_state_or_exit(s, Processing);
     LOG(Debug, "Sample_load_new: done loading %s", file);
     return s;
 }
@@ -268,6 +273,7 @@ Sample_clone(Sample orig,
     s->total_frames_written = 0;
     /* initialize sample rate converters */
     allocate_src(s);
+    Sample_set_state_or_exit(s, Processing);
     return s;
 }
 
