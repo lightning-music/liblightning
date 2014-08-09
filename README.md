@@ -27,13 +27,13 @@ $ lightning-engine --port 21000
 ...
 ```
 
-Play a sample from the audio folder
-
-`./play <file> [gain] [pitch]`
+Then
 
 ```shell
 $ ./play snap 
 ```
+
+should play a snapping sound.
 
 Then use the [OSC interface](https://github.com/lightning/engine/wiki/lightning-engine-OSC-interface).
 
