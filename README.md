@@ -27,15 +27,7 @@ $ lightning-engine --port 21000
 ...
 ```
 
-Then
-
-```shell
-$ ./play snap 
-```
-
-should play a snapping sound.
-
-Then use the [OSC interface](https://github.com/lightning/engine/wiki/lightning-engine-OSC-interface).
+Then visit [the OSC interface](https://github.com/lightning/engine/wiki/lightning-engine-OSC-interface).
 
 ### Discussion & Issues
 
