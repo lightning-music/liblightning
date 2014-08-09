@@ -50,26 +50,29 @@ BinTree_insert(BinTree tree, const void *key, void *value)
     n->key = key;
     n->value = value;
     n->L = n->R = NULL;
-    int cmp = tree->cmp(key, root->key);
+    int cmp;
 
     if (root == NULL) {
         root = n;
-    } else if (cmp < 0) {
-        if (root->L == NULL) {
-            root->L = n;
-            return 0;
-        } else {
-            BinTree_insert_under(tree, root->L, n);
-        }
-    } else if (cmp > 0) {
-        if (root->R == NULL) {
-            root->R = n;
-            return 0;
-        } else {
-            BinTree_insert_under(tree, root->R, n);
-        }
     } else {
-        /* duplicate */
+        cmp = tree->cmp(key, root->key);
+        if (cmp < 0) {
+            if (root->L == NULL) {
+                root->L = n;
+                return 0;
+            } else {
+                BinTree_insert_under(tree, root->L, n);
+            }
+        } else if (cmp > 0) {
+            if (root->R == NULL) {
+                root->R = n;
+                return 0;
+            } else {
+                BinTree_insert_under(tree, root->R, n);
+            }
+        } else {
+            /* duplicate */
+        }
     }
     return 0;
 }

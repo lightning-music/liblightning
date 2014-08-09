@@ -1,6 +1,17 @@
 #!/bin/bash
-if [ $1 = "snap" ]; then
-    ./lightning-client play audio/snap.flac 1.0 1.0
-elif [ $1 = "kick" ]; then
-    ./lightning-client play audio/kick.flac 1.0 1.0
-fi
+
+function main {
+    local pitch="$2"
+    local gain="$3"
+
+    [ -z $pitch ] && pitch=1.0
+    [ -z $gain ] && gain=1.0
+
+    if [ $1 = "snap" ]; then
+        ./lightning-client play audio/snap.flac $pitch $gain
+    elif [ $1 = "kick" ]; then
+        ./lightning-client play audio/kick.flac $pitch $gain
+    fi
+}
+
+main "$@"
