@@ -29,7 +29,7 @@ $ lightning-engine --port 21000
 
 Play a sample from the audio folder
 
-`./play <file> [gain] [pitch]
+`./play <file> [gain] [pitch]`
 
 ```shell
 $ ./play snap 
