@@ -54,20 +54,20 @@ static void
 initialize_state(Sample s);
 
 static void
-allocate_frame_buffers(Sample s,
-                       nframes_t frames);
+allocate_frame_buffers(Sample s, nframes_t frames);
 
+/**
+ * Copy framebufs from src to dest. Time-scale with @a pitch, and
+ * scale amplitude with gain.
+ */
 static void
-copy_frame_buffers(Sample dest,
-                   Sample src);
+copy_frame_buffers(Sample dest, Sample src, gain_t gain);
 
 static int
-Sample_set_state(Sample samp,
-                 State state);
+Sample_set_state(Sample samp, State state);
 
 static void
-Sample_set_state_or_exit(Sample samp,
-                         State state);
+Sample_set_state_or_exit(Sample samp, State state);
 
 static const char *
 state_string(State state) {
@@ -96,8 +96,7 @@ Sample_is_processing(Sample samp)
  * Set a sample's path.
  */
 static void
-Sample_set_path(Sample samp,
-                const char *path)
+Sample_set_path(Sample samp, const char *path)
 {
     /* copy string to path member */
     size_t path_bytes = strlen(path);
@@ -111,9 +110,7 @@ Sample_set_path(Sample samp,
  * been read from disk.
  */
 static int
-Sample_set_buffers(Sample samp,
-                   sample_t *buf,
-                   nframes_t output_sr)
+Sample_set_buffers(Sample samp, sample_t *buf, nframes_t output_sr)
 {
     SRC srcs[2];
     srcs[0] = SRC_init();
@@ -183,10 +180,7 @@ Sample_set_buffers(Sample samp,
  * perform sample rate conversion, then cache this data in memory.
  */
 Sample
-Sample_init(const char *file,
-            pitch_t pitch,
-            gain_t gain,
-            nframes_t output_sr)
+Sample_init(const char *file, pitch_t pitch, gain_t gain, nframes_t output_sr)
 {
     Sample s;
     /* initialize state mutex and set state to Processing */
@@ -246,10 +240,7 @@ Sample_init(const char *file,
 }
 
 Sample
-Sample_clone(Sample orig,
-             pitch_t pitch,
-             gain_t gain,
-             nframes_t output_sr)
+Sample_clone(Sample orig, pitch_t pitch, gain_t gain, nframes_t output_sr)
 {
     Sample s;
     NEW(s);
@@ -263,7 +254,7 @@ Sample_clone(Sample orig,
     s->done_event = Event_init(NULL);
     s->path = orig->path;
     allocate_frame_buffers(s, s->frames);
-    copy_frame_buffers(s, orig);
+    copy_frame_buffers(s, orig, s->gain);
     s->framep = 0;
     s->framep_mutex = Mutex_init();
     s->total_frames_written = 0;
@@ -284,10 +275,9 @@ Sample_path(Sample samp)
 }
 
 nframes_t
-Sample_write(Sample samp,
-             sample_t **buffers,
-             channels_t channels,
-             nframes_t frames) {
+Sample_write(Sample samp, sample_t **buffers, channels_t channels,
+             nframes_t frames)
+{
     assert(samp);
 
     if (! Sample_is_processing(samp)) {
@@ -299,24 +289,34 @@ Sample_write(Sample samp,
     int chans = (int) samp->channels;
     nframes_t offset = samp->framep;
     int chan = 0;
-    int frame = 0;
+    long frame = 0;
+    long prev_frame = 0;
+    long input_frame = 0;
+    double frame_index = 0.0;
     int at_end = 0;
     nframes_t frames_used = 0;
 
-    for (frame = 0; frame < frames; frame++) {
+    while (frame < frames) {
         for (chan = 0; chan < chans; chan++) {
-            if (offset + frame < len) {
-                buffers[chan][frame] =                                  \
-                    samp->gain * samp->framebufs[chan][offset + frame];
+            if (offset + input_frame < len) {
+                buffers[chan][frame] =                      \
+                    samp->framebufs[chan][offset + input_frame];
             } else {
                 at_end = 1;
                 buffers[chan][frame] = 0.0f;
             }
-            /* gain(samp->gain, buffers[chan], frames); */
         }
         if (!at_end) {
-            frames_used++;
+            /* store previous frame index */
+            prev_frame = (long) frame_index;
+            /* nudge the sample index forward
+               this may not actually advance the frame pointer */
+            frame_index = frame_index + samp->pitch;
+            input_frame = (long) frame_index;
+            frames_used += input_frame - prev_frame;
         }
+        /* advance the output frame pointer */
+        frame++;
     }
 
     if (at_end) {
@@ -330,18 +330,15 @@ Sample_write(Sample samp,
 }
 
 int
-Sample_done(Sample samp) {
-    /* int done = 0; */
-    /* if (!Mutex_lock(samp->state_mutex)) { */
-    /*     done = samp->state == Finished; */
-    /*     Mutex_unlock(samp->state_mutex); */
-    /* } */
-    /* return done; */
+Sample_done(Sample samp)
+{
+    /* need to lock mutex? */
     return samp->state == Finished;
 }
 
 int
-Sample_wait(Sample samp) {
+Sample_wait(Sample samp)
+{
     assert(samp);
     return Event_wait(samp->done_event);
 }
@@ -350,7 +347,8 @@ Sample_wait(Sample samp) {
  * Free resources associated with this sample.
  */
 void
-Sample_free(Sample *samp) {
+Sample_free(Sample *samp)
+{
     int i;
     assert(samp && *samp);
     /* free the done event */
@@ -365,8 +363,8 @@ Sample_free(Sample *samp) {
 }
 
 static int
-Sample_set_state(Sample samp,
-                 State state) {
+Sample_set_state(Sample samp, State state)
+{
     assert(samp->state_mutex);
     int not_locked = Mutex_lock(samp->state_mutex);
     if (not_locked) {
@@ -378,8 +376,8 @@ Sample_set_state(Sample samp,
 }
 
 static void
-Sample_set_state_or_exit(Sample s,
-                         State state) {
+Sample_set_state_or_exit(Sample s, State state)
+{
     if (Sample_set_state(s, state)) {
         fprintf(stderr, "Could not set Sample state to %s\n",
                 state_string(state));
@@ -388,13 +386,15 @@ Sample_set_state_or_exit(Sample s,
 }
 
 static void
-initialize_state(Sample s) {
+initialize_state(Sample s)
+{
     s->state_mutex = Mutex_init();
     Sample_set_state_or_exit(s, Initializing);
 }
 
 static void
-allocate_frame_buffers(Sample s, nframes_t frames) {
+allocate_frame_buffers(Sample s, nframes_t frames)
+{
     s->framebufs = CALLOC(2, sizeof(sample_t*));
     s->framebufs[0] = CALLOC(frames, SAMPLE_SIZE);
     s->framebufs[1] = CALLOC(frames, SAMPLE_SIZE);
@@ -406,13 +406,13 @@ allocate_frame_buffers(Sample s, nframes_t frames) {
  * conditions.
  */
 static void
-copy_frame_buffers(Sample dest,
-                   Sample src) {
+copy_frame_buffers(Sample dest, Sample src, gain_t gain)
+{
     int i;
     unsigned int j;
     for (j = 0; j < dest->frames; j++) {
         for (i = 0; i < dest->channels; i++) {
-            dest->framebufs[i][j] = src->framebufs[i][j];
+            dest->framebufs[i][j] = gain * src->framebufs[i][j];
         }
     }
 }
