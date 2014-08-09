@@ -12,7 +12,7 @@ Build
 
 Prerequisites:
 
-* [jack](jackaudio.org)
+* [jack](http://jackaudio.org)
 * [libsndfile](http://www.mega-nerd.com/libsndfile/)
 * [libsamplerate](http://www.mega-nerd.com/SRC/).
 * [liblo](http://liblo.sourceforge.net/)
