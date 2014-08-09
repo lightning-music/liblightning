@@ -1,0 +1,6 @@
+#!/bin/bash
+if [ $1 = "snap" ]; then
+    ./lightning-client play audio/snap.flac 1.0 1.0
+elif [ $1 = "kick" ]; then
+    ./lightning-client play audio/kick.flac 1.0 1.0
+fi

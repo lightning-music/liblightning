@@ -1,0 +1,3 @@
+#!/bin/bash
+./lightning-client load audio/snap.flac
+./lightning-client load audio/kick.flac

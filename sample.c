@@ -61,9 +61,6 @@ static void
 copy_frame_buffers(Sample dest,
                    Sample src);
 
-static void
-allocate_src(Sample s);
-
 static int
 Sample_set_state(Sample samp,
                  State state);
@@ -244,7 +241,7 @@ Sample_init(const char *file,
     s->framep_mutex = Mutex_init();
     s->total_frames_written = 0;
     Sample_set_state_or_exit(s, Processing);
-    LOG(Debug, "Sample_load_new: done loading %s", file);
+    LOG(Debug, "Sample_init: done loading %s", file);
     return s;
 }
 
@@ -418,11 +415,4 @@ copy_frame_buffers(Sample dest,
             dest->framebufs[i][j] = src->framebufs[i][j];
         }
     }
-}
-
-static void
-allocate_src(Sample s) {
-    s->src = CALLOC(2, sizeof(SRC));
-    s->src[0] = SRC_init();
-    s->src[1] = SRC_init();
 }

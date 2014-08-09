@@ -37,7 +37,7 @@ lightning-engine: lightning-engine.c                                \
                   list.o list.h                                     \
                   log.o log.h                                       \
                   clip.o clip.h                                     \
-                  table.o table.h                                   \
+                  bin-tree.o bin-tree.h                             \
                   thread.o thread.h                                 \
                   mem.o mem.h                                       \
                   jack-client.o jack-client.h                       \
@@ -53,7 +53,7 @@ lightning-client: lightning-client.c
 
 jack-client.o: ringbuffer.o mem.o
 ringbuffer.o: mem.o
-sample.o: mem.o event.o gain.o clip.o mutex.o src.o table.o
+sample.o: mem.o event.o clip.o mutex.o src.o bin-tree.o
 event.o: mem.o
 
 examples/play-file: examples/play-file.c       \
@@ -73,7 +73,7 @@ examples/play-sample: examples/play-sample.c   \
              event.o event.h                   \
              mutex.o mutex.h                   \
              src.o src.h                       \
-             table.o table.h                   \
+             bin-tree.o bin-tree.h             \
              samples.o samples.h               \
              sample.o sample.h                 \
              jack-client.o jack-client.h

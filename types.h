@@ -7,6 +7,14 @@
 #define SAMPLE_SIZE sizeof(sample_t)
 
 /**
+ * Compare two opaque types
+ * Return negative if a < b
+ * Return 0        if a == b
+ * Return positive if a > b
+ */
+typedef int (* CmpFunction)(const void *a, const void *b);
+
+/**
  * Gain type float in [0, 1]
  */
 typedef float gain_t;

@@ -6,14 +6,15 @@
 #include <string.h>
 #include <sys/mman.h>
 
+#include "bin-tree.h"
 #include "event.h"
 #include "list.h"
+#include "log.h"
 #include "mem.h"
 #include "realtime.h"
 #include "ringbuffer.h"
 #include "sample.h"
 #include "samples.h"
-#include "table.h"
 #include "thread.h"
 #include "types.h"
 
@@ -23,7 +24,7 @@ struct Samples {
     /* output sample rate */
     nframes_t output_sr;
     /* sample cache */
-    Table tab;
+    BinTree cache;
     /* sample that are actively playing on any
        given audio cycle */
     Sample active[MAX_POLYPHONY];
@@ -72,7 +73,7 @@ Samples_init(nframes_t output_sr)
     Samples samps;
     NEW(samps);
     samps->state = Realtime_init();
-    samps->tab = Table_init(32, NULL, NULL);
+    samps->cache = BinTree_init((CmpFunction) strcmp);
 
     /* allocate auxiliary buffers
        each buffer will be able to hold 2048 samples
@@ -89,12 +90,12 @@ Samples_init(nframes_t output_sr)
         samps->collect_bufs[i] = CALLOC(aux_buf_size, SAMPLE_SIZE);
 
         if (0 != mlock(samps->sum_bufs[i], aux_buf_size * SAMPLE_SIZE)) {
-            fprintf(stderr, "Could not lock memory into RAM\n");
+            LOG(Error, "Could not lock memory into %s", "RAM");
             exit(EXIT_FAILURE);
         }
 
         if (0 != mlock(samps->collect_bufs[i], aux_buf_size * SAMPLE_SIZE)) {
-            fprintf(stderr, "Could not lock memory into RAM\n");
+            LOG(Error, "Could not lock memory into %s", "RAM");
             exit(EXIT_FAILURE);
         }
     }
@@ -109,7 +110,7 @@ Samples_init(nframes_t output_sr)
     NEW(tdata);
     samps->play_buf = Ringbuffer_init(sizeof(Sample) * MAX_POLYPHONY);
     if (0 != Ringbuffer_mlock(samps->play_buf)) {
-        fprintf(stderr, "Could not mlock ringbuffer\n");
+        LOG(Error, "Could not mlock ringbuffer%s", "");
         exit(EXIT_FAILURE);
     }
     samps->play_event = Event_init();
@@ -120,27 +121,27 @@ Samples_init(nframes_t output_sr)
     samps->new_sample = ALLOC(sizeof(Sample));
 
     if (Realtime_set_processing(samps->state)) {
-        fprintf(stderr, "Could not set Samples state to processing\n");
+        LOG(Error, "Could not set Samples state to processing%s", "");
         exit(EXIT_FAILURE);
     }
     return samps;
 }
 
 Sample
-Samples_load(Samples samps,
-             const char *path)
+Samples_load(Samples samps, const char *path)
 {
     assert(samps);
-    printf("looking up %s in sample table\n", path);
-    Sample cached = (Sample) Table_get(samps->tab, path);
+    LOG(Debug, "looking up %s in sample cache", path);
+    Sample cached = (Sample) BinTree_lookup(samps->cache, path);
     if (NULL == cached) {
+        LOG(Debug, "sample %s was not cached", path);
         /* initialize and cache it */
         Sample samp = Sample_init(path, 1.0, 1.0, samps->output_sr);
-        printf("sample %s was not cached\n", Sample_path(samp));
-        Table_put(samps->tab, path, samp);
+        LOG(Debug, "storing %s -> %p in cache", path, samp);
+        BinTree_insert(samps->cache, path, samp);
         return samp;
     } else {
-        printf("returning cached sample %s\n", Sample_path(cached));
+        LOG(Debug, "returning cached sample %s", Sample_path(cached));
         return cached;
     }
 }
@@ -152,17 +153,14 @@ Samples_load(Samples samps,
  * will be from memory.
  */
 Sample
-Samples_play(Samples samps,
-             const char *path,
-             pitch_t pitch,
-             gain_t gain)
+Samples_play(Samples samps, const char *path, pitch_t pitch, gain_t gain)
 {
     assert(samps);
-    printf("playing %s\n", path);
+    LOG(Debug, "playing %s", path);
     Sample cached = Samples_load(samps, path);
-    printf("loaded %s\n", Sample_path(cached));
+    LOG(Debug, "loaded %s", Sample_path(cached));
     Sample samp = Sample_clone(cached, pitch, gain, samps->output_sr);
-    printf("cloned %s\n", Sample_path(samp));
+    LOG(Debug, "cloned %s", Sample_path(samp));
     Event_broadcast(samps->play_event, samp);
     return samp;
 }
@@ -252,7 +250,7 @@ Samples_free(Samples *samps)
     Samples s = *samps;
     Event_free(&s->play_event);
     Ringbuffer_free(&s->play_buf);
-    Table_free(&s->tab);
+    BinTree_free(&s->cache);
     /* free auxiliary buffers */
     for (i = 0; i < ASSUMED_CHANNELS; i++) {
         FREE(s->sum_bufs[i]);

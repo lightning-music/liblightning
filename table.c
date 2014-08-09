@@ -2,6 +2,7 @@
 #include <limits.h>
 #include <stddef.h>
 
+#include "log.h"
 #include "mem.h"
 #include "table.h"
 
@@ -98,8 +99,10 @@ Table_get(Table t,
     assert(key);
     i = (*t->hash)(key) % t->size;
     for (p = t->buckets[i]; p; p = p->link)
-        if ((*t->cmp)(key, p->key) == 0)
+        if ((*t->cmp)(key, p->key) == 0) {
+            LOG(Debug, "found %s -> %p", (const char *) key, p->value);
             break;
+        }
     return p ? p->value : NULL;
 }
 
