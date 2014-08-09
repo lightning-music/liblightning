@@ -105,7 +105,9 @@ play_sample(int argc, char **argv)
     } else {
         lo_address addr = lo_address_new(NULL, port);
         const char *path = "/sample";
-        int sent = lo_send(addr, path, "sff", argv[2], atof(argv[3]), atof(argv[4]));
+        double pitch = atof(argv[3]);
+        double gain = atof(argv[4]);
+        int sent = lo_send(addr, path, "sff", argv[2], pitch, gain);
         if (sent == -1) {
             fprintf(stderr, "Could not send OSC message (%s)\n",
                     lo_address_errstr(addr));

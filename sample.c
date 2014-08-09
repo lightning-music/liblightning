@@ -254,8 +254,8 @@ Sample_clone(Sample orig,
     Sample s;
     NEW(s);
     initialize_state(s);
-    s->gain = pitch;
-    s->pitch = gain;
+    s->pitch = pitch;
+    s->gain = gain;
     s->frames = orig->frames;
     s->channels = orig->channels;
     s->samplerate = orig->samplerate;
