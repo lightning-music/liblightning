@@ -26,8 +26,8 @@ static void
 ListNode_free(ListNode *node);
 
 static int
-default_cmp(const void *x,
-            const void *y) {
+default_cmp(const void *x, const void *y)
+{
     return x == y;
 }
 
@@ -54,8 +54,7 @@ List_init(Compare cmp)
  * Push a value onto the end of the list
  */
 List
-List_push(List l,
-          void *x)
+List_push(List l, void *x)
 {
     assert(l);
     ListNode node = ListNode_init(x);
@@ -72,8 +71,7 @@ List_push(List l,
  * Pop a value from the end of the list
  */
 List
-List_pop(List l,
-         void **x)
+List_pop(List l, void **x)
 {
     assert(l);
     if (l->tail->prev != l->head) {
@@ -91,8 +89,7 @@ List_pop(List l,
  * Add a value to the front of the list
  */
 List
-List_shift(List l,
-           void *x)
+List_shift(List l, void *x)
 {
     assert(l);
     ListNode node = ListNode_init(x);
@@ -109,8 +106,7 @@ List_shift(List l,
  * Pop a value off the front of the list
  */
 List
-List_unshift(List l,
-             void **x)
+List_unshift(List l, void **x)
 {
     assert(l);
     if (l->head->next != l->tail) {
@@ -128,8 +124,7 @@ List_unshift(List l,
  * Remove a particular node in the list
  */
 void *
-List_remove(List l,
-            void *x)
+List_remove(List l, void *x)
 {
     assert(l);
     if (l->length) {
@@ -146,8 +141,7 @@ List_remove(List l,
 }
 
 void *
-List_at(List l,
-        int index)
+List_at(List l, int index)
 {
     ListNode node;
     int i = 0;
@@ -165,9 +159,7 @@ List_length(List l)
 }
 
 void
-List_map(List l,
-         MapFunction f,
-         void *data)
+List_map(List l, ListMap f, void *data)
 {
     assert(l);
     assert(f);

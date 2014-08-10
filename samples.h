@@ -15,6 +15,16 @@ Samples
 Samples_init(nframes_t output_sr);
 
 /**
+ * Add a directory to the list of directories
+ * searched for audio files.
+ * Returns 0 if the directory exists and was
+ * added to the list, and nonzero if the directory
+ * didn't exist or couldn't be added to the list (OOM)
+ */
+int
+Samples_add_dir(Samples samps, const char *dir);
+
+/**
  * Load a sample into the cache.
  * Do nothing if the sample was already loaded.
  */

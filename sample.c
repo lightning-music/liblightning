@@ -192,6 +192,7 @@ Sample_init(const char *file, pitch_t pitch, gain_t gain, nframes_t output_sr)
     SNDFILE *sf = sf_open(file, SFM_READ, &sfinfo);
     if (sf == NULL) {
         LOG(Error, "%s\n", sf_strerror(sf));
+        FREE(s);
         return NULL;
     }
     /* Set pitch to a very small number if it is 0,

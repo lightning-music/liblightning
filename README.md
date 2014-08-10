@@ -15,9 +15,9 @@ Build
 Prerequisites:
 
 * [jack](http://jackaudio.org)
-* [libsndfile](http://www.mega-nerd.com/libsndfile/)
-* [libsamplerate](http://www.mega-nerd.com/SRC/).
-* [liblo](http://liblo.sourceforge.net/)
+* [libsndfile >= 1.0.25](http://www.mega-nerd.com/libsndfile/)
+* [libsamplerate >= 0.1.8](http://www.mega-nerd.com/SRC/).
+* [liblo >= 0.28](http://liblo.sourceforge.net/)
 
 
 

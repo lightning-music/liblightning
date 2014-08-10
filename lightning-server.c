@@ -26,6 +26,14 @@ osc_error_handler(int num,
                   const char *where);
 
 static int
+add_dir(const char *path,
+        const char *types,
+        OscArgument **argv,
+        int argc,
+        OscMessage msg,
+        void *data);
+
+static int
 load_sample(const char *path,
             const char *types,
             OscArgument **argv,
@@ -133,6 +141,22 @@ osc_error_handler(int num,
 }
 
 static int
+add_dir(const char *path,
+        const char *types,
+        OscArgument **argv,
+        int argc,
+        OscMessage msg,
+        void *data)
+{
+    assert(0 == strcmp(types, "s"));
+    assert(argc == 1);
+    Samples samps = (Samples) data;
+    const char *dir = (const char *) argv[0];
+    Samples_add_dir(samps, dir);
+    return 0;
+}
+
+static int
 load_sample(const char *path,
             const char *types,
             OscArgument **argv,
@@ -191,6 +215,13 @@ initialize_jack_client(LightningServer server)
 static void
 setup_osc_handlers(LightningServer server)
 {
+    /* Add Directory handler */
+    OscServer_add_method(server->osc_server,
+                         "/sample/search",
+                         "s",
+                         add_dir,
+                         server->samples);
+
     /* Load Sample handler */
     OscServer_add_method(server->osc_server,
                          "/sample/load",

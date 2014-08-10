@@ -1,14 +1,14 @@
 
 #include <assert.h>
+#include <dirent.h>
+#include <errno.h>
 #include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/types.h>
 
 #include "bin-tree.h"
 #include "event.h"
-#include "list.h"
 #include "log.h"
 #include "mem.h"
 #include "realtime.h"
@@ -46,6 +46,8 @@ struct Samples {
     sample_t **sum_bufs;
     /* sample collecting buffers */
     sample_t **collect_bufs;
+    /* directories to search for audio files */
+    char **dirs;
 };
 
 void *
@@ -66,6 +68,14 @@ typedef struct ThreadData {
     Event event;
 } *ThreadData;
 
+/**
+ * Search directories for a sample and return Sample_init
+ * if it's found, NULL otherwise.
+ * Returns NULL if the file could not be found.
+ */
+static Sample
+Samples_find_file(Samples samps, const char *file, nframes_t output_sr);
+
 Samples
 Samples_init(nframes_t output_sr)
 {
@@ -74,6 +84,7 @@ Samples_init(nframes_t output_sr)
     NEW(samps);
     samps->state = Realtime_init();
     samps->cache = BinTree_init((CmpFunction) strcmp);
+    samps->dirs = NULL;
 
     /* allocate auxiliary buffers
        each buffer will be able to hold 2048 samples
@@ -91,12 +102,10 @@ Samples_init(nframes_t output_sr)
 
         if (0 != mlock(samps->sum_bufs[i], aux_buf_size * SAMPLE_SIZE)) {
             LOG(Error, "Could not lock memory into %s", "RAM");
-            exit(EXIT_FAILURE);
         }
 
         if (0 != mlock(samps->collect_bufs[i], aux_buf_size * SAMPLE_SIZE)) {
             LOG(Error, "Could not lock memory into %s", "RAM");
-            exit(EXIT_FAILURE);
         }
     }
 
@@ -111,7 +120,6 @@ Samples_init(nframes_t output_sr)
     samps->play_buf = Ringbuffer_init(sizeof(Sample) * MAX_POLYPHONY);
     if (0 != Ringbuffer_mlock(samps->play_buf)) {
         LOG(Error, "Could not mlock ringbuffer%s", "");
-        exit(EXIT_FAILURE);
     }
     samps->play_event = Event_init();
     tdata->buf = samps->play_buf;
@@ -122,9 +130,37 @@ Samples_init(nframes_t output_sr)
 
     if (Realtime_set_processing(samps->state)) {
         LOG(Error, "Could not set Samples state to processing%s", "");
-        exit(EXIT_FAILURE);
     }
     return samps;
+}
+
+int
+Samples_add_dir(Samples samps, const char *dir)
+{
+    static const int MAX_DIRS = 32;
+
+    assert(samps);
+    DIR *dh = opendir(dir);
+    if (dh == NULL) {
+        return 1;
+    }
+    int i = 0;
+    if (samps->dirs == NULL) {
+        /* note the arbitrary limit on the number of directories */
+        samps->dirs = CALLOC(MAX_DIRS, sizeof(char*));
+    } else {
+        while (samps->dirs[i++] != NULL) ;
+    }
+    if (i == MAX_DIRS) {
+        LOG(Warn, "maximum number of search directories reached (%d)",
+            MAX_DIRS);
+        return 1;
+    }
+    size_t len = strlen(dir);
+    samps->dirs[i] = ALLOC(len + 1);
+    memcpy(samps->dirs[i], dir, len);
+    samps->dirs[len] = '\0';
+    return 0;
 }
 
 Sample
@@ -136,7 +172,7 @@ Samples_load(Samples samps, const char *path)
     if (NULL == cached) {
         LOG(Debug, "sample %s was not cached", path);
         /* initialize and cache it */
-        Sample samp = Sample_init(path, 1.0, 1.0, samps->output_sr);
+        Sample samp = Samples_find_file(samps, path, samps->output_sr);/*Sample_init(path, 1.0, 1.0, samps->output_sr);*/
         LOG(Debug, "storing %s -> %p in cache", path, samp);
         BinTree_insert(samps->cache, path, samp);
         return samp;
@@ -271,4 +307,31 @@ play_new_samples(void *arg)
         Sample samp = (Sample) Event_value(event);
         Ringbuffer_write(rb, (void *) &samp, sizeof(Sample));
     }
+}
+
+static Sample
+Samples_find_file(Samples samps, const char *file, nframes_t output_sr)
+{
+    /* try the file path as given */
+    Sample s = Sample_init(file, 1.0, 1.0, output_sr);
+    if (s != NULL) {
+        return s;
+    }
+    if (samps->dirs == NULL) {
+        /* no directories to search */
+        return NULL;
+    }
+    char catpath[4096];
+    char *dp = *samps->dirs;
+    while (dp != NULL) {
+        LOG(Debug, "searching %s for %s", dp, file);
+        sprintf(catpath, "%s/%s", dp, file);
+        LOG(Debug, "catpath is %s", catpath);
+        s = Sample_init(catpath, 1.0, 1.0, output_sr);
+        if (s != NULL) {
+            break;
+        }
+        dp++;
+    }
+    return s;
 }
