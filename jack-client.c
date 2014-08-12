@@ -4,15 +4,18 @@
  */
 #include <assert.h>
 #include <jack/jack.h>
-#include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "event.h"
+#include "export-thread.h"
 #include "jack-client.h"
 #include "mem.h"
 #include "mutex.h"
+#include "ringbuffer.h"
+#include "thread.h"
 #include "types.h"
 
 typedef enum {
@@ -32,13 +35,16 @@ struct JackClient {
     /* client state */
     JackClientState state;
     Mutex state_mutex;
+    /* Thread for exporting to audio file */
+    ExportThread export_thread;
+    ExportThread_Signal export_thread_signal;
 };
 
 /* state-handling functions */
 
 static int
-JackClient_set_state(JackClient client,
-                     JackClientState state) {
+JackClient_set_state(JackClient client, JackClientState state)
+{
     assert(client->state_mutex);
     int result = Mutex_lock(client->state_mutex);
     if (result) {
@@ -50,7 +56,8 @@ JackClient_set_state(JackClient client,
 }
 
 inline static int
-JackClient_is_processing(JackClient client) {
+JackClient_is_processing(JackClient client)
+{
     return client->state == JackClientState_Processing;
 }
 
@@ -59,7 +66,8 @@ JackClient_is_processing(JackClient client) {
 
 static int
 samplerate_callback(nframes_t sr,
-                    void *data) {
+                    void *data)
+{
     /* Notify client code that depends on the output
        sample rate */
     return 0;
@@ -68,7 +76,8 @@ samplerate_callback(nframes_t sr,
 /* JACK shutdown callback */
 /* Set a JackClient's state to finished */
 void
-jack_shutdown(void *arg) {
+jack_shutdown(void *arg)
+{
     JackClient client = (JackClient) arg;
     JackClient_set_state(client,
                          JackClientState_Finished);
@@ -78,7 +87,8 @@ jack_shutdown(void *arg) {
  * JACK error callback
  */
 void
-jack_errors(const char *msg) {
+jack_errors(const char *msg)
+{
     fprintf(stderr, "%s\n", msg);
     exit(EXIT_FAILURE);
 }
@@ -88,8 +98,8 @@ jack_errors(const char *msg) {
  */
 int
 process(jack_nframes_t nframes,
-        void *arg) {
-
+        void *arg)
+{
     JackClient client = (JackClient) arg;
 
     /* return if the client is not ready for processing */
@@ -99,22 +109,30 @@ process(jack_nframes_t nframes,
     }
 
     /* setup output sample buffers */
-    /* TODO: dynamically detect jack playback ports */
 
     sample_t **buffers = CALLOC(2, sizeof(sample_t*));
 
     buffers[0] = jack_port_get_buffer( client->jack_output_port_1, nframes );
     buffers[1] = jack_port_get_buffer( client->jack_output_port_2, nframes );
 
+    if (client->export_thread != NULL) {
+        /* export data to a file */
+        if (client->export_thread_signal == ExportThread_Stop) {
+            client->export_thread = NULL;
+            client->export_thread_signal = ExportThread_Idle;
+        } else if (client->export_thread_signal == ExportThread_Continue) {
+            
+        }
+    }
+
     /* write data to the output buffer with registered callbacks */
-    /* TODO: don't use stereo_callback if there is only one playback port */
 
     return client->audio_callback(buffers, 2, (nframes_t) nframes, client->data);
 }
 
 JackClient
-JackClient_init(AudioCallback audio_callback,
-                void *client_data) {
+JackClient_init(AudioCallback audio_callback, void *client_data)
+{
     JackClient client;
     NEW(client);
 
@@ -138,6 +156,8 @@ JackClient_init(AudioCallback audio_callback,
 
     client->data = client_data;
     client->audio_callback = audio_callback;
+    client->export_thread = NULL;
+    client->export_thread_signal = ExportThread_Idle;
 
     return client;
 }
@@ -146,8 +166,8 @@ JackClient_init(AudioCallback audio_callback,
  * Register callbacks with JACK.
  */
 int
-JackClient_setup_callbacks(JackClient client) {
-
+JackClient_setup_callbacks(JackClient client)
+{
     /* register error callback */
 
     jack_set_error_function(jack_errors);
@@ -183,13 +203,15 @@ JackClient_setup_callbacks(JackClient client) {
 }
 
 int
-JackClient_activate(JackClient client) {
+JackClient_activate(JackClient client)
+{
     assert(client);
     return jack_activate(client->jack_client);
 }
 
 int
-JackClient_setup_ports(JackClient client) {
+JackClient_setup_ports(JackClient client)
+{
     assert(client);
 
     /* register output ports */
@@ -242,14 +264,15 @@ JackClient_setup_ports(JackClient client) {
 }
 
 void
-JackClient_set_data(JackClient client,
-                    void *data) {
+JackClient_set_data(JackClient client, void *data)
+{
     assert(client);
     client->data = data;
 }
 
 nframes_t
-JackClient_samplerate(JackClient jack) {
+JackClient_samplerate(JackClient jack)
+{
     assert(jack);
     return jack_get_sample_rate(jack->jack_client);
 }
@@ -257,7 +280,8 @@ JackClient_samplerate(JackClient jack) {
 int
 JackClient_set_samplerate_callback(JackClient jack,
                                    SampleRateCallback callback,
-                                   void *arg) {
+                                   void *arg)
+{
     assert(jack);
     return jack_set_sample_rate_callback(jack->jack_client,
                                          callback,
@@ -265,25 +289,51 @@ JackClient_set_samplerate_callback(JackClient jack,
 }
 
 nframes_t
-JackClient_buffersize(JackClient jack) {
+JackClient_buffersize(JackClient jack)
+{
     assert(jack);
     return jack_get_buffer_size(jack->jack_client);
 }
 
 /* FIXME */
 int
-JackClient_playback_ports(JackClient jack) {
+JackClient_playback_ports(JackClient jack)
+{
     return 2;
 }
 
-/* How would the set_*_callback functions ever fail? */
+/**
+ * Start exporting to an audio file
+ * Return 0 on success, nonzero on failure
+ */
+int
+JackClient_start_exporting(JackClient client, const char *file)
+{
+    assert(client);
+    nframes_t output_sr = JackClient_samplerate(client);
+    client->export_thread = ExportThread_create(file, output_sr, 2);
+    client->export_thread_signal = ExportThread_Continue;
+    return 0;
+}
+
+/**
+ * Stop recording output to audio file
+ * Return 0 on success, nonzero on failure
+ */
+int
+JackClient_stop_exporting(JackClient client)
+{
+    assert(client);
+    client->export_thread_signal = ExportThread_Stop;
+    return 0;
+}
 
 void
-JackClient_free(JackClient *jack) {
+JackClient_free(JackClient *jack)
+{
     assert(jack && *jack);
     JackClient_set_state(*jack, JackClientState_Finished);
     /* close jack client */
     jack_client_close((*jack)->jack_client);
     FREE(*jack);
 }
-

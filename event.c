@@ -19,7 +19,8 @@ struct Event {
 };
 
 Event
-Event_init() {
+Event_init()
+{
     Event e;
     NEW(e);
     pthread_mutex_init(&e->mutex, NULL);
@@ -50,8 +51,8 @@ Event_wait(Event e)
 }
 
 int
-Event_timedwait(Event e,
-                long ns) {
+Event_timedwait(Event e, long ns)
+{
     assert(e);
     e->state = EventState_NotReady;
     struct timespec time;
@@ -65,8 +66,8 @@ Event_timedwait(Event e,
 }
 
 int
-Event_signal(Event e,
-             void *value) {
+Event_signal(Event e, void *value)
+{
     assert(e);
     int fail = pthread_mutex_lock(&e->mutex);
     if (!fail) {
@@ -84,8 +85,8 @@ Event_signal(Event e,
 }
 
 int
-Event_broadcast(Event e,
-                void *value) {
+Event_broadcast(Event e, void *value)
+{
     assert(e);
     int fail = pthread_mutex_lock(&e->mutex);
     if (!fail) {
@@ -102,14 +103,23 @@ Event_broadcast(Event e,
     }
 }
 
+void
+Event_set_value(Event e, void *value)
+{
+    assert(e);
+    e->val = value;
+}
+
 void *
-Event_value(Event e) {
+Event_value(Event e)
+{
     assert(e);
     return e->val;
 }
 
 void
-Event_free(Event *e) {
+Event_free(Event *e)
+{
     assert(e && *e);
     FREE(*e);
 }

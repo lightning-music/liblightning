@@ -11,8 +11,8 @@ struct Thread {
 };
 
 Thread
-Thread_create(ThreadFunction f,
-              ThreadArgument arg) {
+Thread_create(ThreadFunction f, ThreadArgument arg)
+{
     Thread t;
     NEW(t);
     int error = pthread_create(&t->threadId, NULL, f, arg);
@@ -24,7 +24,8 @@ Thread_create(ThreadFunction f,
 }
 
 int
-Thread_join(Thread t) {
+Thread_join(Thread t)
+{
     assert(t);
     return pthread_join(t->threadId, NULL);
 }

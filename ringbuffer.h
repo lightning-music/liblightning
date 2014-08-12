@@ -8,7 +8,7 @@
 typedef struct Ringbuffer *Ringbuffer;
 
 /**
- * Initialize a Ringbuffer with @a size frames for @a channels.
+ * Initialize a Ringbuffer with @a size bytes
  */
 Ringbuffer
 Ringbuffer_init(size_t size);
@@ -25,18 +25,14 @@ Ringbuffer_mlock(Ringbuffer rb);
  * Returns the number of samples read.
  */
 size_t
-Ringbuffer_read(Ringbuffer rb,
-                char *buf,
-                size_t len);
+Ringbuffer_read(Ringbuffer rb, char *buf, size_t len);
 
 /**
  * Write @a len samples from @a buf to @a rb.
  * Returns the number of samples written.
  */
 size_t
-Ringbuffer_write(Ringbuffer rb,
-                 const char *buf,
-                 size_t len);
+Ringbuffer_write(Ringbuffer rb, void *buf, size_t len);
 
 /**
  * Free a ringbuffer.

@@ -45,6 +45,7 @@ lightning-engine: lightning-engine.c                                \
                   ringbuffer.o ringbuffer.h                         \
                   event.o event.h                                   \
                   mutex.o mutex.h                                   \
+                  export-thread.o export-thread.h                   \
                   osc-server.o osc-server.h                         \
                   src.o src.h                                       \
                   sample.o sample.h
@@ -61,6 +62,7 @@ examples/play-file: examples/play-file.c       \
            ringbuffer.o ringbuffer.h           \
            mutex.o mutex.h                     \
            src.o src.h                         \
+           export-thread.o export-thread.h     \
            jack-client.o jack-client.h
 
 examples/play-sample: examples/play-sample.c   \
@@ -75,6 +77,7 @@ examples/play-sample: examples/play-sample.c   \
              src.o src.h                       \
              bin-tree.o bin-tree.h             \
              samples.o samples.h               \
+             export-thread.o export-thread.h   \
              sample.o sample.h                 \
              jack-client.o jack-client.h
 

@@ -23,8 +23,7 @@ typedef struct JackClient *JackClient;
  * @client_data pointer to data passed to callback
  */
 JackClient
-JackClient_init(AudioCallback audio_callback,
-                void *client_data);
+JackClient_init(AudioCallback audio_callback, void *client_data);
 
 int
 JackClient_setup_callbacks(JackClient client);
@@ -36,8 +35,7 @@ int
 JackClient_setup_ports(JackClient client);
 
 void
-JackClient_set_data(JackClient client,
-                    void *data);
+JackClient_set_data(JackClient client, void *data);
 
 nframes_t
 JackClient_samplerate(JackClient jack);
@@ -52,6 +50,19 @@ JackClient_buffersize(JackClient jack);
 
 int
 JackClient_playback_ports(JackClient jack);
+
+/**
+ * Start exporting to an audio file
+ * Return 0 on success, nonzero on failure
+ */
+int
+JackClient_start_exporting(JackClient client, const char *file);
+
+/**
+ * Stop recording output to audio file
+ */
+int
+JackClient_stop_exporting();
 
 // free any resources being used by the audio engine
 void

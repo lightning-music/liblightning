@@ -19,16 +19,16 @@ int
 Event_wait(Event e);
 
 int
-Event_timedwait(Event e,
-                long ns);
+Event_timedwait(Event e, long ns);
 
 int
-Event_signal(Event e,
-             void *value);
+Event_signal(Event e, void *value);
 
 int
-Event_broadcast(Event e,
-                void *value);
+Event_broadcast(Event e, void *value);
+
+void
+Event_set_value(Event e, void *value);
 
 void *
 Event_value(Event e);

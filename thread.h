@@ -8,8 +8,7 @@ typedef void * ThreadArgument;
 typedef struct Thread *Thread;
 
 Thread
-Thread_create(ThreadFunction f,
-              ThreadArgument arg);
+Thread_create(ThreadFunction f, ThreadArgument arg);
 
 int
 Thread_join(Thread t);

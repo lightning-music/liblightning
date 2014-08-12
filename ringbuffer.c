@@ -36,12 +36,10 @@ Ringbuffer_read(Ringbuffer rb,
 }
 
 size_t
-Ringbuffer_write(Ringbuffer rb,
-                 const char *buf,
-                 size_t len)
+Ringbuffer_write(Ringbuffer rb, void *buf, size_t len)
 {
     assert(rb);
-    return jack_ringbuffer_write(rb->jrb, (void *) buf, len);
+    return jack_ringbuffer_write(rb->jrb, buf, len);
 }
 
 void
