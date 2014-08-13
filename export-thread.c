@@ -29,11 +29,6 @@ struct ExportThread {
     Thread thread;
 };
 
-typedef enum {
-    WORKING = 10,
-    DONE = 20
-} State;
-
 static void *
 export_thread(void *arg);
 
@@ -50,8 +45,7 @@ ExportThread_create(const char *file, nframes_t output_sr, channels_t channels)
     memcpy(thread->file, file, len);
     thread->file[len] = '\0';
     thread->output_sr = output_sr;
-    State state = WORKING;
-    thread->data_event = Event_init(&state);
+    thread->data_event = Event_init(NULL);
     thread->rb = Ringbuffer_init(4096 * SAMPLE_SIZE * channels);
     thread->thread = Thread_create(export_thread, thread);
     return thread;
@@ -59,23 +53,23 @@ ExportThread_create(const char *file, nframes_t output_sr, channels_t channels)
 
 /**
  * Write some samples to the export thread's ring buffer
+ * Beware that this function must be realtime safe!
  */
 nframes_t
-ExportThread_write(ExportThread thread, sample_t **bufs,
-                   nframes_t frames, channels_t channels)
+ExportThread_write(ExportThread thread, sample_t **bufs, nframes_t frames)
 {
     assert(thread);
 
     channels_t chan = 0;
     nframes_t frame = 0;
-    size_t bytes_total = frames * channels * SAMPLE_SIZE;
+    size_t bytes_total = frames * thread->channels * SAMPLE_SIZE;
 
     /* allocate and fill interleaved buffer */
 
-    sample_t *ibuf = CALLOC(frames * channels, SAMPLE_SIZE);
-    for (chan = 0; chan < channels; chan++) {
+    sample_t ibuf[ frames * thread->channels * SAMPLE_SIZE ];
+    for (chan = 0; chan < thread->channels; chan++) {
         for (frame = 0; frame < frames; frame++) {
-            ibuf[ chan + (frame * channels) ] = bufs[chan][frame];
+            ibuf[ chan + (frame * thread->channels) ] = bufs[chan][frame];
         }
     }
 
@@ -84,14 +78,14 @@ ExportThread_write(ExportThread thread, sample_t **bufs,
     size_t bytes_written =                          \
         Ringbuffer_write(thread->rb, ibuf, bytes_total);
 
-    /* warn if we couldn't write all the data */
+    return bytes_written / (thread->channels * SAMPLE_SIZE);
+}
 
-    LOG(Warn, "attempted to write %ld bytes, but could only write %ld",
-        bytes_total, bytes_written);
-
-    FREE(ibuf);
-
-    return bytes_written / (channels * SAMPLE_SIZE);
+int
+ExportThread_signal(ExportThread thread, ExportThread_Signal *signal)
+{
+    assert(thread);
+    return Event_signal(thread->data_event, signal);
 }
 
 /**
@@ -107,6 +101,7 @@ ExportThread_free(ExportThread *thread)
     FREE(t->file);
 }
 
+/* FIXME!! */
 static void *
 export_thread(void *arg)
 {
@@ -132,8 +127,14 @@ export_thread(void *arg)
     while (bytes_read == bytes_wanted) {
         /* wait for data */
         Event_wait(thread->data_event);
+
+        ExportThread_Signal *signal = Event_value(thread->data_event);
+
+        if (*signal == ExportThread_Stop) {
+            break;
+        }
  
-       /* read data from the ringbuffer */
+        /* read data from the ringbuffer */
         bytes_read = Ringbuffer_read(thread->rb, (void *) buf, bytes_wanted);
 
         /* write to file */
@@ -143,6 +144,7 @@ export_thread(void *arg)
 
     sf_close(sf);
     ExportThread_free(&thread);
+    thread = NULL;
 
     return NULL;
 }

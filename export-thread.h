@@ -30,8 +30,14 @@ ExportThread_create(const char *file, nframes_t output_sr, channels_t channels);
  * @param ExportThread structure
  */
 nframes_t
-ExportThread_write(ExportThread thread, sample_t **bufs,
-                   nframes_t frames, channels_t channels);
+ExportThread_write(ExportThread thread, sample_t **bufs, nframes_t frames);
+
+/**
+ * Signal that there is data, with an optional signal to tell the
+ * thread to stop.
+ */
+int
+ExportThread_signal(ExportThread thread, ExportThread_Signal *signal);
 
 /**
  * Destroy an export thread

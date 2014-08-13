@@ -97,8 +97,7 @@ jack_errors(const char *msg)
  * JACK process callback
  */
 int
-process(jack_nframes_t nframes,
-        void *arg)
+process(jack_nframes_t nframes, void *arg)
 {
     JackClient client = (JackClient) arg;
 
@@ -115,19 +114,20 @@ process(jack_nframes_t nframes,
     buffers[0] = jack_port_get_buffer( client->jack_output_port_1, nframes );
     buffers[1] = jack_port_get_buffer( client->jack_output_port_2, nframes );
 
+    /* write data to the output buffer */
+
+    int result = client->audio_callback(buffers, 2, (nframes_t) nframes,
+                                        client->data);
+
     if (client->export_thread != NULL) {
-        /* export data to a file */
-        if (client->export_thread_signal == ExportThread_Stop) {
-            client->export_thread = NULL;
-            client->export_thread_signal = ExportThread_Idle;
-        } else if (client->export_thread_signal == ExportThread_Continue) {
-            
+        if (client->export_thread_signal == ExportThread_Continue) {
+            ExportThread_write(client->export_thread, buffers, nframes);
         }
+        ExportThread_signal(client->export_thread,
+                            &client->export_thread_signal);
     }
 
-    /* write data to the output buffer with registered callbacks */
-
-    return client->audio_callback(buffers, 2, (nframes_t) nframes, client->data);
+    return result;
 }
 
 JackClient
@@ -310,10 +310,16 @@ int
 JackClient_start_exporting(JackClient client, const char *file)
 {
     assert(client);
-    nframes_t output_sr = JackClient_samplerate(client);
-    client->export_thread = ExportThread_create(file, output_sr, 2);
-    client->export_thread_signal = ExportThread_Continue;
-    return 0;
+    nframes_t output_sr;
+    if (client->export_thread_signal == ExportThread_Idle
+        && client->export_thread == NULL) {
+        output_sr = JackClient_samplerate(client);
+        client->export_thread = ExportThread_create(file, output_sr, 2);
+        client->export_thread_signal = ExportThread_Continue;
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 /**
