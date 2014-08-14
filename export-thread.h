@@ -1,43 +1,53 @@
+#ifndef EXPORT_THREAD_H_INCLUDED
+#define EXPORT_THREAD_H_INCLUDED
 
 #include "types.h"
 
 typedef struct ExportThread *ExportThread;
 
 /**
- * client code must send the Continue signal as the
- * value of the data event for the thread to write data
- * from the ringbuffer to the file.
- * when the thread receives the Stop signal it will stop writing
- * and close the file
- */
-typedef enum {
-    ExportThread_Idle = 100,
-    ExportThread_Continue = 200,
-    ExportThread_Stop = 300
-} ExportThread_Signal;
-
-/**
  * Start a thread for writing to a file
+ *
+ * @param  output_sr - Output sample rate
+ * @param  channels - Output channels
  *
  * @return ExportThread structure
  */
 ExportThread
-ExportThread_create(const char *file, nframes_t output_sr, channels_t channels);
+ExportThread_create(nframes_t output_sr, channels_t channels);
 
 /**
  * Make the export thread wait for data
  *
- * @param ExportThread structure
+ * @param  thread - ExportThread, can not be NULL
+ * @param  bufs - Sample buffers
+ * @param  frames - Number of frames to write. Each buffer in @a bufs must contain this many frames.
  */
 nframes_t
 ExportThread_write(ExportThread thread, sample_t **bufs, nframes_t frames);
 
 /**
- * Signal that there is data, with an optional signal to tell the
- * thread to stop.
+ * Start exporting to a file.
+ * Fails if the export thread is already exporting.
+ *
+ * @param  thread - ExportThread, can not be NULL
+ * @param  file - file to save exported data in
+ *
+ * @return 0 on success, nonzero on failure
  */
 int
-ExportThread_signal(ExportThread thread, ExportThread_Signal *signal);
+ExportThread_start(ExportThread thread, const char *file);
+
+/**
+ * Stop exporting to a file.
+ * Does nothing if the export thread is not currently exporting.
+ *
+ * @param  thread - ExportThread
+ *
+ * @return 0 on success, nonzero on failure
+ */
+int
+ExportThread_stop(ExportThread thread);
 
 /**
  * Destroy an export thread
@@ -45,3 +55,4 @@ ExportThread_signal(ExportThread thread, ExportThread_Signal *signal);
 void
 ExportThread_free(ExportThread *thread);
 
+#endif

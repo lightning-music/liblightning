@@ -37,7 +37,6 @@ struct JackClient {
     Mutex state_mutex;
     /* Thread for exporting to audio file */
     ExportThread export_thread;
-    ExportThread_Signal export_thread_signal;
 };
 
 /* state-handling functions */
@@ -119,13 +118,9 @@ process(jack_nframes_t nframes, void *arg)
     int result = client->audio_callback(buffers, 2, (nframes_t) nframes,
                                         client->data);
 
-    if (client->export_thread != NULL) {
-        if (client->export_thread_signal == ExportThread_Continue) {
-            ExportThread_write(client->export_thread, buffers, nframes);
-        }
-        ExportThread_signal(client->export_thread,
-                            &client->export_thread_signal);
-    }
+    /* possible write data to an audio file */
+
+    ExportThread_write(client->export_thread, buffers, nframes);
 
     return result;
 }
@@ -154,10 +149,11 @@ JackClient_init(AudioCallback audio_callback, void *client_data)
         exit(EXIT_FAILURE);
     }
 
+    nframes_t sr = jack_get_sample_rate(client->jack_client);
+
     client->data = client_data;
     client->audio_callback = audio_callback;
-    client->export_thread = NULL;
-    client->export_thread_signal = ExportThread_Idle;
+    client->export_thread = ExportThread_create(sr, 2);
 
     return client;
 }
@@ -307,19 +303,10 @@ JackClient_playback_ports(JackClient jack)
  * Return 0 on success, nonzero on failure
  */
 int
-JackClient_start_exporting(JackClient client, const char *file)
+JackClient_export_start(JackClient client, const char *file)
 {
-    assert(client);
-    nframes_t output_sr;
-    if (client->export_thread_signal == ExportThread_Idle
-        && client->export_thread == NULL) {
-        output_sr = JackClient_samplerate(client);
-        client->export_thread = ExportThread_create(file, output_sr, 2);
-        client->export_thread_signal = ExportThread_Continue;
-        return 0;
-    } else {
-        return 1;
-    }
+    assert(client && client->export_thread);
+    return ExportThread_start(client->export_thread, file);
 }
 
 /**
@@ -327,19 +314,20 @@ JackClient_start_exporting(JackClient client, const char *file)
  * Return 0 on success, nonzero on failure
  */
 int
-JackClient_stop_exporting(JackClient client)
+JackClient_export_stop(JackClient client)
 {
-    assert(client);
-    client->export_thread_signal = ExportThread_Stop;
-    return 0;
+    assert(client && client->export_thread);
+    return ExportThread_stop(client->export_thread);
 }
 
 void
 JackClient_free(JackClient *jack)
 {
     assert(jack && *jack);
+    JackClient j = *jack;
     JackClient_set_state(*jack, JackClientState_Finished);
+    ExportThread_free(&j->export_thread);
     /* close jack client */
-    jack_client_close((*jack)->jack_client);
+    jack_client_close(j->jack_client);
     FREE(*jack);
 }

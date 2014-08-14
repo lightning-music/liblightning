@@ -53,16 +53,19 @@ JackClient_playback_ports(JackClient jack);
 
 /**
  * Start exporting to an audio file
- * Return 0 on success, nonzero on failure
+ *
+ * @return 0 on success, nonzero on failure
  */
 int
-JackClient_start_exporting(JackClient client, const char *file);
+JackClient_export_start(JackClient client, const char *file);
 
 /**
  * Stop recording output to audio file
+ *
+ * @return 0 on success, nonzero on failure
  */
 int
-JackClient_stop_exporting();
+JackClient_export_stop(JackClient client);
 
 // free any resources being used by the audio engine
 void
