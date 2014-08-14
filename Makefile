@@ -62,6 +62,8 @@ examples/play-file: examples/play-file.c       \
            ringbuffer.o ringbuffer.h           \
            mutex.o mutex.h                     \
            src.o src.h                         \
+           thread.o thread.h                   \
+           event.o event.h                     \
            export-thread.o export-thread.h     \
            jack-client.o jack-client.h
 
@@ -72,12 +74,12 @@ examples/play-sample: examples/play-sample.c   \
              realtime.o realtime.h             \
              ringbuffer.o ringbuffer.h         \
              thread.o thread.h                 \
+             export-thread.o export-thread.h   \
              event.o event.h                   \
              mutex.o mutex.h                   \
              src.o src.h                       \
              bin-tree.o bin-tree.h             \
              samples.o samples.h               \
-             export-thread.o export-thread.h   \
              sample.o sample.h                 \
              jack-client.o jack-client.h
 
