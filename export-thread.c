@@ -245,22 +245,31 @@ export_thread(void *arg)
 
     /* wait for the start event */
     Event_wait(thread->start_event);
+
+    LOG(Debug, "received %s event", "start");
     
     char *file = (char *) Event_value(thread->start_event);
     SF_INFO sfinfo;
     sfinfo.samplerate = thread->output_sr;
     sfinfo.channels = thread->channels;
+    sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
     LOG(Debug, "exporting to %s", file);
     SNDFILE *sf = sf_open(file, SFM_WRITE, &sfinfo);
     FREE(file);
 
     if (sf == NULL) {
+        LOG(Error, "%s", sf_strerror(sf));
         return NULL;
     }
 
     while (1) {
+
+        LOG(Debug, "waiting for %s event", "data");
+
         /* wait for data */
         Event_wait(thread->data_event);
+
+        LOG(Debug, "received %s event", "data");
 
         /* read data from the ringbuffer and write it to the file,
            assume data in ringbuffer is interleaved */
