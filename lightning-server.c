@@ -49,6 +49,22 @@ play_sample(const char *path,
             OscMessage msg,
             void *data);
 
+static int
+export_start(const char *path,
+             const char *types,
+             OscArgument **argv,
+             int argc,
+             OscMessage msg,
+             void *data);
+
+static int
+export_stop(const char *path,
+            const char *types,
+            OscArgument **argv,
+            int argc,
+            OscMessage msg,
+            void *data);
+
 /* realtime callback */
 static int
 audio_callback(sample_t **buffers,
@@ -191,6 +207,33 @@ play_sample(const char *path,
 }
 
 static int
+export_start(const char *path,
+             const char *types,
+             OscArgument **argv,
+             int argc,
+             OscMessage msg,
+             void *data)
+{
+    assert(0 == strcmp(types, "s"));
+    assert(argc == 1);
+    JackClient jack = (JackClient) data;
+    const char *file = (const char *) argv[0];
+    return JackClient_export_start(jack, file);
+}
+
+static int
+export_stop(const char *path,
+            const char *types,
+            OscArgument **argv,
+            int argc,
+            OscMessage msg,
+            void *data)
+{
+    JackClient jack = (JackClient) data;
+    return JackClient_export_stop(jack);
+}
+
+static int
 audio_callback(sample_t **buffers,
                channels_t channels,
                nframes_t frames,
@@ -235,4 +278,18 @@ setup_osc_handlers(LightningServer server)
                          "sff",
                          play_sample,
                          server->samples);
+
+    /* Export Start handler */
+    OscServer_add_method(server->osc_server,
+                         "/export/start",
+                         "",
+                         export_start,
+                         server->jack_client);
+
+    /* Export Stop handler */
+    OscServer_add_method(server->osc_server,
+                         "/export/stop",
+                         "",
+                         export_stop,
+                         server->jack_client);
 }

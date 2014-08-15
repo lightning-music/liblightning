@@ -172,7 +172,7 @@ Samples_load(Samples samps, const char *path)
     if (NULL == cached) {
         LOG(Debug, "sample %s was not cached", path);
         /* initialize and cache it */
-        Sample samp = Samples_find_file(samps, path, samps->output_sr);/*Sample_init(path, 1.0, 1.0, samps->output_sr);*/
+        Sample samp = Samples_find_file(samps, path, samps->output_sr);
         LOG(Debug, "storing %s -> %p in cache", path, samp);
         BinTree_insert(samps->cache, path, samp);
         return samp;
@@ -194,6 +194,10 @@ Samples_play(Samples samps, const char *path, pitch_t pitch, gain_t gain)
     assert(samps);
     LOG(Debug, "playing %s", path);
     Sample cached = Samples_load(samps, path);
+    if (cached == NULL) {
+        LOG(Error, "could not load %s", path);
+        return NULL;
+    }
     LOG(Debug, "loaded %s", Sample_path(cached));
     Sample samp = Sample_clone(cached, pitch, gain, samps->output_sr);
     LOG(Debug, "cloned %s", Sample_path(samp));
@@ -305,7 +309,9 @@ play_new_samples(void *arg)
     while (1) {
         Event_wait(event);
         Sample samp = (Sample) Event_value(event);
-        Ringbuffer_write(rb, (void *) &samp, sizeof(Sample));
+        if (samp != NULL) {
+            Ringbuffer_write(rb, (void *) &samp, sizeof(Sample));
+        }
     }
 }
 
