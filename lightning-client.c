@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
 
 static void
 usage(char *prog) {
-    fprintf(stderr, "Usage");
+    fprintf(stderr, "Usage\n");
     fprintf(stderr, "$ %s command [options]\n", prog);
     fprintf(stderr, "\n");
     fprintf(stderr, "commands\n");
@@ -70,7 +70,8 @@ valid_command(char *cmd)
 {
     return (0 == strcmp(cmd, "add"))
         || (0 == strcmp(cmd, "load"))
-        || (0 == strcmp(cmd, "play"));
+        || (0 == strcmp(cmd, "play"))
+        || (0 == strcmp(cmd, "export"));
 }
 
 static int
@@ -133,15 +134,17 @@ static int
 export_cmd(int argc, char **argv)
 {
     if (argc < 3) {
+        fprintf(stderr, "export requires start|stop\n");
         usage(argv[0]);
     } else if (0 == strcmp("start", argv[2])) {
         return export_start(argc, argv);
     } else if (0 == strcmp("stop", argv[2])) {
         return export_stop(argc, argv);
     } else {
+        fprintf(stderr, "export requires start|stop\n");
         usage(argv[0]);
     }
-    return 1;
+    return EXIT_FAILURE;
 }
 
 static int
@@ -149,10 +152,11 @@ export_start(int argc, char **argv)
 {
     if (argc < 4) {
         fprintf(stderr, "export start command requires a file name\n");
+        return EXIT_FAILURE;
     } else {
         lo_address addr = lo_address_new(NULL, port);
         const char *path = "/export/start";
-        int sent = lo_send(addr, path, "s", argv[2]);
+        int sent = lo_send(addr, path, "s", argv[3]);
         if (sent == -1) {
             fprintf(stderr, "Could not send OSC message (%s)\n",
                     lo_address_errstr(addr));
@@ -169,10 +173,8 @@ export_stop(int argc, char **argv)
         fprintf(stderr, "export stop command requires a sample name, pitch, and gain\n");
     } else {
         lo_address addr = lo_address_new(NULL, port);
-        const char *path = "/sample";
-        double pitch = atof(argv[3]);
-        double gain = atof(argv[4]);
-        int sent = lo_send(addr, path, "sff", argv[2], pitch, gain);
+        const char *path = "/export/stop";
+        int sent = lo_send(addr, path, "");
         if (sent == -1) {
             fprintf(stderr, "Could not send OSC message (%s)\n",
                     lo_address_errstr(addr));

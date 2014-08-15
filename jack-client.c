@@ -12,6 +12,7 @@
 #include "event.h"
 #include "export-thread.h"
 #include "jack-client.h"
+#include "log.h"
 #include "mem.h"
 #include "mutex.h"
 #include "ringbuffer.h"
@@ -306,7 +307,12 @@ int
 JackClient_export_start(JackClient client, const char *file)
 {
     assert(client && client->export_thread);
-    return ExportThread_start(client->export_thread, file);
+    LOG(Debug, "starting export for %s", file);
+    size_t len = strlen(file);
+    char *copy = ALLOC( len + 1 );
+    memcpy(copy, file, len);
+    copy[len] = '\0';
+    return ExportThread_start(client->export_thread, copy);
 }
 
 /**

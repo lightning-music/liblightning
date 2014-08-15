@@ -134,6 +134,7 @@ ExportThread_create(nframes_t output_sr, channels_t channels)
     ExportThread thread;
     NEW(thread);
     thread->exporting = 0;
+    thread->channels = channels;
     thread->exporting_mutex = Mutex_init();
     thread->output_sr = output_sr;
     thread->start_event = Event_init(NULL);
@@ -172,6 +173,8 @@ ExportThread_write(ExportThread thread, sample_t **bufs, nframes_t frames)
 
         size_t bytes_written =                          \
             Ringbuffer_write(thread->rb, ibuf, bytes_total);
+
+        Event_broadcast(thread->data_event, NULL);
 
         return bytes_written / (thread->channels * SAMPLE_SIZE);
     } else {
@@ -243,11 +246,13 @@ export_thread(void *arg)
     /* wait for the start event */
     Event_wait(thread->start_event);
     
-    const char *file = (const char *) Event_value(thread->start_event);
+    char *file = (char *) Event_value(thread->start_event);
     SF_INFO sfinfo;
     sfinfo.samplerate = thread->output_sr;
     sfinfo.channels = thread->channels;
+    LOG(Debug, "exporting to %s", file);
     SNDFILE *sf = sf_open(file, SFM_WRITE, &sfinfo);
+    FREE(file);
 
     if (sf == NULL) {
         return NULL;

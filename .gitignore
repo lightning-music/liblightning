@@ -3,3 +3,6 @@
 .vagrant/
 core
 *.log
+*.wav
+*.flac
+*.opus

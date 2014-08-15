@@ -218,6 +218,7 @@ export_start(const char *path,
     assert(argc == 1);
     JackClient jack = (JackClient) data;
     const char *file = (const char *) argv[0];
+    LOG(Debug, "export start %s", file);
     return JackClient_export_start(jack, file);
 }
 
@@ -282,7 +283,7 @@ setup_osc_handlers(LightningServer server)
     /* Export Start handler */
     OscServer_add_method(server->osc_server,
                          "/export/start",
-                         "",
+                         "s",
                          export_start,
                          server->jack_client);
 
