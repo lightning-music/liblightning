@@ -62,6 +62,9 @@ examples/play-file: examples/play-file.c       \
            ringbuffer.o ringbuffer.h           \
            mutex.o mutex.h                     \
            src.o src.h                         \
+           thread.o thread.h                   \
+           log.o log.h                         \
+           event.o event.h                     \
            export-thread.o export-thread.h     \
            jack-client.o jack-client.h
 
