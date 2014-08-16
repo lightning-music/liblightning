@@ -2,4 +2,4 @@ language: c
 before_script:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libjack-dev libsndfile1-dev libsamplerate0-dev liblo-dev
-script: make && make examples
+script: make
