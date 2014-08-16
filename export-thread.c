@@ -118,7 +118,7 @@ struct ExportThread {
     Thread thread;
     /* flag to tell whether we are currently exporting,
        and associated mutex to protect concurrent reads/writes */
-    int exporting;
+    volatile int exporting;
     Mutex exporting_mutex;
 };
 
@@ -186,8 +186,10 @@ static int
 ExportThread_set_exporting(ExportThread thread, int val)
 {
     if (Mutex_lock(thread->exporting_mutex)) {
+        LOG(Warn, "could not lock %s", "exporting_mutex");
         return 1;
     }
+    LOG(Debug, "setting exporting to %d", val);
     thread->exporting = val;
     return Mutex_unlock(thread->exporting_mutex);
 }
@@ -197,9 +199,11 @@ ExportThread_is_exporting(ExportThread thread)
 {
     int result;
     if (Mutex_lock(thread->exporting_mutex)) {
+        LOG(Warn, "could not lock %s", "exporting_mutex");
         return 0;
     }
     result = thread->exporting != 0;
+    /* LOG(Debug, "exporting = %d", thread->exporting); */
     Mutex_unlock(thread->exporting_mutex);
     return result;
 }
@@ -216,7 +220,12 @@ int
 ExportThread_stop(ExportThread thread)
 {
     assert(thread);
-    return ExportThread_set_exporting(thread, 0);
+    int error = ExportThread_set_exporting(thread, 0);
+    if (error) {
+        LOG(Warn, "could not set exporting to %d", 0);
+        return error;
+    }
+    return Event_broadcast(thread->data_event, NULL);
 }
 
 /**
@@ -243,11 +252,10 @@ export_thread(void *arg)
     const size_t bytes_wanted = samples_wanted * SAMPLE_SIZE * thread->channels;
     sample_t buf[samples_wanted * thread->channels];
 
+ wait_for_start_event:
     /* wait for the start event */
     Event_wait(thread->start_event);
 
-    LOG(Debug, "received %s event", "start");
-    
     char *file = (char *) Event_value(thread->start_event);
     SF_INFO sfinfo;
     sfinfo.samplerate = thread->output_sr;
@@ -255,34 +263,47 @@ export_thread(void *arg)
     sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
     LOG(Debug, "exporting to %s", file);
     SNDFILE *sf = sf_open(file, SFM_WRITE, &sfinfo);
-    FREE(file);
 
     if (sf == NULL) {
         LOG(Error, "%s", sf_strerror(sf));
         return NULL;
     }
 
+    LOG(Debug, "start exporting %s", file);
+    
+    int exporting = 1;
+
     while (1) {
-
-        LOG(Debug, "waiting for %s event", "data");
-
         /* wait for data */
         Event_wait(thread->data_event);
 
-        LOG(Debug, "received %s event", "data");
+        exporting = ExportThread_is_exporting(thread);
 
-        /* read data from the ringbuffer and write it to the file,
-           assume data in ringbuffer is interleaved */
-        size_t bytes_read = 0;
-        nframes_t frames_read = 0;
-        do {
-            bytes_read = Ringbuffer_read(thread->rb, (void *) buf, bytes_wanted);
-            frames_read = bytes_read / (SAMPLE_SIZE * thread->channels);
-            sf_writef_float(sf, buf, frames_read);
-        } while (bytes_read == bytes_wanted);
+        if (exporting) {
+            /* read data from the ringbuffer and write it to the file,
+               assume data in ringbuffer is interleaved */
+            size_t bytes_read = 0;
+            nframes_t frames_read = 0;
+            do {
+                bytes_read = Ringbuffer_read(thread->rb,
+                                             (void *) buf,
+                                             bytes_wanted);
+
+                frames_read = bytes_read / (SAMPLE_SIZE * thread->channels);
+                sf_writef_float(sf, buf, frames_read);
+            } while (bytes_read == bytes_wanted);
+        } else {
+            LOG(Debug, "done exporting %s", file);
+            break;
+        }
     }
 
     sf_close(sf);
+
+    LOG(Debug, "closed %s", file);
+    FREE(file);
+
+    goto wait_for_start_event;
 
     return NULL;
 }

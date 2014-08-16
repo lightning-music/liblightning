@@ -231,7 +231,12 @@ export_stop(const char *path,
             void *data)
 {
     JackClient jack = (JackClient) data;
-    return JackClient_export_stop(jack);
+    LOG(Debug, "export %s", "stop");
+    int error = JackClient_export_stop(jack);
+    if (error) {
+        LOG(Error, "could not stop %s", "export");
+    }
+    return error;
 }
 
 static int
