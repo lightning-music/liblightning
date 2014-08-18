@@ -267,8 +267,6 @@ Samples_write(Samples samps,
     }
 
     /* write samples to output buffers */
-    /* TODO: sum the samples into the output buffers
-       instead of overwriting each time through the loop */
 
     for (i = 0; i < MAX_POLYPHONY; i++) {
         if (samps->active[i] == NULL)
@@ -298,10 +296,7 @@ Samples_write(Samples samps,
 
     /* copy sum buffers to output buffers */
 
-    /* LOG(Debug, "buffers[0] %p", buffers[0]); */
-    /* LOG(Debug, "buffers[1] %p", buffers[1]); */
     for (chan = 0; chan < channels; chan++) {
-        /* memcpy(buffers[chan], samps->sum_bufs[chan], frames * SAMPLE_SIZE); */
         for (frame = 0; frame < frames; frame++) {
             buffers[chan][frame] = samps->sum_bufs[chan][frame];
         }
