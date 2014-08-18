@@ -21,7 +21,7 @@ BinTree_init(CmpFunction cmp);
  * Returns 0 on success, nonzero on failure
  */
 int
-BinTree_insert(BinTree tree, const void *key, void *value);
+BinTree_insert(BinTree tree, const char *key, void *value);
 
 /**
  * Lookup a node by key
@@ -29,7 +29,7 @@ BinTree_insert(BinTree tree, const void *key, void *value);
  * if it was found
  */
 void *
-BinTree_lookup(BinTree tree, const void *key);
+BinTree_lookup(BinTree tree, const char *key);
                
 /**
  * Free all the tree's nodes and the tree structure itself

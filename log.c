@@ -60,5 +60,6 @@ lightning_log(Log log, const char *file, long line,
     vsprintf(msg, fmt, ap);
     fprintf(log->stream, "%s:%ld [%s] %s\n",
             file, line, level_to_string(level), msg);
+    fflush(log->stream);
     va_end(ap);
 }

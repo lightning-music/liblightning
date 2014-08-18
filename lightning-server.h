@@ -1,6 +1,8 @@
 #ifndef SERVER_H_INCLUDED
 #define SERVER_H_INCLUDED
 
+#include "types.h"
+
 /**
  * lightning server data type
  *
@@ -53,6 +55,15 @@ LightningServer_broadcast_port(LightningServer server);
  */
 void
 LightningServer_listen(LightningServer server);
+
+/**
+ * Play a sample
+ */
+int
+LightningServer_play_sample(LightningServer server,
+                            const char *file,
+                            pitch_t pitch,
+                            gain_t gain);
 
 /**
  * Free the resources held by a lightning server

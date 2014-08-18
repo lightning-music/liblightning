@@ -37,6 +37,9 @@ Samples_load(Samples samps,
  * If the sample was not in the cache and had to be loaded from disk,
  * it will be stored in the cache so that subsequent loads
  * will be from memory.
+ *
+ * @param  {Samples}        samps - Samples instance
+ * @param  {const char *}   path - path to audio file
  */
 Sample
 Samples_play(Samples samps,

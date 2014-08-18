@@ -11,12 +11,13 @@ function void playBuf(string file, float gain, float speed) {
 function void go(Event play, string file) {
     while (1) {
         play => now;
-        spork ~ playBuf(file, Math.random2f(0.01, 0.5), Math.random2f(0.5, 1.5));
+        // spork ~ playBuf(file, Math.random2f(0.01, 0.5), Math.random2f(0.5, 1.5));
+        spork ~ playBuf(file, 1.0, 1.0);
     }
 }
 
 Event e;
-spork ~ go(e, me.arg(0));
+spork ~ go(e, "audio/snap.flac");
 while (1) {
     e.signal();
     200::ms => now;

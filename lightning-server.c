@@ -139,6 +139,19 @@ LightningServer_listen(LightningServer server)
     }
 }
 
+/**
+ * Play a sample
+ */
+int
+LightningServer_play_sample(LightningServer server,
+                            const char *file,
+                            pitch_t pitch,
+                            gain_t gain)
+{
+    assert(server && server->samples);
+    return NULL != Samples_play(server->samples, file, pitch, gain);
+}
+
 void
 LightningServer_free(LightningServer *server)
 {

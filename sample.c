@@ -41,7 +41,6 @@ struct Sample {
     // provide a way to synchronize a thread on the `done` event
     Event done_event;
     /* sample rate converters */
-    SRC *src;
     double src_ratio;
     /* sample state and associated mutex */
     State state;
@@ -243,6 +242,7 @@ Sample_init(const char *file, pitch_t pitch, gain_t gain, nframes_t output_sr)
 Sample
 Sample_clone(Sample orig, pitch_t pitch, gain_t gain, nframes_t output_sr)
 {
+    LOG(Debug, "cloning sample %p", orig);
     Sample s;
     NEW(s);
     initialize_state(s);
@@ -253,15 +253,14 @@ Sample_clone(Sample orig, pitch_t pitch, gain_t gain, nframes_t output_sr)
     s->samplerate = orig->samplerate;
     s->src_ratio = output_sr / (double) orig->samplerate;
     s->done_event = Event_init(NULL);
-    s->path = orig->path;
+    Sample_set_path(s, orig->path);
     allocate_frame_buffers(s, s->frames);
     copy_frame_buffers(s, orig, s->gain);
     s->framep = 0;
     s->framep_mutex = Mutex_init();
     s->total_frames_written = 0;
-    /* initialize sample rate converters */
-    /* allocate_src(s); */
     Sample_set_state_or_exit(s, Processing);
+    LOG(Debug, "%s created %p", "Sample_clone", s);
     return s;
 }
 
@@ -352,15 +351,26 @@ Sample_free(Sample *samp)
 {
     int i;
     assert(samp && *samp);
+    Sample s = *samp;
+    /* free the path char array */
+    FREE(s->path);
+    /* free the sample rate converter */
+    /* SRC_free(&s->src); */
     /* free the done event */
-    Event_free(&(*samp)->done_event);
+    Event_free(&s->done_event);
     /* free the framep mutex */
-    Mutex_free(&(*samp)->framep_mutex);
-    for (i = 0; i < (*samp)->channels; i++) {
-        FREE((*samp)->framebufs[i]);
+    Mutex_free(&s->framep_mutex);
+    /* free the state mutex */
+    Mutex_free(&s->state_mutex);
+    LOG(Debug, "Sample_free s->framebufs[0]  %p", s->framebufs[0]);
+    LOG(Debug, "Sample_free s->framebufs[1]  %p", s->framebufs[1]);
+    for (i = 0; i < s->channels; i++) {
+        FREE(s->framebufs[i]);
     }
-    FREE((*samp)->framebufs);
+    FREE(s->framebufs);
+    void *p = *samp;
     FREE(*samp);
+    LOG(Debug, "freed %p", p);
 }
 
 static int
@@ -396,9 +406,13 @@ initialize_state(Sample s)
 static void
 allocate_frame_buffers(Sample s, nframes_t frames)
 {
+    size_t sz = frames * SAMPLE_SIZE;
     s->framebufs = CALLOC(2, sizeof(sample_t*));
-    s->framebufs[0] = CALLOC(frames, SAMPLE_SIZE);
-    s->framebufs[1] = CALLOC(frames, SAMPLE_SIZE);
+    LOG(Debug, "allocating frame buffers of size %ld", sz);
+    s->framebufs[0] = ALLOC(frames * SAMPLE_SIZE);
+    s->framebufs[1] = ALLOC(frames * SAMPLE_SIZE);
+    LOG(Debug, "allocated s->framebufs[0]  %p", s->framebufs[0]);
+    LOG(Debug, "allocated s->framebufs[1]  %p", s->framebufs[1]);
 }
 
 /**

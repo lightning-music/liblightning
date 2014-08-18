@@ -38,7 +38,7 @@ int main(int argc, char * const argv[])
         OPTION_SEARCH_DIRS
     };
 
-    char **search_dirs;
+    char **search_dirs = NULL;
     
     setup_signal_handlers();
     LOG(Info, "Welcome to %s!", "lightning");
@@ -65,9 +65,12 @@ int main(int argc, char * const argv[])
     }
 
     int i = 0;
-    while (search_dirs[i++] != NULL) ;
+    if (search_dirs != NULL)
+        while (search_dirs[i++] != NULL) ;
+
     LightningServer server =                                        \
         LightningServer_init("41068", NULL, NULL, i, search_dirs);
+    /* blocking */
     LightningServer_listen(server);
     LightningServer_free(&server);
 

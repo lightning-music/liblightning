@@ -33,6 +33,7 @@ struct JackClient {
     jack_port_t *jack_output_port_1;
     jack_port_t *jack_output_port_2;
     AudioCallback audio_callback;
+    sample_t **buffers;
     /* client state */
     JackClientState state;
     Mutex state_mutex;
@@ -109,19 +110,20 @@ process(jack_nframes_t nframes, void *arg)
 
     /* setup output sample buffers */
 
-    sample_t **buffers = CALLOC(2, sizeof(sample_t*));
-
-    buffers[0] = jack_port_get_buffer( client->jack_output_port_1, nframes );
-    buffers[1] = jack_port_get_buffer( client->jack_output_port_2, nframes );
+    client->buffers[0] = jack_port_get_buffer(client->jack_output_port_1,
+                                              nframes );
+    client->buffers[1] = jack_port_get_buffer(client->jack_output_port_2,
+                                              nframes);
 
     /* write data to the output buffer */
 
-    int result = client->audio_callback(buffers, 2, (nframes_t) nframes,
+    int result = client->audio_callback(client->buffers,
+                                        2, (nframes_t) nframes,
                                         client->data);
 
     /* possible write data to an audio file */
 
-    ExportThread_write(client->export_thread, buffers, nframes);
+    ExportThread_write(client->export_thread, client->buffers, nframes);
 
     return result;
 }
@@ -155,6 +157,7 @@ JackClient_init(AudioCallback audio_callback, void *client_data)
     client->data = client_data;
     client->audio_callback = audio_callback;
     client->export_thread = ExportThread_create(sr, 2);
+    client->buffers = CALLOC(2, sizeof(sample_t*));
 
     return client;
 }
@@ -191,10 +194,10 @@ JackClient_setup_callbacks(JackClient client)
 
     /* set state to Processing */
 
-    if (JackClient_set_state(client, JackClientState_Processing)) {
-        fprintf(stderr, "Could not set JackClient state to Processing\n");
-        exit(EXIT_FAILURE);
-    }
+    /* if (JackClient_set_state(client, JackClientState_Processing)) { */
+    /*     fprintf(stderr, "Could not set JackClient state to Processing\n"); */
+    /*     exit(EXIT_FAILURE); */
+    /* } */
 
     return 0;
 }
@@ -254,6 +257,13 @@ JackClient_setup_ports(JackClient client)
         fprintf(stderr, "Could not connect %s to %s\n",
                 jack_port_name(client->jack_output_port_2),
                 playback2);
+        exit(EXIT_FAILURE);
+    }
+
+    /* set state to Processing */
+
+    if (JackClient_set_state(client, JackClientState_Processing)) {
+        fprintf(stderr, "Could not set JackClient state to Processing\n");
         exit(EXIT_FAILURE);
     }
 

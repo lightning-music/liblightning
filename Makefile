@@ -25,7 +25,8 @@ EXAMPLES := metro play-file play-sample
 
 EXAMPLES := $(addprefix examples/,$(EXAMPLES))
 
-OBJS := bin-tree.o            \
+OBJS := atom.o                \
+        bin-tree.o            \
         clip.o                \
         event.o               \
         export-thread.o       \
@@ -60,3 +61,4 @@ examples/play-sample: examples/play-sample.c $(OBJS)
 clean:
 	rm -rf $(PROGS) $(EXAMPLES) *~ *.o examples/*~
 	$(MAKE) -C test clean
+	rm $(LIBLIGHTNING_AR)

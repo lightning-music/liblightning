@@ -37,6 +37,13 @@ struct Samples {
     /* thread used to push samples into the play buffer
        every time there is a play event */
     Thread play_thread;
+    /* buffer containing samples that need to be freed */
+    Ringbuffer free_buf;
+    /* event used to signal when there are samples that
+       need to be freed */
+    Event free_event;
+    /* thread that frees samples */
+    Thread free_thread;
     /* state for objects being used in the realtime thread */
     Realtime state;
     /* Sample pointer used for pushing samples into the play
@@ -52,6 +59,9 @@ struct Samples {
 
 void *
 play_new_samples(void *arg);
+
+void *
+free_done_samples(void *arg);
 
 /**
  * Data for the thread we start that adds
@@ -115,16 +125,26 @@ Samples_init(nframes_t output_sr)
 
     samps->output_sr = output_sr;
 
-    ThreadData tdata;
-    NEW(tdata);
+    /* setup play thread */
+
+    ThreadData play_thread;
+    NEW(play_thread);
     samps->play_buf = Ringbuffer_init(sizeof(Sample) * MAX_POLYPHONY);
     if (0 != Ringbuffer_mlock(samps->play_buf)) {
-        LOG(Error, "Could not mlock ringbuffer%s", "");
+        LOG(Error, "Could not %s ringbuffer", "mlock");
     }
     samps->play_event = Event_init();
-    tdata->buf = samps->play_buf;
-    tdata->event = samps->play_event;
-    samps->play_thread = Thread_create(play_new_samples, tdata);
+    play_thread->buf = samps->play_buf;
+    play_thread->event = samps->play_event;
+    samps->play_thread = Thread_create(play_new_samples, play_thread);
+
+    /* setup free thread */
+
+    ThreadData free_thread;
+    NEW(free_thread);
+    samps->free_event = Event_init();
+    free_thread->event = samps->free_event;
+    samps->free_thread = Thread_create(free_done_samples, free_thread);
 
     samps->new_sample = ALLOC(sizeof(Sample));
 
@@ -177,7 +197,7 @@ Samples_load(Samples samps, const char *path)
         BinTree_insert(samps->cache, path, samp);
         return samp;
     } else {
-        LOG(Debug, "returning cached sample %s", Sample_path(cached));
+        LOG(Debug, "returning cached sample %p", cached);
         return cached;
     }
 }
@@ -198,9 +218,9 @@ Samples_play(Samples samps, const char *path, pitch_t pitch, gain_t gain)
         LOG(Error, "could not load %s", path);
         return NULL;
     }
-    LOG(Debug, "loaded %s", Sample_path(cached));
+    LOG(Debug, "loaded %p", cached);
     Sample samp = Sample_clone(cached, pitch, gain, samps->output_sr);
-    LOG(Debug, "cloned %s", Sample_path(samp));
+    LOG(Debug, "cloned %p to %p", cached, samp);
     Event_broadcast(samps->play_event, samp);
     return samp;
 }
@@ -238,6 +258,8 @@ Samples_write(Samples samps,
             if (samps->active[i] == NULL) {
                 /* assign to the open sample slot and read another
                    new sample from the ring buffer */
+                LOG(Debug, "Samples_write read new sample %p",
+                    samps->new_sample);
                 samps->active[i] = samps->new_sample;
                 break;
             }
@@ -268,15 +290,21 @@ Samples_write(Samples samps,
 
         if (Sample_done(samps->active[i])) {
             /* remove from the active list and free the sample */
-            Sample_free(&samps->active[i]);
+            Event_broadcast(samps->free_event, samps->active[i]);
+            /* Sample_free(&samps->active[i]); */
             samps->active[i] = NULL;
         }
     }
 
     /* copy sum buffers to output buffers */
 
+    /* LOG(Debug, "buffers[0] %p", buffers[0]); */
+    /* LOG(Debug, "buffers[1] %p", buffers[1]); */
     for (chan = 0; chan < channels; chan++) {
-        memcpy(buffers[chan], samps->sum_bufs[chan], frames * SAMPLE_SIZE);
+        /* memcpy(buffers[chan], samps->sum_bufs[chan], frames * SAMPLE_SIZE); */
+        for (frame = 0; frame < frames; frame++) {
+            buffers[chan][frame] = samps->sum_bufs[chan][frame];
+        }
     }
 
     return 0;
@@ -310,7 +338,23 @@ play_new_samples(void *arg)
         Event_wait(event);
         Sample samp = (Sample) Event_value(event);
         if (samp != NULL) {
+            LOG(Debug, "play_new_samples adding %p to the ringbuffer", samp);
             Ringbuffer_write(rb, (void *) &samp, sizeof(Sample));
+        }
+    }
+}
+
+void *
+free_done_samples(void *arg)
+{
+    ThreadData data = (ThreadData) arg;
+    Event event = data->event;
+    while (1) {
+        Event_wait(event);
+        Sample samp = (Sample) Event_value(event);
+        if (samp != NULL) {
+            LOG(Debug, "free_done_samples freeing %p", samp);
+            Sample_free(&samp);
         }
     }
 }
