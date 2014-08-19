@@ -2,8 +2,9 @@ language: c
 before_install:
   - ./install-libwebsockets.sh
   - ./install-libjansson.sh
+  - ./install-check.sh
 before_script:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libjack-dev libsndfile1-dev libsamplerate0-dev liblo-dev check
+  - sudo apt-get install -qq libjack-dev libsndfile1-dev libsamplerate0-dev liblo-dev
   - make
 script: make test
