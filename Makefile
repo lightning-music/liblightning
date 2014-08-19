@@ -6,7 +6,7 @@ include vars.mk
 
 .PHONY: all install test clean
 
-all .DEFAULT: $(PROGS) $(LIBLIGHTNING_AR) $(EXAMPLES)
+all .DEFAULT: $(LIBLIGHTNING_AR) $(PROGS) $(EXAMPLES)
 
 install: $(PROGS) $(LIBLIGHTNING_AR)
 	install $(PROGS) $(DESTDIR)$(bindir)
