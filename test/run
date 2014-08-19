@@ -1,4 +1,5 @@
 #!/bin/bash
+test/check-json
 test/check-list
 test/check-metro
 

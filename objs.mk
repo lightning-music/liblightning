@@ -5,6 +5,7 @@ OBJS := atom.o                \
         event.o               \
         export-thread.o       \
         jack-client.o         \
+        json.o                \
         list.o                \
         lightning-server.o    \
         log.o                 \
