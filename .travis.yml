@@ -4,6 +4,6 @@ before_install:
   - ./install-libjansson.sh
 before_script:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libjack-dev libsndfile1-dev libsamplerate0-dev liblo-dev
+  - sudo apt-get install -qq libjack-dev libsndfile1-dev libsamplerate0-dev liblo-dev check
   - make
 script: make test
