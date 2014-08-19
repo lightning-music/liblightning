@@ -3,6 +3,7 @@ SNDFILE_FLAGS := $(shell pkg-config --cflags --libs sndfile)
 LIBLO_FLAGS := $(shell pkg-config --cflags --libs liblo)
 SRC_FLAGS := $(shell pkg-config --cflags --libs samplerate)
 CHECK_FLAGS := $(shell pkg-config --cflags --libs check)
+LWS_FLAGS := $(shell pkg-config --cflags --libs libwebsockets)
 CC=gcc
 CFLAGS := -Wall -g -std=c99
 LDFLAGS := -L.
