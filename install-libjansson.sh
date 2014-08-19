@@ -5,4 +5,3 @@ cd jansson-2.6
 ./configure
 make
 sudo make install
-
