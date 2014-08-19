@@ -15,6 +15,11 @@
 typedef int (* CmpFunction)(const void *a, const void *b);
 
 /**
+ * Tempo in BPM
+ */
+typedef int tempo_t;
+
+/**
  * Gain type float in [0, 1]
  */
 typedef float gain_t;
