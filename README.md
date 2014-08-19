@@ -1,9 +1,8 @@
 lightning-engine
 ===========
 
-lightning-engine is the audio sample playback engine of lightning.
-
-It is controlled with [OSC](http://opensoundcontrol.org).
+lightning-engine is an audio sample playback server that can be controlled with
+[OSC](http://opensoundcontrol.org), HTTP, and [websockets](http://tools.ietf.org/html/rfc6455).
 
 [![Build Status](https://travis-ci.org/lightning/engine.svg?branch=master)](https://travis-ci.org/lightning/engine)
 
