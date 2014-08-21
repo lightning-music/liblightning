@@ -18,4 +18,5 @@ OBJS := atom.o                \
         sample.o              \
         samples.o             \
         src.o                 \
-        thread.o
+        thread.o              \
+        web-server.o

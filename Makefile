@@ -17,7 +17,7 @@ clean:
 	rm -rf $(LIBLIGHTNING_AR) $(TESTS) $(TEST_DIR)/*~
 	rm -rf core *.log *.tar.gz
 
-lightning-engine: lightning-engine.c $(OBJS)
+lightning-engine: lightning-engine.c $(LIBLIGHTNING_AR)
 
 test: $(TESTS)
 	$(TEST_DIR)/run

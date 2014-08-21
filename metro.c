@@ -66,7 +66,8 @@ Metro_start(Metro metro)
     new_it.it_interval = interval;
     error = timer_settime(metro->timerid, 0, &new_it, NULL);
     if (error) {
-        fprintf(stderr, "Could not set timer: %s\n", strerror(errno));
+        fprintf(stderr, "Could not set timer value=0,1 interval=1,0: %s\n",
+                strerror(errno));
         return 1;
     }
     return 0;
@@ -88,7 +89,8 @@ Metro_stop(Metro metro)
     new_it.it_interval = interval;
     error = timer_settime(metro->timerid, 0, &new_it, NULL);
     if (error) {
-        fprintf(stderr, "Could not set timer: %s\n", strerror(errno));
+        fprintf(stderr, "Could not set timer value=0,0 interval=1,0: %s\n",
+                strerror(errno));
         return 1;
     }
     return 0;
