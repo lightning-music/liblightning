@@ -25,7 +25,7 @@ void
 notify_func(union sigval sv)
 {
     Event e = (Event) sv.sival_ptr;
-    printf("broadcasting event %p\n", e);
+    Event_broadcast(e, NULL);
 }
 
 Metro

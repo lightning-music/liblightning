@@ -14,12 +14,16 @@ install: $(PROGS) $(LIBLIGHTNING_AR)
 
 clean:
 	rm -rf $(PROGS) $(EXAMPLES) *~ *.o examples/*~
-	rm $(LIBLIGHTNING_AR) $(TESTS) $(TEST_DIR)/*~
+	rm -rf $(LIBLIGHTNING_AR) $(TESTS) $(TEST_DIR)/*~
+	rm -rf core *.log *.tar.gz
 
 lightning-engine: lightning-engine.c $(OBJS)
 
 test: $(TESTS)
 	$(TEST_DIR)/run
+
+test-clean:
+	rm -rf $(TESTS)
 
 test/check-metro: test/check-metro.c $(LIBLIGHTNING_AR)
 test/check-list: test/check-list.c $(LIBLIGHTNING_AR)

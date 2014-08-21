@@ -16,10 +16,19 @@ Json
 Json_null(void);
 
 Json
+Json_true(void);
+
+Json
+Json_false(void);
+
+Json
 Json_bool(int b);
 
 Json
 Json_int(JsonInt i);
+
+JsonInt
+Json_int_value(Json val);
 
 Json
 Json_real(double val);
@@ -36,20 +45,26 @@ Json_string_value(const Json string);
 Json
 Json_array(void);
 
+int
+Json_array_append(Json array, Json el);
+
 Json
 Json_object(void);
 
+int
+Json_object_set(Json obj, const char *key, Json value);
+
 char *
-Json_encode(const Json obj, JsonEncodeFlags flags);
+Json_encode(const Json obj);
 
 int
-Json_encode_fp(const Json obj, JsonEncodeFlags flags, FILE *fp);
+Json_encode_fp(const Json obj, FILE *fp);
 
 Json
-Json_decode(const char *str, JsonDecodeFlags flags, JsonError error);
+Json_decode(const char *str, JsonError error);
 
-Json
-Json_pack(JsonError error, const char *fmt, ...);
+int
+Json_equal(Json x, Json y);
 
 void
 Json_free(Json *json);
