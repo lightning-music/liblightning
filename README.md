@@ -1,10 +1,9 @@
-lightning-engine
+liblightning
 ===========
 
-lightning-engine is an audio sample playback server that can be controlled with
-[OSC](http://opensoundcontrol.org), HTTP, and [websockets](http://tools.ietf.org/html/rfc6455).
+liblightning is an audio sample engine
 
-[![Build Status](https://travis-ci.org/lightning/engine.svg?branch=master)](https://travis-ci.org/lightning/engine)
+[![Build Status](https://travis-ci.org/lightning/liblightning.svg?branch=master)](https://travis-ci.org/lightning/liblightning)
 
 
 
@@ -43,18 +42,6 @@ $ make install
 ```
 
 
-Usage
------
-
-Start the engine
-
-```shell
-$ lightning-engine --port 21000
-```
-
-
-
-Then visit [the OSC interface](https://github.com/lightning/engine/wiki/lightning-engine-OSC-interface).
 
 ### Discussion & Issues
 
