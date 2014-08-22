@@ -1,6 +1,6 @@
 package engine
 
-// go bindings for the lightning.h entry point
+// go bindings for the lightning audio engine
 
 // #cgo CFLAGS: -Wall -O2
 // #cgo LDFLAGS: -L. -llightning -lm -ljack -lsndfile -lpthread -lsamplerate
