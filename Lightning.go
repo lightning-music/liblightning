@@ -32,14 +32,14 @@ func (this *impl) ExportStop() int {
 	return int(C.Lightning_export_stop(this.handle))
 }
 
-type Lightning interface {
+type Engine interface {
 	AddDir(file string) int
 	PlaySample(file string, speed float32, gain float32) int
 	ExportStart(file string) int
 	ExportStop() int
 }
 
-func New() Lightning {
+func New() Engine {
 	instance := new(impl)
 	instance.handle = C.Lightning_init()
 	return instance

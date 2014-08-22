@@ -7,4 +7,4 @@ before_script:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libjack-dev libsndfile1-dev libsamplerate0-dev
   - make
-script: go build Lightning.go
+script: go build Lightning.go Metro.go
