@@ -33,3 +33,4 @@ $(LIBLIGHTNING_AR): $(OBJS)
 
 examples/play-file: examples/play-file.c $(LIBLIGHTNING_AR)
 examples/play-sample: examples/play-sample.c $(LIBLIGHTNING_AR)
+examples/webs: examples/webs.c $(LIBLIGHTNING_AR)
