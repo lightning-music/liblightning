@@ -18,9 +18,7 @@ Prerequisites:
 * [jack](http://jackaudio.org)
 * [libsndfile >= 1.0.25](http://www.mega-nerd.com/libsndfile/)
 * [libsamplerate >= 0.1.8](http://www.mega-nerd.com/SRC/).
-* [liblo >= 0.28](http://liblo.sourceforge.net/)
-* [libwebsockets 1.3-chrome37-firefox30](http://libwebsockets.org)
-* [libjansson >= 2.6](http://www.digip.org/jansson/)
+* [go >= 1.3.1](golang.org)
 
 ```shell
 $ make
