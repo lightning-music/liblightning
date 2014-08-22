@@ -1,12 +1,11 @@
 prefix=/usr/local
 bindir=$(prefix)/bin
 libdir=$(prefix)/lib
-# programs, examples, archive
-PROGS = lightning-engine lightning-client
+# examples, archive
 LIBLIGHTNING_AR=liblightning.a
-EXAMPLES := metro play-file play-sample webs
+EXAMPLES := play-file play-sample
 EXAMPLES := $(addprefix examples/,$(EXAMPLES))
 # tests
 TEST_DIR=test
-TESTS := check-list check-metro check-json
+TESTS := check-list
 TESTS := $(addprefix $(TEST_DIR)/, $(TESTS))

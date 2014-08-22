@@ -22,12 +22,12 @@ typedef int tempo_t;
 /**
  * Gain type float in [0, 1]
  */
-typedef float gain_t;
+typedef double gain_t;
 
 /**
  * Pitch type
  */
-typedef float pitch_t;
+typedef double pitch_t;
 
 /**
  * default sample size (jack currently uses 32-bit float)
