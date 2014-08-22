@@ -1,4 +1,4 @@
-LIGHTNING_FLAGS := $(shell pkg-config --cflags --libs jack sndfile liblo samplerate check libwebsockets jansson)
+LIGHTNING_FLAGS := $(shell pkg-config --cflags --libs jack sndfile samplerate check)
 CC=gcc
 ifeq ($(DEBUG),true)
 CFLAGS := -Wall -g -std=c99
