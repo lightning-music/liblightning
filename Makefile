@@ -6,18 +6,22 @@ include vars.mk
 
 .PHONY: all install test clean
 
-all .DEFAULT: $(LIBLIGHTNING_AR) $(PROGS) $(EXAMPLES)
+all .DEFAULT: $(LIBLIGHTNING_AR) $(EXAMPLES)
 
-install: $(PROGS) $(LIBLIGHTNING_AR)
-	install $(PROGS) $(DESTDIR)$(bindir)
-	install $(LIBLIGHTNING_AR) $(DESTDIR)$(libdir)
+install: $(LIBLIGHTNING_AR) $(includedir)
+	install -vC $(LIBLIGHTNING_AR) $(DESTDIR)$(libdir)
+	install -vC $(HEADERS) $(DESTDIR)$(includedir)
+
+$(includedir):
+	mkdir $(includedir)
+
+uninstall:
+	rm $(DESTDIR)$(libdir)/$(LIBLIGHTNING_AR)
 
 clean:
-	rm -rf $(PROGS) $(EXAMPLES) *~ *.o examples/*~
+	rm -rf $(EXAMPLES) *~ *.o examples/*~
 	rm -rf $(LIBLIGHTNING_AR) $(TESTS) $(TEST_DIR)/*~
 	rm -rf core *.log *.tar.gz
-
-lightning-engine: lightning-engine.c $(LIBLIGHTNING_AR)
 
 test: $(TESTS)
 	$(TEST_DIR)/run
@@ -33,4 +37,3 @@ $(LIBLIGHTNING_AR): $(OBJS)
 
 examples/play-file: examples/play-file.c $(LIBLIGHTNING_AR)
 examples/play-sample: examples/play-sample.c $(LIBLIGHTNING_AR)
-examples/webs: examples/webs.c $(LIBLIGHTNING_AR)
