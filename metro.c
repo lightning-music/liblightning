@@ -4,10 +4,10 @@
 #include <errno.h>
 #include <signal.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <string.h>
 #include <time.h>
 
+#include "log.h"
 #include "mem.h"
 #include "metro.h"
 #include "types.h"
@@ -44,7 +44,7 @@ Metro_init(MetroCallback cb, tempo_t tempo, void *data)
     NEW(timerid);
     int error = timer_create(CLOCK_REALTIME, &sev, timerid);
     if (error) {
-        fprintf(stderr, "Could not create timer: %s\n", strerror(errno));
+        LOG(Error, "Could not create timer: %s\n", strerror(errno));
     }
 
     metro->tempo = tempo;
@@ -58,13 +58,17 @@ Metro_init(MetroCallback cb, tempo_t tempo, void *data)
 int
 Metro_start(Metro metro)
 {
+    return Metro_set_tempo(metro, metro->tempo);
+}
+
+int
+Metro_set_tempo(Metro metro, tempo_t tempo)
+{
     assert(metro);
     int error;
-
     /* calculate ns interval for given tempo
        we tick 384 times per bar */
     double nspertick = (1000000000 * (240 / metro->tempo)) / 384.0;
-
     struct timespec interval, expire;
     /* best we can do to make it never expire? */
     expire.tv_sec = 0;
@@ -76,17 +80,10 @@ Metro_start(Metro metro)
     new_it.it_interval = interval;
     error = timer_settime(metro->timerid, 0, &new_it, NULL);
     if (error) {
-        fprintf(stderr, "Could not set timer value=0,1 interval=1,0: %s\n",
-                strerror(errno));
+        LOG(Error, "Could not set timer value=0,1 interval=1,0: %s\n",
+            strerror(errno));
         return 1;
     }
-    return 0;
-}
-
-int
-Metro_set_tempo(Metro metro, tempo_t tempo)
-{
-    // TODO
     return 0;
 }
 
@@ -106,8 +103,8 @@ Metro_stop(Metro metro)
     new_it.it_interval = interval;
     error = timer_settime(metro->timerid, 0, &new_it, NULL);
     if (error) {
-        fprintf(stderr, "Could not set timer value=0,0 interval=1,0: %s\n",
-                strerror(errno));
+        LOG(Error, "Could not set timer value=0,0 interval=1,0: %s\n",
+            strerror(errno));
         return 1;
     }
     return 0;
