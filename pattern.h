@@ -10,8 +10,13 @@
  */
 typedef struct Pattern *Pattern;
 
+/**
+ * Initialize a pattern with a given length.
+ *
+ * @param {void *} data - Pointer to data that will be used to process the notes in the pattern
+ */
 Pattern
-Pattern_init(int length, const char *sample);
+Pattern_init(int length, void *data);
 
 Note
 Pattern_note(Pattern pat, int i);

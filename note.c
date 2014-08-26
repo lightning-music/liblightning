@@ -7,13 +7,17 @@
 struct Note {
     int number;
     int velocity;
+    void *data;
 };
 
 Note
-Note_init()
+Note_init(int number, int velocity, void *data)
 {
     Note note;
     NEW(note);
+    note->number = number;
+    note->velocity = velocity;
+    note->data = data;
     return note;
 }
 

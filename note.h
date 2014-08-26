@@ -4,7 +4,7 @@
 typedef struct Note *Note;
 
 Note
-Note_init();
+Note_init(int number, int velocity, void *data);
 
 int
 Note_number(Note n);

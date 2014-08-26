@@ -20,7 +20,7 @@ typedef struct Lightning *Lightning;
  * If @a listenPort is NULL then liblo chooses an unused system port.
  */
 Lightning
-Lightning_init(void);
+Lightning_init(tempo_t initial_tempo);
 
 /**
  * Add a directory for lighting to search for audio files.

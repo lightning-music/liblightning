@@ -1,4 +1,9 @@
-
+/**
+ * Top-level module for lightning.
+ * This module initializes a master metro, and can use
+ * this to play patterns, or can just play one-off
+ * samples.
+ */
 #include <assert.h>
 #include <string.h>
 
@@ -6,19 +11,23 @@
 #include "lightning.h"
 #include "log.h"
 #include "mem.h"
+#include "metro.h"
 #include "samples.h"
 
 struct Lightning {
     JackClient jack_client;
     Samples samples;
+    Metro metro;
 };
 
 /* realtime callback */
 static int
-audio_callback(sample_t **buffers,
-               channels_t channels,
-               nframes_t frames,
-               void *data);
+audio_callback(sample_t **buffers, channels_t channels,
+               nframes_t frames, void *data);
+               
+/* metro callback */
+static int
+metro_callback(position_t pos, void *data);
 
 /**
  * Initialize jack_client and samples,
@@ -29,12 +38,12 @@ static void
 initialize_jack_client(Lightning lightning);
 
 Lightning
-Lightning_init(void)
+Lightning_init(tempo_t initial_tempo)
 {
     Lightning lightning;
     NEW(lightning);
     initialize_jack_client(lightning);
-
+    lightning->metro = Metro_init(metro_callback, initial_tempo, lightning);
     return lightning;
 }
 
@@ -95,6 +104,12 @@ audio_callback(sample_t **buffers,
 {
     Samples samples = (Samples) data;
     Samples_write(samples, buffers, channels, frames);
+    return 0;
+}
+
+static int
+metro_callback(position_t pos, void *data)
+{
     return 0;
 }
 

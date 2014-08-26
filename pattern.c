@@ -1,7 +1,6 @@
 
 #include <assert.h>
 
-#include "atom.h"
 #include "mem.h"
 #include "note.h"
 #include "pattern.h"
@@ -9,17 +8,17 @@
 struct Pattern {
     int length;
     Note *notes;
-    const char *sample;
+    void *data;
 };
 
 Pattern
-Pattern_init(int length, const char *sample)
+Pattern_init(int length, void *data)
 {
     Pattern pat;
     NEW(pat);
     pat->length = length;
     pat->notes = CALLOC(length, sizeof(Note));
-    pat->sample = Atom_string(sample);
+    pat->data = data;
     return pat;
 }
 
