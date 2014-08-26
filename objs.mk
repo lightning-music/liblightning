@@ -9,6 +9,7 @@ OBJS := atom.o                \
         lightning.o           \
         log.o                 \
         mem.o                 \
+        metro.o               \
         mutex.o               \
         realtime.o            \
         ringbuffer.o          \
