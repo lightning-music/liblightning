@@ -30,7 +30,7 @@ notify_func(union sigval sv)
 }
 
 Metro
-        Metro_init(MetroCallback cb, tempo_t tempo, void *data)
+Metro_init(MetroCallback cb, tempo_t tempo, void *data)
 {
     Metro metro;
     NEW(metro);
@@ -46,9 +46,12 @@ Metro
     if (error) {
         fprintf(stderr, "Could not create timer: %s\n", strerror(errno));
     }
+
+    metro->tempo = tempo;
     metro->cb = cb;
     metro->data = data;
     metro->timerid = timerid;
+
     return metro;
 }
 
@@ -57,12 +60,17 @@ Metro_start(Metro metro)
 {
     assert(metro);
     int error;
+
+    /* calculate ns interval for given tempo
+       we tick 384 times per bar */
+    double nspertick = (1000000000 * (240 / metro->tempo)) / 384.0;
+
     struct timespec interval, expire;
     /* best we can do to make it never expire? */
     expire.tv_sec = 0;
     expire.tv_nsec = 1;
-    interval.tv_sec = 1;
-    interval.tv_nsec = 0;
+    interval.tv_sec = 0;
+    interval.tv_nsec = (long) nspertick;
     struct itimerspec new_it;
     new_it.it_value = expire;
     new_it.it_interval = interval;
@@ -72,6 +80,13 @@ Metro_start(Metro metro)
                 strerror(errno));
         return 1;
     }
+    return 0;
+}
+
+int
+Metro_set_tempo(Metro metro, tempo_t tempo)
+{
+    // TODO
     return 0;
 }
 
