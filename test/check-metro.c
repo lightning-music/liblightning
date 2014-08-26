@@ -3,14 +3,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "../event.h"
 #include "../metro.h"
 #include "../types.h"
 
+int
+metro_callback(position_t pos, void *data) {
+    return 0;
+}
+
 START_TEST (check_Metro_init)
 {
-    Event e = Event_init(NULL);
-    Metro m = Metro_init(e, 120);
+    Metro m = Metro_init(metro_callback, 120, NULL);
     ck_assert_msg(m != NULL,
                   "Metro_init returns non-NULL");
     Metro_free(&m);
@@ -19,8 +22,7 @@ END_TEST
 
 START_TEST (check_Metro_start)
 {
-    Event e = Event_init(NULL);
-    Metro m = Metro_init(e, 120);
+    Metro m = Metro_init(metro_callback, 120, NULL);
     ck_assert_msg(m != NULL,
                   "Metro_init returns non-NULL");
     Metro_start(m);
@@ -30,8 +32,7 @@ END_TEST
 
 START_TEST (check_Metro_stop)
 {
-    Event e = Event_init(NULL);
-    Metro m = Metro_init(e, 120);
+    Metro m = Metro_init(metro_callback, 120, NULL);
     ck_assert_msg(m != NULL,
                   "Metro_init returns non-NULL");
     Metro_start(m);

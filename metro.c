@@ -8,7 +8,6 @@
 #include <string.h>
 #include <time.h>
 
-#include "event.h"
 #include "mem.h"
 #include "metro.h"
 #include "types.h"
@@ -16,20 +15,22 @@
 extern int errno;
 
 struct Metro {
-    Event e;
+    MetroCallback cb;
     tempo_t tempo;
+    position_t pos;
+    void *data;
     timer_t *timerid;
 };
 
 void
 notify_func(union sigval sv)
 {
-    Event e = (Event) sv.sival_ptr;
-    Event_broadcast(e, NULL);
+    Metro metro = (Metro) sv.sival_ptr;
+    metro->cb(++metro->pos, metro->data);
 }
 
 Metro
-Metro_init(Event e, tempo_t tempo)
+        Metro_init(MetroCallback cb, tempo_t tempo, void *data)
 {
     Metro metro;
     NEW(metro);
@@ -37,7 +38,7 @@ Metro_init(Event e, tempo_t tempo)
     sev.sigev_notify = SIGEV_THREAD;
     sev.sigev_signo = SIGRTMIN;
     sev.sigev_notify_function = notify_func;
-    sev.sigev_value.sival_ptr = e;
+    sev.sigev_value.sival_ptr = cb;
 
     timer_t *timerid;
     NEW(timerid);
@@ -45,7 +46,8 @@ Metro_init(Event e, tempo_t tempo)
     if (error) {
         fprintf(stderr, "Could not create timer: %s\n", strerror(errno));
     }
-    metro->e = e;
+    metro->cb = cb;
+    metro->data = data;
     metro->timerid = timerid;
     return metro;
 }

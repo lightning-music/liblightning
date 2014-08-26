@@ -20,6 +20,11 @@ typedef int (* CmpFunction)(const void *a, const void *b);
 typedef int tempo_t;
 
 /**
+ * Timeline position for metro
+ */
+typedef uint64_t position_t;
+
+/**
  * Gain type float in [0, 1]
  */
 typedef double gain_t;
@@ -71,5 +76,7 @@ typedef struct AudioData {
     /* output buffer */
     sample_t *output;
 } AudioData;
+
+typedef int (* MetroCallback)(position_t pos, void *data);
 
 #endif
