@@ -11,6 +11,8 @@ OBJS := atom.o                \
         mem.o                 \
         metro.o               \
         mutex.o               \
+        note.o                \
+        pattern.o             \
         realtime.o            \
         ringbuffer.o          \
         sample.o              \
