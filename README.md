@@ -1,8 +1,7 @@
 liblightning
 ===========
 
-liblightning is a C library for playing audio
-samples with JACK.
+liblightning is a C library for playing audio samples with JACK on Linux systems.
 
 [![Build Status](https://travis-ci.org/lightning/liblightning.svg?branch=master)](https://travis-ci.org/lightning/liblightning)
 
