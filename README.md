@@ -10,7 +10,7 @@ liblightning is an audio sample engine
 Build
 -----
 
-**Note** There are helper scripts for installing some of these dependencies from source in the lightning/engine repo. These scripts are named `install-*.sh`.
+**Note** There are helper scripts named `install-*.sh` for installing some of the dependencies, the rest should be available in your distro's package manager.
 
 Prerequisites:
 
