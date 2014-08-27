@@ -7,10 +7,13 @@
 #include <string.h>
 #include <time.h>
 
+#include "event.h"
 #include "log.h"
 #include "mem.h"
 #include "metro.h"
 #include "types.h"
+
+#define MAX_SLAVES 16
 
 extern int errno;
 
@@ -20,14 +23,15 @@ struct Metro {
     position_t pos;
     void *data;
     timer_t *timerid;
+    int num_slaves;
+    Slave *slaves;
 };
 
 void
-notify_func(union sigval sv)
-{
-    Metro metro = (Metro) sv.sival_ptr;
-    metro->cb(++metro->pos, metro->data);
-}
+notify_func(union sigval sv);
+
+static int
+parse_divisor(const char *divisor);
 
 Metro
 Metro_init(MetroCallback cb, tempo_t tempo, void *data)
@@ -51,6 +55,8 @@ Metro_init(MetroCallback cb, tempo_t tempo, void *data)
     metro->cb = cb;
     metro->data = data;
     metro->timerid = timerid;
+    metro->num_slaves = 0;
+    metro->slaves = CALLOC(MAX_SLAVES, sizeof(Slave));
 
     return metro;
 }
@@ -87,6 +93,13 @@ Metro_set_tempo(Metro metro, tempo_t tempo)
     return 0;
 }
 
+Slave
+Metro_slave(Metro master, const char *divisor)
+{
+    Slave slave = Slave_init( parse_divisor(divisor) );
+    return slave;
+}
+
 int
 Metro_stop(Metro metro)
 {
@@ -118,4 +131,20 @@ Metro_free(Metro *metro)
     timer_delete(*(m->timerid));
     FREE(m->timerid);
     FREE(*metro);
+}
+
+void
+notify_func(union sigval sv)
+{
+    Metro metro = (Metro) sv.sival_ptr;
+    metro->cb(++metro->pos, metro->data);
+}
+
+static int
+parse_divisor(const char *divisor)
+{
+    int d;
+    sscanf(divisor, "1/%d", &d);
+    assert(d);
+    return d;
 }

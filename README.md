@@ -17,7 +17,6 @@ Prerequisites:
 * [jack](http://jackaudio.org)
 * [libsndfile >= 1.0.25](http://www.mega-nerd.com/libsndfile/)
 * [libsamplerate >= 0.1.8](http://www.mega-nerd.com/SRC/).
-* [go >= 1.3.1](http://golang.org)
 
 ```shell
 $ make
