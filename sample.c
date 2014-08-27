@@ -13,7 +13,6 @@
 #include "mutex.h"
 #include "sample.h"
 #include "src.h"
-#include "table.h"
 #include "types.h"
 
 typedef enum {
