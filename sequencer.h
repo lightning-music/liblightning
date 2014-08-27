@@ -10,6 +10,11 @@
 /**
  * Sequencer is an ADT that manages patterns, a clock,
  * and uses a lightning instance to play samples.
+ * It spawns a thread when initialized that will use the
+ * ticks emitted by the clock to play the
+ * notes in the patterns it contains.
+ * It uses a reference to a lightning instance
+ * to actually play the patterns.
  */
 typedef struct Sequencer *Sequencer;
 

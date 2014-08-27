@@ -39,6 +39,8 @@ Slave_tick(Slave slave)
         slave->count++;
         Event_broadcast(slave->emitter, &slave->count);
         slave->pos = 0;
+    } else {
+        slave->pos++;
     }
 }
 

@@ -66,6 +66,10 @@ Sequencer_free(Sequencer *seq)
     FREE(*seq);
 }
 
+/**
+ * middle C (MIDI note 60) is considered to be
+ * a speed of 1 for sample playback.
+ */
 static void *
 play_samples(void *arg)
 {
@@ -78,6 +82,7 @@ play_samples(void *arg)
     if (0 == Mutex_lock(seq->patterns_mutex)) {
         for (i = 0; i < seq->num_patterns; i++) {
             note = Pattern_note(seq->patterns[i]);
+            // TODO: play samples
         }
         if (0 != Mutex_unlock(seq->patterns_mutex)) {
             LOG(Warn, "could not unlock %s", "patterns_mutex");
