@@ -1,9 +1,21 @@
 liblightning
 ===========
 
-liblightning is an audio sample engine
+liblightning is a C library for playing audio
+samples with JACK.
 
 [![Build Status](https://travis-ci.org/lightning/liblightning.svg?branch=master)](https://travis-ci.org/lightning/liblightning)
+
+It is a very young project, but can already
+
+* play back audio samples read from disk
+* control pitch and gain for each triggered sample
+* export its output to an audio file
+
+Ideas for the near future are:
+
+* support opus file format for playback and export
+* expose a sequencer API
 
 
 
@@ -41,6 +53,11 @@ $ make install
 ```
 
 
+
+### Related projects
+
+* [lightning-go](https://github.com/lightning/lightning-go) - go bindings for liblightning
+* [lightningd](https://github.com/lightning/lightningd) - An http/websocket server for controlling a liblightning-based backend.
 
 ### Discussion & Issues
 
