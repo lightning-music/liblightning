@@ -1,6 +1,7 @@
 #ifndef SERVER_H_INCLUDED
 #define SERVER_H_INCLUDED
 
+#include "pattern.h"
 #include "types.h"
 
 /**
@@ -56,6 +57,8 @@ Lightning_play_sample(Lightning lightning, const char *file,
  * For the purposes of v1, we will have only sample-playback
  * events.
  */
+int
+Lightning_play_pattern(Lightning lightning, Pattern pat);
 
 /**
  * Start exporting to an audio file

@@ -53,6 +53,7 @@ Metro_init(tempo_t tempo)
     metro->timerid = timerid;
     metro->num_slaves = 0;
     metro->slaves = CALLOC(MAX_SLAVES, sizeof(Slave));
+    Metro_set_tempo(metro, metro->tempo);
 
     return metro;
 }

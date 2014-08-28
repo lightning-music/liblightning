@@ -42,6 +42,13 @@ Lightning_init(tempo_t initial_tempo)
     NEW(lightning);
     initialize_jack_client(lightning);
     lightning->metro = Metro_init(initial_tempo);
+    /* kind of arbitrary */
+    Slave clock = Metro_slave(lightning->metro, "1/16");
+    lightning->seq = Sequencer_init(lightning, clock);
+    if (Sequencer_start(lightning->seq)) {
+        LOG(Error, "could not start %s", "sequencer");
+        return NULL;
+    }
     return lightning;
 }
 
@@ -63,6 +70,13 @@ Lightning_play_sample(Lightning lightning,
 {
     assert(lightning && lightning->samples);
     return NULL != Samples_play(lightning->samples, file, pitch, gain);
+}
+
+int
+Lightning_play_pattern(Lightning lightning, Pattern pat)
+{
+    assert(lightning);
+    return Sequencer_add_pattern(lightning->seq, pat);
 }
 
 /**
