@@ -6,7 +6,7 @@ libdir=$(prefix)/lib
 HEADERS = lightning.h types.h
 # examples, archive
 LIBLIGHTNING_AR=liblightning.a
-EXAMPLES := play-file play-sample
+EXAMPLES := play-file play-sample play-pattern
 EXAMPLES := $(addprefix examples/,$(EXAMPLES))
 # tests
 TEST_DIR=test

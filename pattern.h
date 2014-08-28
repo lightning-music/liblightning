@@ -20,10 +20,10 @@
  */
 typedef struct Pattern *Pattern;
 
-typedef enum {
-    PatternLoop,
-    PatternOnce
-} PatternMode;
+/* typedef enum { */
+/*     PatternLoop, */
+/*     PatternOnce */
+/* } PatternMode; */
 
 /**
  * Initialize a pattern with a given length.
@@ -31,8 +31,25 @@ typedef enum {
  * @param {void *} data - Pointer to data that will be used to process the notes in the pattern
  */
 Pattern
-Pattern_init(int length, void *data, const char *file,
-             PatternMode mode);
+Pattern_init(int length, const char *file);
+
+/**
+ * Append a note to the pattern.
+ * Fails if the pattern is full.
+ *
+ * @return 0 on success, nonzero on failure
+ */
+int
+Pattern_append_note(Pattern pat, Note note);
+
+/**
+ * Set a pattern's note at a particular index.
+ * Fails if the i < 0 or i > length.
+ *
+ * @return 0 on success, nonzero on failure
+ */
+int
+Pattern_set_note(Pattern pat, Note note, int i);
 
 /**
  * Get pattern note at a particular position.

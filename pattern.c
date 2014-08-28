@@ -12,24 +12,22 @@
 struct Pattern {
     int flags;
     int length;
+    int num_notes;
     Note *notes;
-    void *data;
-    PatternMode mode;
+    /* void *data; */
+    /* PatternMode mode; */
     const char *file;
 };
 
 Pattern
-Pattern_init(int length, void *data, const char *file,
-             PatternMode mode)
+Pattern_init(int length, const char *file)
 {
     Pattern pat;
     NEW(pat);
     pat->length = length;
     pat->notes = CALLOC(length, sizeof(Note));
-    pat->data = data;
-    /* will be used at play time */
-    pat->mode = mode;
     pat->file = Atom_string(file);
+    pat->num_notes = 0;
     return pat;
 }
 
@@ -39,6 +37,32 @@ Pattern_note(Pattern pat, int i)
     assert(pat);
     assert(i > 0);
     return pat->notes[ i % pat->length ];
+}
+
+int
+Pattern_append_note(Pattern pat, Note note)
+{
+    assert(pat);
+    if (pat->num_notes == pat->length) {
+        return 1;
+    }
+    pat->notes[ pat->num_notes++ ] = note;
+    return 0;
+}
+
+int
+Pattern_set_note(Pattern pat, Note note, int i)
+{
+    assert(pat);
+    if (i < 0 || i > pat->length - 1) {
+        return 1;
+    }
+    Note prev = pat->notes[i];
+    pat->notes[i] = note;
+    if (prev != NULL) {
+        Note_free(&prev);
+    }
+    return 0;
 }
 
 const char *

@@ -1,5 +1,5 @@
-#ifndef SERVER_H_INCLUDED
-#define SERVER_H_INCLUDED
+#ifndef LIGHTNING_H_INCLUDED
+#define LIGHTNING_H_INCLUDED
 
 #include "pattern.h"
 #include "types.h"
