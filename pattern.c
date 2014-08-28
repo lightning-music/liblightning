@@ -43,8 +43,8 @@ Note
 Pattern_note(Pattern pat, int i)
 {
     assert(pat);
-    assert(i > 0 && i < pat->length);
-    return pat->notes[i];
+    assert(i > 0);
+    return pat->notes[ i % pat->length ];
 }
 
 const char *
