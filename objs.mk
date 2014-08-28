@@ -17,6 +17,7 @@ OBJS := atom.o                \
         ringbuffer.o          \
         sample.o              \
         samples.o             \
+        sequencer.o           \
         slave.o               \
         src.o                 \
         thread.o

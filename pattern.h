@@ -31,7 +31,8 @@ typedef enum {
  * @param {void *} data - Pointer to data that will be used to process the notes in the pattern
  */
 Pattern
-Pattern_init(int length, void *data, PatternMode mode);
+Pattern_init(int length, void *data, const char *file,
+             PatternMode mode);
 
 /**
  * Get pattern note at a particular position.
@@ -41,12 +42,10 @@ Note
 Pattern_note(Pattern pat, int i);
 
 /**
- * All Pattern_play* functions spin up a thread that emits notes.
- *
- * @return Event - must be free'd after usage
+ * Return the sample associated with this pattern
  */
-Event
-Pattern_play(Pattern pat, Metro metro);
+const char *
+Pattern_sample(Pattern pat);
 
 void
 Pattern_free(Pattern *pat);

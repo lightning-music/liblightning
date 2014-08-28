@@ -1,6 +1,7 @@
 
 #include <assert.h>
 
+#include "atom.h"
 #include "event.h"
 #include "mem.h"
 #include "metro.h"
@@ -14,6 +15,7 @@ struct Pattern {
     Note *notes;
     void *data;
     PatternMode mode;
+    const char *file;
 };
 
 /**
@@ -23,7 +25,8 @@ static int
 play_callback(position_t pos, void *data);
 
 Pattern
-Pattern_init(int length, void *data, PatternMode mode)
+Pattern_init(int length, void *data, const char *file,
+             PatternMode mode)
 {
     Pattern pat;
     NEW(pat);
@@ -32,6 +35,7 @@ Pattern_init(int length, void *data, PatternMode mode)
     pat->data = data;
     /* will be used at play time */
     pat->mode = mode;
+    pat->file = Atom_string(file);
     return pat;
 }
 
@@ -43,11 +47,11 @@ Pattern_note(Pattern pat, int i)
     return pat->notes[i];
 }
 
-Event
-Pattern_play(Pattern pat, Metro metro)
+const char *
+Pattern_sample(Pattern pat)
 {
-    Event event = Event_init();
-    return event;
+    assert(pat);
+    return pat->file;
 }
 
 void

@@ -29,6 +29,25 @@ Sequencer_init(Lightning lightning, Slave clock);
 int
 Sequencer_add_pattern(Sequencer seq, Pattern pat);
 
+/**
+ * Start a sequencer.
+ *
+ * @return 0 on success, nonzero on failure
+ */
+int
+Sequencer_start(Sequencer seq);
+
+/**
+ * Stop a sequencer.
+ *
+ * @return 0 on success, nonzero on failure
+ */
+int
+Sequencer_stop(Sequencer seq);
+
+/**
+ * Free the resources of a sequencer
+ */
 void
 Sequencer_free(Sequencer *seq);
 
