@@ -10,7 +10,7 @@
 typedef struct Metro *Metro;
 
 Metro
-Metro_init(MetroCallback cb, tempo_t tempo, void *data);
+Metro_init(tempo_t tempo);
 
 int
 Metro_start(Metro metro);

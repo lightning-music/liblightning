@@ -13,9 +13,11 @@
 #include "mem.h"
 #include "metro.h"
 #include "samples.h"
+#include "sequencer.h"
 
 struct Lightning {
     JackClient jack_client;
+    Sequencer seq;
     Samples samples;
     Metro metro;
 };
@@ -25,10 +27,6 @@ static int
 audio_callback(sample_t **buffers, channels_t channels,
                nframes_t frames, void *data);
                
-/* metro callback */
-static int
-metro_callback(position_t pos, void *data);
-
 /**
  * Initialize jack_client and samples,
  * and use samples as the data for the jack_client
@@ -43,7 +41,7 @@ Lightning_init(tempo_t initial_tempo)
     Lightning lightning;
     NEW(lightning);
     initialize_jack_client(lightning);
-    lightning->metro = Metro_init(metro_callback, initial_tempo, lightning);
+    lightning->metro = Metro_init(initial_tempo);
     return lightning;
 }
 
@@ -104,12 +102,6 @@ audio_callback(sample_t **buffers,
 {
     Samples samples = (Samples) data;
     Samples_write(samples, buffers, channels, frames);
-    return 0;
-}
-
-static int
-metro_callback(position_t pos, void *data)
-{
     return 0;
 }
 

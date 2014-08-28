@@ -18,10 +18,8 @@
 extern int errno;
 
 struct Metro {
-    MetroCallback cb;
     tempo_t tempo;
     position_t pos;
-    void *data;
     timer_t *timerid;
     int num_slaves;
     Slave *slaves;
@@ -34,7 +32,7 @@ static int
 parse_divisor(const char *divisor);
 
 Metro
-Metro_init(MetroCallback cb, tempo_t tempo, void *data)
+Metro_init(tempo_t tempo)
 {
     Metro metro;
     NEW(metro);
@@ -42,7 +40,7 @@ Metro_init(MetroCallback cb, tempo_t tempo, void *data)
     sev.sigev_notify = SIGEV_THREAD;
     sev.sigev_signo = SIGRTMIN;
     sev.sigev_notify_function = notify_func;
-    sev.sigev_value.sival_ptr = cb;
+    sev.sigev_value.sival_ptr = metro;
 
     timer_t *timerid;
     NEW(timerid);
@@ -52,8 +50,6 @@ Metro_init(MetroCallback cb, tempo_t tempo, void *data)
     }
 
     metro->tempo = tempo;
-    metro->cb = cb;
-    metro->data = data;
     metro->timerid = timerid;
     metro->num_slaves = 0;
     metro->slaves = CALLOC(MAX_SLAVES, sizeof(Slave));
@@ -96,7 +92,12 @@ Metro_set_tempo(Metro metro, tempo_t tempo)
 Slave
 Metro_slave(Metro master, const char *divisor)
 {
-    Slave slave = Slave_init( parse_divisor(divisor) );
+    Slave slave;
+    if (master->num_slaves == MAX_SLAVES) {
+        return NULL;
+    }
+    slave = Slave_init( parse_divisor(divisor) );
+    master->slaves[ master->num_slaves++ ] = slave;
     return slave;
 }
 
@@ -137,7 +138,10 @@ void
 notify_func(union sigval sv)
 {
     Metro metro = (Metro) sv.sival_ptr;
-    metro->cb(++metro->pos, metro->data);
+    int i;
+    for (i = 0; i < metro->num_slaves; i++) {
+        Slave_tick(metro->slaves[i]);
+    }
 }
 
 static int

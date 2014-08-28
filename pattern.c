@@ -18,12 +18,6 @@ struct Pattern {
     const char *file;
 };
 
-/**
- *
- */
-static int
-play_callback(position_t pos, void *data);
-
 Pattern
 Pattern_init(int length, void *data, const char *file,
              PatternMode mode)
@@ -65,10 +59,4 @@ Pattern_free(Pattern *pat)
     }
     FREE(p->notes);
     FREE(*pat);
-}
-
-static int
-play_callback(position_t pos, void *data)
-{
-    return 0;
 }

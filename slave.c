@@ -27,7 +27,6 @@ Event
 Slave_event(Slave slave)
 {
     assert(slave);
-    
     return slave->emitter;
 }
 

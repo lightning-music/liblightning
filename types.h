@@ -77,6 +77,4 @@ typedef struct AudioData {
     sample_t *output;
 } AudioData;
 
-typedef int (* MetroCallback)(position_t pos, void *data);
-
 #endif
