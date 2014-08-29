@@ -1,7 +1,6 @@
 #ifndef LIGHTNING_H_INCLUDED
 #define LIGHTNING_H_INCLUDED
 
-#include "pattern.h"
 #include "types.h"
 
 /**
@@ -21,7 +20,7 @@ typedef struct Lightning *Lightning;
  * If @a listenPort is NULL then liblo chooses an unused system port.
  */
 Lightning
-Lightning_init(tempo_t initial_tempo);
+Lightning_init();
 
 /**
  * Add a directory for lighting to search for audio files.
@@ -57,8 +56,8 @@ Lightning_play_sample(Lightning lightning, const char *file,
  * For the purposes of v1, we will have only sample-playback
  * events.
  */
-int
-Lightning_play_pattern(Lightning lightning, Pattern pat);
+/* int */
+/* Lightning_play_pattern(Lightning lightning, Pattern pat); */
 
 /**
  * Start exporting to an audio file

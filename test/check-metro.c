@@ -13,7 +13,7 @@ metro_callback(position_t pos, void *data) {
 
 START_TEST (check_Metro_init)
 {
-    Metro m = Metro_init(metro_callback, 120, NULL);
+    Metro m = Metro_init(120);
     ck_assert_msg(m != NULL,
                   "Metro_init returns non-NULL");
     Metro_free(&m);
@@ -22,7 +22,7 @@ END_TEST
 
 START_TEST (check_Metro_start)
 {
-    Metro m = Metro_init(metro_callback, 120, NULL);
+    Metro m = Metro_init(120);
     ck_assert_msg(m != NULL,
                   "Metro_init returns non-NULL");
     Metro_start(m);
@@ -32,7 +32,7 @@ END_TEST
 
 START_TEST (check_Metro_stop)
 {
-    Metro m = Metro_init(metro_callback, 120, NULL);
+    Metro m = Metro_init(120);
     ck_assert_msg(m != NULL,
                   "Metro_init returns non-NULL");
     Metro_start(m);

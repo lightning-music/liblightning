@@ -141,7 +141,9 @@ notify_func(union sigval sv)
     Metro metro = (Metro) sv.sival_ptr;
     int i;
     for (i = 0; i < metro->num_slaves; i++) {
-        Slave_tick(metro->slaves[i]);
+        if (NULL != metro->slaves[i]) {
+            Slave_tick(metro->slaves[i]);
+        }
     }
 }
 

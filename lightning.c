@@ -1,8 +1,5 @@
 /**
  * Top-level module for lightning.
- * This module initializes a master metro, and can use
- * this to play patterns, or can just play one-off
- * samples.
  */
 #include <assert.h>
 #include <string.h>
@@ -19,7 +16,6 @@ struct Lightning {
     JackClient jack_client;
     Sequencer seq;
     Samples samples;
-    Metro metro;
 };
 
 /* realtime callback */
@@ -36,19 +32,19 @@ static void
 initialize_jack_client(Lightning lightning);
 
 Lightning
-Lightning_init(tempo_t initial_tempo)
+Lightning_init()
 {
     Lightning lightning;
     NEW(lightning);
     initialize_jack_client(lightning);
-    lightning->metro = Metro_init(initial_tempo);
+    /* lightning->metro = Metro_init(initial_tempo); */
     /* kind of arbitrary */
-    Slave clock = Metro_slave(lightning->metro, "1/16");
-    lightning->seq = Sequencer_init(lightning, clock);
-    if (Sequencer_start(lightning->seq)) {
-        LOG(Error, "could not start %s", "sequencer");
-        return NULL;
-    }
+    /* Slave clock = Metro_slave(lightning->metro, "1/16"); */
+    /* lightning->seq = Sequencer_init(lightning, clock); */
+    /* if (Sequencer_start(lightning->seq)) { */
+    /*     LOG(Error, "could not start %s", "sequencer"); */
+    /*     return NULL; */
+    /* } */
     return lightning;
 }
 
@@ -72,12 +68,12 @@ Lightning_play_sample(Lightning lightning,
     return NULL != Samples_play(lightning->samples, file, pitch, gain);
 }
 
-int
-Lightning_play_pattern(Lightning lightning, Pattern pat)
-{
-    assert(lightning);
-    return Sequencer_add_pattern(lightning->seq, pat);
-}
+/* int */
+/* Lightning_play_pattern(Lightning lightning, Pattern pat) */
+/* { */
+/*     assert(lightning); */
+/*     return Sequencer_add_pattern(lightning->seq, pat); */
+/* } */
 
 /**
  * Start exporting to an audio file

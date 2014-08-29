@@ -37,4 +37,5 @@ $(LIBLIGHTNING_AR): $(OBJS)
 
 examples/play-file: examples/play-file.c $(LIBLIGHTNING_AR)
 examples/play-sample: examples/play-sample.c $(LIBLIGHTNING_AR)
-examples/play-pattern: examples/play-pattern.c $(LIBLIGHTNING_AR)
+# examples/play-pattern: examples/play-pattern.c $(LIBLIGHTNING_AR)
+# examples/play-metro: examples/play-metro.c $(LIBLIGHTNING_AR)
