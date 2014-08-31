@@ -211,9 +211,14 @@ Sample_init(const char *file, pitch_t pitch, gain_t gain, nframes_t output_sr)
     nframes_t output_frames = (nframes_t) ceil(s->frames * src_ratio);
     allocate_frame_buffers(s, output_frames);
     /* read the file */
-    sample_t *framebuf = ALLOC( s->frames * s->channels * SAMPLE_SIZE );
+    /* some files seem to report a smaller number of frames than
+       the data they actually contain.
+       this code was segfault'ing when trying to read
+       http://www.freesound.org/people/madjad/sounds/21653/ */
     const sf_count_t frames = (4096 / SAMPLE_SIZE) / s->channels;
+    sample_t *framebuf = ALLOC( (s->frames + frames) * 2 * s->channels * SAMPLE_SIZE );
     long total_frames = sf_readf_float(sf, framebuf, frames);
+
     while (total_frames < s->frames) {
         total_frames +=                         \
             sf_readf_float(sf,
