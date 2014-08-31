@@ -342,7 +342,10 @@ JackClient_free(JackClient *jack)
     assert(jack && *jack);
     JackClient j = *jack;
     JackClient_set_state(*jack, JackClientState_Finished);
-    ExportThread_free(&j->export_thread);
+    /* I don't think we should have to care about freeing the
+       resources created for this thread since this thread exists
+       for the entire duration of our program */
+    /* ExportThread_free(&j->export_thread); */
     /* close jack client */
     jack_client_close(j->jack_client);
     FREE(*jack);
