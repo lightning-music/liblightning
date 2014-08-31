@@ -9,3 +9,6 @@ core
 *.a
 check-0.9.14/
 *.tar.gz
+# programs
+examples/play-file
+examples/play-sample
