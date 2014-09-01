@@ -1,9 +1,15 @@
 #ifndef SAMPLE_H_INCLUDED
 #define SAMPLE_H_INCLUDED
 
+#include "sample-disk.h"
+#include "sample-ram.h"
 #include "types.h"
 
-typedef struct Sample *Sample;
+/* typedef struct Sample *Sample; */
+typedef union Sample {
+    SampleRam ram;
+    SampleDisk disk;
+} *Sample;
 
 /**
  * Play a sample.
@@ -15,16 +21,14 @@ typedef struct Sample *Sample;
  * be much faster.
  */
 Sample
-Sample_init(const char *file,
-            pitch_t pitch,
-            gain_t gain,
-            nframes_t output_samplerate);
+Sample_init(const char *file, pitch_t pitch,
+            gain_t gain, nframes_t output_samplerate);
 
 Sample
 Sample_clone(Sample orig,
-            pitch_t pitch,
-            gain_t gain,
-            nframes_t output_samplerate);
+             pitch_t pitch,
+             gain_t gain,
+             nframes_t output_samplerate);
 
 /**
  * Get the path this sample was loaded from.

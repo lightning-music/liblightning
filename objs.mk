@@ -14,6 +14,7 @@ OBJS := atom.o                \
         realtime.o            \
         ringbuffer.o          \
         sample.o              \
+        sample-ram.o          \
         samples.o             \
         slave.o               \
         src.o                 \

@@ -6,6 +6,11 @@
 
 #define SAMPLE_SIZE sizeof(sample_t)
 
+typedef enum {
+    SampleType_RAM,
+    SampleType_DISK
+} SampleType;
+
 /**
  * Compare two opaque types
  * Return negative if a < b
