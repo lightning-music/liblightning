@@ -110,15 +110,18 @@ SampleRam_set_path(SampleRam samp, const char *path)
 static int
 SampleRam_set_buffers(SampleRam samp, sample_t *buf, nframes_t output_sr)
 {
+    /* sample-rate converters */
     SRC srcs[2];
     srcs[0] = SRC_init();
     srcs[1] = SRC_init();
-    /* de-interleave data */
+    /* de-interleaved buffers */
     sample_t *di_bufs[2];
     di_bufs[0] = ALLOC( samp->frames * SAMPLE_SIZE );
     di_bufs[1] = ALLOC( samp->frames * SAMPLE_SIZE );
+    /* de-interleave */
     int i;
     unsigned int j;
+    LOG(Info, "samp->channels = %d", samp->channels);
     if (samp->channels == 1) {
         for (j = 0; j < samp->frames; j++) {
             di_bufs[0][j] = di_bufs[1][j] = buf[j];
@@ -147,8 +150,8 @@ SampleRam_set_buffers(SampleRam samp, sample_t *buf, nframes_t output_sr)
         audio_data.input_frames = samp->frames - frames_consumed;
         audio_data.output_frames = output_frames - frames_produced;
         for (i = 0; i < 2; i++) {
-            audio_data.output = samp->framebufs[i + frames_produced];
-            audio_data.input = di_bufs[i + frames_consumed];
+            audio_data.output = &samp->framebufs[i][frames_produced];
+            audio_data.input = &di_bufs[i][frames_consumed];
             error = SRC_process(srcs[i], src_ratio, audio_data,
                                 &input_frames_used, &output_frames_gen,
                                 &end_of_input);
@@ -216,7 +219,7 @@ SampleRam_init(const char *file, pitch_t pitch, gain_t gain, nframes_t output_sr
        this code was segfault'ing when trying to read
        http://www.freesound.org/people/madjad/sounds/21653/ */
     const sf_count_t frames = (4096 / SAMPLE_SIZE) / s->channels;
-    sample_t *framebuf = ALLOC( (s->frames + frames) * 2 * s->channels * SAMPLE_SIZE );
+    sample_t *framebuf = ALLOC( (s->frames + frames) * s->channels * SAMPLE_SIZE );
     long total_frames = sf_readf_float(sf, framebuf, frames);
 
     while (total_frames < s->frames) {
@@ -228,6 +231,7 @@ SampleRam_init(const char *file, pitch_t pitch, gain_t gain, nframes_t output_sr
     assert(total_frames == s->frames);
     sf_close(sf);
 
+    /* de-interleave (if necessary) and resample */
     SampleRam_set_buffers(s, framebuf, output_sr);
 
     FREE(framebuf);
@@ -290,7 +294,10 @@ SampleRam_write(SampleRam samp, sample_t **buffers, channels_t channels,
     }
 
     nframes_t len = samp->frames;
-    int chans = (int) samp->channels;
+    /* we ensure at initialization that mono samples fill
+       stereo buffers */
+    int chans = 2;
+    /* int chans = (int) samp->channels; */
     nframes_t offset = samp->framep;
     int chan = 0;
     long frame = 0;
@@ -430,7 +437,10 @@ copy_frame_buffers(SampleRam dest, SampleRam src, gain_t gain)
     int i;
     unsigned int j;
     for (j = 0; j < dest->frames; j++) {
-        for (i = 0; i < dest->channels; i++) {
+        /* we deliberately initialize the samples in a way that
+           fills stereo buffers even if the sample is mono on disk */
+        /* for (i = 0; i < dest->channels; i++) { */
+        for (i = 0; i < 2; i++) {
             dest->framebufs[i][j] = gain * src->framebufs[i][j];
         }
     }
