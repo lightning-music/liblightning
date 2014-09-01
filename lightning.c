@@ -65,7 +65,7 @@ Lightning_play_sample(Lightning lightning,
                       gain_t gain)
 {
     assert(lightning && lightning->samples);
-    return NULL != Samples_play(lightning->samples, file, pitch, gain);
+    return NULL == Samples_play(lightning->samples, file, pitch, gain);
 }
 
 /* int */

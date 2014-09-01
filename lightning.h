@@ -30,6 +30,8 @@ Lightning_add_dir(Lightning lightning, const char *dir);
 
 /**
  * Play a sample
+ *
+ * @return 0 success, nonzero failure
  */
 int
 Lightning_play_sample(Lightning lightning, const char *file,
