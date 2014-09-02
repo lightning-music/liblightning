@@ -289,7 +289,7 @@ SampleRam_write(SampleRam samp, sample_t **buffers, channels_t channels,
     assert(samp);
 
     if (! SampleRam_is_processing(samp)) {
-        fprintf(stderr, "sample is not processing\n");
+        /* fprintf(stderr, "sample is not processing\n"); */
         return 0;
     }
 
@@ -332,7 +332,7 @@ SampleRam_write(SampleRam samp, sample_t **buffers, channels_t channels,
 
     if (at_end) {
         SampleRam_set_state(samp, Finished);
-        Event_broadcast(samp->done_event, NULL);
+        Event_try_broadcast(samp->done_event, NULL);
     } else {
         samp->framep += frames_used;
     }
@@ -388,7 +388,7 @@ static int
 SampleRam_set_state(SampleRam samp, State state)
 {
     assert(samp->state_mutex);
-    int not_locked = Mutex_lock(samp->state_mutex);
+    int not_locked = Mutex_trylock(samp->state_mutex);
     if (not_locked) {
         return not_locked;
     } else {
