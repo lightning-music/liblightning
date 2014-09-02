@@ -258,8 +258,6 @@ Samples_write(Samples samps,
             if (samps->active[i] == NULL) {
                 /* assign to the open sample slot and read another
                    new sample from the ring buffer */
-                LOG(Debug, "Samples_write read new sample %p",
-                    samps->new_sample);
                 samps->active[i] = samps->new_sample;
                 break;
             }
@@ -288,7 +286,7 @@ Samples_write(Samples samps,
 
         if (Sample_done(samps->active[i])) {
             /* remove from the active list and free the sample */
-            Event_broadcast(samps->free_event, samps->active[i]);
+            Event_try_broadcast(samps->free_event, samps->active[i]);
             /* Sample_free(&samps->active[i]); */
             samps->active[i] = NULL;
         }

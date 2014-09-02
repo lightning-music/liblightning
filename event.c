@@ -85,10 +85,48 @@ Event_signal(Event e, void *value)
 }
 
 int
+Event_try_signal(Event e, void *value)
+{
+    assert(e);
+    int fail = pthread_mutex_trylock(&e->mutex);
+    if (!fail) {
+        e->state = EventState_Ready;
+        e->val = value;
+        fail = pthread_cond_signal(&e->cond);
+        if (!fail) {
+            return pthread_mutex_unlock(&e->mutex);
+        } else {
+            return fail;
+        }
+    } else {
+        return fail;
+    }
+}
+
+int
 Event_broadcast(Event e, void *value)
 {
     assert(e);
     int fail = pthread_mutex_lock(&e->mutex);
+    if (!fail) {
+        e->state = EventState_Ready;
+        e->val = value;
+        fail = pthread_cond_broadcast(&e->cond);
+        if (!fail) {
+            return pthread_mutex_unlock(&e->mutex);
+        } else {
+            return fail;
+        }
+    } else {
+        return fail;
+    }
+}
+
+int
+Event_try_broadcast(Event e, void *value)
+{
+    assert(e);
+    int fail = pthread_mutex_trylock(&e->mutex);
     if (!fail) {
         e->state = EventState_Ready;
         e->val = value;
