@@ -16,6 +16,7 @@ OBJS := atom.o                \
         sample.o              \
         sample-ram.o          \
         samples.o             \
+        sf.o                  \
         slave.o               \
         src.o                 \
         thread.o
