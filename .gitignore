@@ -15,3 +15,6 @@ examples/play-sample
 # test programs
 test/check-list
 test/check-metro
+# opus
+opus-1.1/
+opus-tools-0.1.9/
