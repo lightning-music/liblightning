@@ -9,6 +9,7 @@ OBJS := atom.o                \
         lightning.o           \
         log.o                 \
         mem.o                 \
+        metro.o               \
         mutex.o               \
         note.o                \
         realtime.o            \
@@ -20,7 +21,3 @@ OBJS := atom.o                \
         slave.o               \
         src.o                 \
         thread.o
-
-#         metro.o               \
-          sequencer.o           \
-          pattern.o             \
