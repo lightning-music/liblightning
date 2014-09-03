@@ -11,6 +11,7 @@ function pkg_install {
     cd $dir
     ./configure && make && sudo make install
     cd ..
+    rm -rf $dir $tarball
 }
 
 function main {
