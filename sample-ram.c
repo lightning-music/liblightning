@@ -1,6 +1,6 @@
 #include <assert.h>
 #include <math.h>
-#include <sndfile.h>
+/* #include <sndfile.h> */
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +12,7 @@
 #include "mem.h"
 #include "mutex.h"
 #include "sample-ram.h"
+#include "sf.h"
 #include "src.h"
 #include "types.h"
 
@@ -27,7 +28,7 @@ struct SampleRam {
     char *path;
     pitch_t pitch;
     gain_t gain;
-    // channels, frames, and samplerate are pulled from SF_INFO
+    // channels, frames, and samplerate
     channels_t channels;
     nframes_t frames;
     int samplerate;
@@ -189,10 +190,9 @@ SampleRam_init(const char *file, pitch_t pitch, gain_t gain, nframes_t output_sr
     initialize_state(s);
     SampleRam_set_path(s, file);
     /* open audio file */
-    SF_INFO sfinfo;
-    SNDFILE *sf = sf_open(file, SFM_READ, &sfinfo);
+    SF sf = SF_open(file, SF_MODE_R);
     if (sf == NULL) {
-        LOG(Error, "%s\n", sf_strerror(sf));
+        LOG(Error, "%s\n", SF_strerror(sf));
         FREE(s);
         return NULL;
     }
@@ -205,9 +205,9 @@ SampleRam_init(const char *file, pitch_t pitch, gain_t gain, nframes_t output_sr
         s->pitch = clip(pitch, -32.0f, 32.0f);
     }
     s->gain = clip(gain, 0.0f, 1.0f);
-    s->channels = sfinfo.channels;
-    s->frames = sfinfo.frames;
-    s->samplerate = sfinfo.samplerate;
+    s->channels = SF_channels(sf);
+    s->frames = SF_frames(sf);
+    s->samplerate = SF_samplerate(sf);
     s->done_event = Event_init(NULL);
     /* allocate stereo buffers */
     double src_ratio = output_sr / (double) s->samplerate;
@@ -218,18 +218,16 @@ SampleRam_init(const char *file, pitch_t pitch, gain_t gain, nframes_t output_sr
        the data they actually contain.
        this code was segfault'ing when trying to read
        http://www.freesound.org/people/madjad/sounds/21653/ */
-    const sf_count_t frames = (4096 / SAMPLE_SIZE) / s->channels;
+    const nframes_t frames = (4096 / SAMPLE_SIZE) / s->channels;
     sample_t *framebuf = ALLOC( (s->frames + frames) * s->channels * SAMPLE_SIZE );
-    long total_frames = sf_readf_float(sf, framebuf, frames);
+    long total_frames = SF_read(sf, framebuf, frames);
 
     while (total_frames < s->frames) {
         total_frames +=                         \
-            sf_readf_float(sf,
-                           framebuf + (total_frames * s->channels),
-                           frames);
+            SF_read(sf, framebuf + (total_frames * s->channels), frames);
     }
     assert(total_frames == s->frames);
-    sf_close(sf);
+    SF_close(&sf);
 
     /* de-interleave (if necessary) and resample */
     SampleRam_set_buffers(s, framebuf, output_sr);
