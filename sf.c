@@ -2,37 +2,89 @@
 #include <assert.h>
 #include <sndfile.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 
+#include "log.h"
 #include "mem.h"
 #include "sf.h"
 #include "types.h"
+
+typedef enum {
+    SF_MODE_READ,
+    SF_MODE_WRITE
+} SF_MODE;
 
 struct SF {
     SNDFILE *sfp;
     nframes_t frames;
     channels_t channels;
     nframes_t samplerate;
+    SF_MODE mode;
 };
 
+static SF
+SF_open_write_opus(const char *file, channels_t channels,
+                   nframes_t samplerate);
+
 SF
-SF_open(const char *file,  SF_MODE mode)
+SF_open_read(const char *file)
 {
     SF sf;
     NEW(sf);
 
-    int sndfile_mode;
-    switch (mode) {
-    case SF_MODE_R:  sndfile_mode = SFM_READ;  break;
-    case SF_MODE_W:  sndfile_mode = SFM_WRITE; break;
-    case SF_MODE_RW: sndfile_mode = SFM_RDWR;  break;
-    default: sndfile_mode = SFM_RDWR;
+    SF_INFO sfinfo;
+    sf->sfp = sf_open(file, SFM_READ, &sfinfo);
+
+    if (sf->sfp == NULL) {
+        LOG(Error, "could not open %s: %s", file, sf_strerror(sf->sfp));
+        return NULL;
     }
 
-    SF_INFO sfinfo;
-    sf->sfp = sf_open(file, sndfile_mode, &sfinfo);
     sf->channels = sfinfo.channels;
     sf->frames = sfinfo.frames;
     sf->samplerate = sfinfo.samplerate;
+    sf->mode = SF_MODE_READ;
+
+    return sf;
+}
+
+SF
+SF_open_write(const char *file, channels_t channels,
+              nframes_t samplerate, SF_FMT format)
+{
+    if (format == SF_FMT_OPUS) {
+        fprintf(stderr, "opus format not yet supported!\n");
+        exit(EXIT_FAILURE);
+        /* return SF_open_write_opus(file, channels, samplerate); */
+    }
+
+    SF sf;
+    SF_INFO sfinfo;
+    int sndfile_format;
+
+    NEW(sf);
+    sf->frames = 0;
+    sf->mode = SF_MODE_WRITE;
+    sfinfo.channels = sf->channels = channels;
+    sfinfo.samplerate = sf->samplerate = samplerate;
+
+    switch (format) {
+    case SF_FMT_WAV:  { sndfile_format = SF_FORMAT_WAV;  break; }
+    case SF_FMT_AIFF: { sndfile_format = SF_FORMAT_AIFF; break; }
+    case SF_FMT_FLAC: { sndfile_format = SF_FORMAT_FLAC; break; }
+    case SF_FMT_OGG:  { sndfile_format = SF_FORMAT_OGG;  break; }
+    default:            sndfile_format = SF_FORMAT_WAV;
+    }
+
+    sndfile_format |= SF_FORMAT_FLOAT;
+    sfinfo.format = sndfile_format;
+    sf->sfp = sf_open(file, SFM_WRITE, &sfinfo);
+
+    if (sf->sfp == NULL) {
+        LOG(Error, "could not open %s: %s", file, sf_strerror(sf->sfp));
+        return NULL;
+    }
 
     return sf;
 }
@@ -85,4 +137,14 @@ SF_close(SF *sf)
     assert(sf && *sf);
     sf_close((*sf)->sfp);
     FREE(*sf);
+}
+
+/* not yet supported */
+static SF
+SF_open_write_opus(const char *file, channels_t channels,
+                   nframes_t samplerate)
+{
+    SF sf;
+    NEW(sf);
+    return sf;
 }

@@ -1,24 +1,44 @@
 #ifndef SF_H_INCLUDED
 #define SF_H_INCLUDED
 
+#include <sndfile.h>
+
 #include "types.h"
 
 typedef enum {
-    SF_MODE_R,
-    SF_MODE_W,
-    SF_MODE_RW
-} SF_MODE;
+    /* libsndfile formats */
+    SF_FMT_WAV = SF_FORMAT_WAV,
+    SF_FMT_AIFF = SF_FORMAT_AIFF,
+    SF_FMT_FLAC = SF_FORMAT_FLAC,
+    SF_FMT_OGG = SF_FORMAT_OGG,
+    /* opus format */
+    SF_FMT_OPUS = 0x230000
+} SF_FMT;
 
 typedef struct SF *SF;
 
 /**
- * Open a sound file.
+ * Open a sound file for reading.
  *
  * @param file - The path to a file
  * @param mode - Open mode (read, write, or read/write)
  */
 SF
-SF_open(const char *file,  SF_MODE mode);
+SF_open_read(const char *file);
+
+/**
+ * Open a sound file for writing.
+ *
+ * @param file - The path to the new file.
+ * @param channels - The number of channels to write.
+ * @param samplerate - The sample rate of the file.
+ * @param format - The format of the file.
+ *
+ * @return struct SF *
+ */
+SF
+SF_open_write(const char *file, channels_t channels,
+              nframes_t samplerate, SF_FMT format);
 
 /**
  * Get the channels of a sound file.

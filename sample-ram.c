@@ -190,7 +190,7 @@ SampleRam_init(const char *file, pitch_t pitch, gain_t gain, nframes_t output_sr
     initialize_state(s);
     SampleRam_set_path(s, file);
     /* open audio file */
-    SF sf = SF_open(file, SF_MODE_R);
+    SF sf = SF_open_read(file);
     if (sf == NULL) {
         LOG(Error, "%s\n", SF_strerror(sf));
         FREE(s);

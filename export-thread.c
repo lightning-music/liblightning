@@ -81,7 +81,7 @@
  * for JackClient to use to determine this.
  */
 #include <assert.h>
-#include <sndfile.h>
+/* #include <sndfile.h> */
 #include <stddef.h>
 #include <string.h>
 
@@ -91,6 +91,7 @@
 #include "mem.h"
 #include "mutex.h"
 #include "ringbuffer.h"
+#include "sf.h"
 #include "thread.h"
 #include "types.h"
 
@@ -257,15 +258,11 @@ export_thread(void *arg)
     Event_wait(thread->start_event);
 
     char *file = (char *) Event_value(thread->start_event);
-    SF_INFO sfinfo;
-    sfinfo.samplerate = thread->output_sr;
-    sfinfo.channels = thread->channels;
-    sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
     LOG(Debug, "exporting to %s", file);
-    SNDFILE *sf = sf_open(file, SFM_WRITE, &sfinfo);
+    SF sf = SF_open_write(file, thread->channels, thread->output_sr, SF_FMT_WAV);
 
     if (sf == NULL) {
-        LOG(Error, "%s", sf_strerror(sf));
+        LOG(Error, "%s", SF_strerror(sf));
         return NULL;
     }
 
@@ -290,7 +287,7 @@ export_thread(void *arg)
                                              bytes_wanted);
 
                 frames_read = bytes_read / (SAMPLE_SIZE * thread->channels);
-                sf_writef_float(sf, buf, frames_read);
+                SF_write(sf, buf, frames_read);
             } while (bytes_read == bytes_wanted);
         } else {
             LOG(Debug, "done exporting %s", file);
@@ -298,7 +295,7 @@ export_thread(void *arg)
         }
     }
 
-    sf_close(sf);
+    SF_close(&sf);
 
     LOG(Debug, "closed %s", file);
     FREE(file);
