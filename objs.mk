@@ -12,6 +12,7 @@ OBJS := atom.o                \
         metro.o               \
         mutex.o               \
         note.o                \
+        opus_header.o         \
         realtime.o            \
         ringbuffer.o          \
         sample.o              \
