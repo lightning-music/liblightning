@@ -55,7 +55,7 @@ $ make install
 
 ### Related projects
 
-* [lightning-go](https://github.com/lightning/lightning-go) - go bindings for liblightning
+* [lightning](https://github.com/lightning/lightning) - go bindings for liblightning
 * [lightningd](https://github.com/lightning/lightningd) - An http/websocket server for controlling a liblightning-based backend.
 
 ### Discussion & Issues
