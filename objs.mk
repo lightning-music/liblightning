@@ -19,6 +19,7 @@ OBJS := atom.o                \
         sample-ram.o          \
         samples.o             \
         sf.o                  \
+        sf_opus.o             \
         slave.o               \
         src.o                 \
         thread.o

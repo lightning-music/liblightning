@@ -1,17 +1,17 @@
-/* Copyright (C)2012 Xiph.Org Foundation
-   File: opus_header.h
+/* Copyright (C) 2002 Jean-Marc Valin 
+   File: wav_io.h
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
-
+   
    - Redistributions of source code must retain the above copyright
    notice, this list of conditions and the following disclaimer.
-
+   
    - Redistributions in binary form must reproduce the above copyright
    notice, this list of conditions and the following disclaimer in the
    documentation and/or other materials provided with the distribution.
-
+   
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -25,44 +25,39 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef OPUS_HEADER_H_INCLUDED
-#define OPUS_HEADER_H_INCLUDED
+/* TODO(bps): get rid of this file */
+#ifndef WAV_IO_H
+#define WAV_IO_H
 
-typedef struct OpusHeader *OpusHeader;
+#include <stdio.h>
+#include <opus/opus_types.h>
 
-OpusHeader
-OpusHeader_parse(const unsigned char *header, int len);
+#if !defined(__LITTLE_ENDIAN__) && ( defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__) )
+#define le_short(s) ((short) ((unsigned short) (s) << 8) | ((unsigned short) (s) >> 8))
+#define be_short(s) ((short) (s))
+#else
+#define le_short(s) ((short) (s))
+#define be_short(s) ((short) ((unsigned short) (s) << 8) | ((unsigned short) (s) >> 8))
+#endif 
 
-int
-OpusHeader_to_packet(const OpusHeader h, unsigned char *packet, int len);
+/** Convert little endian */
+static inline opus_int32 le_int(opus_int32 i)
+{
+#if !defined(__LITTLE_ENDIAN__) && ( defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__) )
+   opus_uint32 ui, ret;
+   ui = i;
+   ret =  ui>>24;
+   ret |= (ui>>8)&0x0000ff00;
+   ret |= (ui<<8)&0x00ff0000;
+   ret |= (ui<<24);
+   return ret;
+#else
+   return i;
+#endif
+}
 
-int
-OpusHeader_version(OpusHeader h);
+void adjust_wav_mapping(int mapping_family, int channels, unsigned char *stream_map);
 
-int
-OpusHeader_channels(OpusHeader h);
-
-int
-OpusHeader_preskip(OpusHeader h);
-
-ogg_uint32_t
-OpusHeader_input_sr(OpusHeader h);
-
-int
-OpusHeader_gain(OpusHeader h);
-
-int
-OpusHeader_channel_mapping(OpusHeader h);
-
-int
-OpusHeader_num_streams(OpusHeader h);
-
-int
-OpusHeader_num_coupled(OpusHeader h);
-
-unsigned char *
-OpusHeader_stream_map(OpusHeader h);
-
-extern const int wav_permute_matrix[8][8];
+int write_wav_header(FILE *file, int rate, int mapping_family, int channels, int fp);
 
 #endif

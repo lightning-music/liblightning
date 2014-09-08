@@ -28,6 +28,7 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <assert.h>
 #include <ogg/ogg.h>
 #include <stdio.h>
 #include <string.h>
@@ -329,14 +330,76 @@ OpusHeader_to_packet(const OpusHeader h, unsigned char *packet, int len)
 
 /* This is just here because it's a convenient file linked by both opusenc and
    opusdec (to guarantee this maps stays in sync). */
-const int wav_permute_matrix[8][8] =
-    {
-        {0},              /* 1.0 mono   */
-        {0,1},            /* 2.0 stereo */
-        {0,2,1},          /* 3.0 channel ('wide') stereo */
-        {0,1,2,3},        /* 4.0 discrete quadraphonic */
-        {0,2,1,3,4},      /* 5.0 surround */
-        {0,2,1,4,5,3},    /* 5.1 surround */
-        {0,2,1,5,6,4,3},  /* 6.1 surround */
-        {0,2,1,6,7,4,5,3} /* 7.1 surround (classic theater 8-track) */
-    };
+const int wav_permute_matrix[8][8] = {
+    {0},              /* 1.0 mono   */
+    {0,1},            /* 2.0 stereo */
+    {0,2,1},          /* 3.0 channel ('wide') stereo */
+    {0,1,2,3},        /* 4.0 discrete quadraphonic */
+    {0,2,1,3,4},      /* 5.0 surround */
+    {0,2,1,4,5,3},    /* 5.1 surround */
+    {0,2,1,5,6,4,3},  /* 6.1 surround */
+    {0,2,1,6,7,4,5,3} /* 7.1 surround (classic theater 8-track) */
+};
+
+int
+OpusHeader_version(OpusHeader h)
+{
+    assert(h);
+    return h->version;
+}
+
+int
+OpusHeader_channels(OpusHeader h)
+{
+    assert(h);
+    return h->channels;
+}
+
+int
+OpusHeader_preskip(OpusHeader h)
+{
+    assert(h);
+    return h->preskip;
+}
+
+ogg_uint32_t
+OpusHeader_input_sr(OpusHeader h)
+{
+    assert(h);
+    return h->input_sample_rate;
+}
+
+int
+OpusHeader_gain(OpusHeader h)
+{
+    assert(h);
+    return h->gain;
+}
+
+int
+OpusHeader_channel_mapping(OpusHeader h)
+{
+    assert(h);
+    return h->channel_mapping;
+}
+
+int
+OpusHeader_num_streams(OpusHeader h)
+{
+    assert(h);
+    return h->nb_streams;
+}
+
+int
+OpusHeader_num_coupled(OpusHeader h)
+{
+    assert(h);
+    return h->nb_coupled;
+}
+
+unsigned char *
+OpusHeader_stream_map(OpusHeader h)
+{
+    assert(h);
+    return &h->stream_map[0];
+}
