@@ -4,6 +4,7 @@
 #include <opus/opus.h>
 #include <opus/opus_multistream.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "mem.h"
 #include "opus_header.h"
@@ -19,6 +20,9 @@ SF_open_read_opus(const char *file)
 {
     SF_Opus sf;
     NEW(sf);
+    ogg_sync_state oy;
+    ogg_sync_init(&oy);
+    memcpy(sf->oy, &oy, sizeof(oy));
     return sf;
 }
 
