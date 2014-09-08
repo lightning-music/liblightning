@@ -3,6 +3,7 @@
 #include <ogg/ogg.h>
 #include <opus/opus.h>
 #include <opus/opus_multistream.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -19,10 +20,28 @@ SF_Opus
 SF_open_read_opus(const char *file)
 {
     SF_Opus sf;
-    NEW(sf);
     ogg_sync_state oy;
+    FILE *fin;
+    char *data;
+    long rd = 4096;
+    size_t nr;
+    /* initialize SF_Opus struct */
+    NEW(sf);
+    /* initialize ogg_sync_state */
     ogg_sync_init(&oy);
     memcpy(sf->oy, &oy, sizeof(oy));
+    /* open file */
+    fin = fopen(file, "r");
+    if (fin == NULL) {
+        fprintf(stderr, "could not open %s\n", file);
+        return NULL;
+    }
+    /* get ogg buffer */
+    data = ogg_sync_buffer(sf->oy, rd);
+    /* read file */
+    nr = fread(data, sizeof(char), rd, fin);
+    ogg_sync_wrote(sf->oy, nr);
+    // TODO: finish
     return sf;
 }
 
