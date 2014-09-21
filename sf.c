@@ -1,6 +1,4 @@
-// TODO: opus support
 #include <assert.h>
-#include <opus/opus.h>
 #include <sndfile.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -9,7 +7,6 @@
 #include "log.h"
 #include "mem.h"
 #include "sf.h"
-#include "sf_opus.h"
 #include "types.h"
 
 typedef enum {
@@ -19,32 +16,17 @@ typedef enum {
 
 struct SF {
     SNDFILE *sfp;
-    /* opus soundfile, must be handled differently
-       until libsndfile supports Ogg/Opus.
-       For non-opus files this pointer will be NULL. */
-    /* SF_Opus opus; */
     nframes_t frames;
     channels_t channels;
     nframes_t samplerate;
     SF_MODE mode;
 };
 
-/**
- * Determine if a filename ends in .opus
- */
-/* static int */
-/* is_opus_file(const char *file); */
-
 SF
 SF_open_read(const char *file)
 {
     SF sf;
     NEW(sf);
-
-    /* if (is_opus_file(file)) { */
-    /*     sf->opus = SF_open_read_opus(file); */
-    /*     return sf; */
-    /* } */
 
     SF_INFO sfinfo;
     sf->sfp = sf_open(file, SFM_READ, &sfinfo);
@@ -68,11 +50,6 @@ SF_open_write(const char *file, channels_t channels,
 {
     SF sf;
     NEW(sf);
-
-    /* if (format == SF_FMT_OPUS) { */
-    /*      sf->opus = SF_open_write_opus(file, channels, samplerate); */
-    /*      return sf; */
-    /* } */
 
     SF_INFO sfinfo;
     int sndfile_format;
@@ -151,9 +128,3 @@ SF_close(SF *sf)
     sf_close((*sf)->sfp);
     FREE(*sf);
 }
-
-/* static int */
-/* is_opus_file(const char *file) */
-/* { */
-/*     return 0; */
-/* } */

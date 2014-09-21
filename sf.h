@@ -10,9 +10,7 @@ typedef enum {
     SF_FMT_WAV = SF_FORMAT_WAV,
     SF_FMT_AIFF = SF_FORMAT_AIFF,
     SF_FMT_FLAC = SF_FORMAT_FLAC,
-    SF_FMT_OGG = SF_FORMAT_OGG,
-    /* opus format */
-    SF_FMT_OPUS = 0x230000
+    SF_FMT_OGG = SF_FORMAT_OGG
 } SF_FMT;
 
 typedef struct SF *SF;

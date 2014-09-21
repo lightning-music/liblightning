@@ -1,4 +1,4 @@
-LIGHTNING_FLAGS := $(shell pkg-config --cflags --libs jack sndfile samplerate check ogg opus)
+LIGHTNING_FLAGS := $(shell pkg-config --cflags --libs jack sndfile samplerate check)
 CC=gcc
 ifeq ($(DEBUG),true)
 CFLAGS := -Wall -g

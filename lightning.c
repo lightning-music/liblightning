@@ -8,13 +8,10 @@
 #include "lightning.h"
 #include "log.h"
 #include "mem.h"
-#include "metro.h"
 #include "samples.h"
-#include "sequencer.h"
 
 struct Lightning {
     JackClient jack_client;
-    Sequencer seq;
     Samples samples;
 };
 
