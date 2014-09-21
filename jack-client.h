@@ -25,14 +25,46 @@ typedef struct JackClient *JackClient;
 JackClient
 JackClient_init(AudioCallback audio_callback, void *client_data);
 
+/**
+ * Register callbacks for a JackClient.
+ *
+ * @param client   {JackClient}
+ */
 int
 JackClient_setup_callbacks(JackClient client);
 
+/**
+ * Activate a JackClient.
+ *
+ * @param client   {JackClient}
+ */
 int
 JackClient_activate(JackClient client);
 
+/**
+ * Setup the output ports for a JackClient.
+ *
+ * @param client   {JackClient}
+ *
+ * @return 0 (success), nonzero (failure)
+ */
 int
 JackClient_setup_ports(JackClient client);
+
+/**
+ * Connect JackClient's output to a pair of jack inputs.
+ *
+ * e.g. to connect to the system outputs
+ * JackClient_connect(client, "system:playback_1", "system:playback_2");
+ *
+ * @param client   {JackClient}
+ * @param ch1      {const char *}
+ * @param ch2      {const char *}
+ *
+ * @return 0 (success), nonzero (failure)
+ */
+int
+JackClient_connect_to(JackClient client, const char *ch1, const char *ch2);
 
 void
 JackClient_set_data(JackClient client, void *data);

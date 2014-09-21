@@ -22,7 +22,7 @@ struct SF {
     /* opus soundfile, must be handled differently
        until libsndfile supports Ogg/Opus.
        For non-opus files this pointer will be NULL. */
-    SF_Opus opus;
+    /* SF_Opus opus; */
     nframes_t frames;
     channels_t channels;
     nframes_t samplerate;
@@ -32,8 +32,8 @@ struct SF {
 /**
  * Determine if a filename ends in .opus
  */
-static int
-is_opus_file(const char *file);
+/* static int */
+/* is_opus_file(const char *file); */
 
 SF
 SF_open_read(const char *file)
@@ -41,10 +41,10 @@ SF_open_read(const char *file)
     SF sf;
     NEW(sf);
 
-    if (is_opus_file(file)) {
-        sf->opus = SF_open_read_opus(file);
-        return sf;
-    }
+    /* if (is_opus_file(file)) { */
+    /*     sf->opus = SF_open_read_opus(file); */
+    /*     return sf; */
+    /* } */
 
     SF_INFO sfinfo;
     sf->sfp = sf_open(file, SFM_READ, &sfinfo);
@@ -69,10 +69,10 @@ SF_open_write(const char *file, channels_t channels,
     SF sf;
     NEW(sf);
 
-    if (format == SF_FMT_OPUS) {
-         sf->opus = SF_open_write_opus(file, channels, samplerate);
-         return sf;
-    }
+    /* if (format == SF_FMT_OPUS) { */
+    /*      sf->opus = SF_open_write_opus(file, channels, samplerate); */
+    /*      return sf; */
+    /* } */
 
     SF_INFO sfinfo;
     int sndfile_format;
@@ -152,8 +152,8 @@ SF_close(SF *sf)
     FREE(*sf);
 }
 
-static int
-is_opus_file(const char *file)
-{
-    return 0;
-}
+/* static int */
+/* is_opus_file(const char *file) */
+/* { */
+/*     return 0; */
+/* } */

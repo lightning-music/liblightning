@@ -235,36 +235,67 @@ JackClient_setup_ports(JackClient client)
         exit(EXIT_FAILURE);
     }
 
-    const char *playback1 = "system:playback_1";
-    const char *playback2 = "system:playback_2";
+    /* const char *playback1 = "system:playback_1"; */
+    /* const char *playback2 = "system:playback_2"; */
 
-    /* connect playback_1 */
+    /* /\* connect playback_1 *\/ */
 
-    if (jack_connect(client->jack_client,
-                     jack_port_name(client->jack_output_port_1),
-                     playback1)) {
-        fprintf(stderr, "Could not connect %s to %s\n",
-                jack_port_name(client->jack_output_port_1),
-                playback1);
-        exit(EXIT_FAILURE);
-    }
+    /* if (jack_connect(client->jack_client, */
+    /*                  jack_port_name(client->jack_output_port_1), */
+    /*                  playback1)) { */
+    /*     fprintf(stderr, "Could not connect %s to %s\n", */
+    /*             jack_port_name(client->jack_output_port_1), */
+    /*             playback1); */
+    /*     exit(EXIT_FAILURE); */
+    /* } */
 
-    /* connect playback_2 */
+    /* /\* connect playback_2 *\/ */
 
-    if (jack_connect(client->jack_client,
-                     jack_port_name(client->jack_output_port_2),
-                     playback2)) {
-        fprintf(stderr, "Could not connect %s to %s\n",
-                jack_port_name(client->jack_output_port_2),
-                playback2);
-        exit(EXIT_FAILURE);
-    }
+    /* if (jack_connect(client->jack_client, */
+    /*                  jack_port_name(client->jack_output_port_2), */
+    /*                  playback2)) { */
+    /*     fprintf(stderr, "Could not connect %s to %s\n", */
+    /*             jack_port_name(client->jack_output_port_2), */
+    /*             playback2); */
+    /*     exit(EXIT_FAILURE); */
+    /* } */
 
     /* set state to Processing */
 
     if (JackClient_set_state(client, JackClientState_Processing)) {
         fprintf(stderr, "Could not set JackClient state to Processing\n");
         exit(EXIT_FAILURE);
+    }
+
+    return 0;
+}
+
+int
+JackClient_connect_to(JackClient client, const char *ch1, const char *ch2)
+{
+    assert(client);
+
+    int err = jack_connect(client->jack_client,
+                           jack_port_name(client->jack_output_port_1),
+                           ch1);
+
+    /* connect playback_1 */
+    if (err) {
+        LOG(Error, "Could not connect %s to %s\n",
+            jack_port_name(client->jack_output_port_1),
+            ch1);
+        return err;
+    }
+
+    /* connect playback_2 */
+    err = jack_connect(client->jack_client,
+                       jack_port_name(client->jack_output_port_2),
+                       ch2);
+    if (err) {
+        LOG(Error, "Could not connect %s to %s\n",
+            jack_port_name(client->jack_output_port_2),
+            ch2);
+        return err;
     }
 
     return 0;

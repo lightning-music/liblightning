@@ -23,6 +23,18 @@ Lightning
 Lightning_init();
 
 /**
+ * Connect lightning to a pair of JACK sinks.
+ *
+ * @param  lightning   {Lightning}
+ * @param  ch1         {const char *}
+ * @param  ch2         {const char *}
+ *
+ * @return 0 (success), nonzero (failure)
+ */
+int
+Lightning_connect_to(Lightning lightning, const char *ch1, const char *ch2);
+
+/**
  * Add a directory for lighting to search for audio files.
  */
 int

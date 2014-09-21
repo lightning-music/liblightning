@@ -37,15 +37,14 @@ Lightning_init()
     Lightning lightning;
     NEW(lightning);
     initialize_jack_client(lightning);
-    /* lightning->metro = Metro_init(initial_tempo); */
-    /* kind of arbitrary */
-    /* Slave clock = Metro_slave(lightning->metro, "1/16"); */
-    /* lightning->seq = Sequencer_init(lightning, clock); */
-    /* if (Sequencer_start(lightning->seq)) { */
-    /*     LOG(Error, "could not start %s", "sequencer"); */
-    /*     return NULL; */
-    /* } */
     return lightning;
+}
+
+int
+Lightning_connect_to(Lightning lightning, const char *ch1, const char *ch2)
+{
+    assert(lightning);
+    return JackClient_connect_to(lightning->jack_client, ch1, ch2);
 }
 
 int
@@ -67,13 +66,6 @@ Lightning_play_sample(Lightning lightning,
     assert(lightning && lightning->samples);
     return NULL == Samples_play(lightning->samples, file, pitch, gain);
 }
-
-/* int */
-/* Lightning_play_pattern(Lightning lightning, Pattern pat) */
-/* { */
-/*     assert(lightning); */
-/*     return Sequencer_add_pattern(lightning->seq, pat); */
-/* } */
 
 /**
  * Start exporting to an audio file
