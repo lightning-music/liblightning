@@ -4,7 +4,7 @@ include flags.mk
 include objs.mk
 include vars.mk
 
-.PHONY: all install test clean
+.PHONY: all install clean
 
 all .DEFAULT: $(LIBLIGHTNING_AR) $(EXAMPLES)
 
@@ -20,16 +20,9 @@ uninstall:
 
 clean:
 	rm -rf $(EXAMPLES) *~ *.o examples/*~
-	rm -rf $(LIBLIGHTNING_AR) $(TESTS) $(TEST_DIR)/*~
+	rm -rf $(LIBLIGHTNING_AR)
 	rm -rf core *.log *.tar.gz
 
-test: $(TESTS)
-	$(TEST_DIR)/run
-
-test-clean:
-	rm -rf $(TESTS)
-
-test/check-metro: test/check-metro.c $(LIBLIGHTNING_AR)
 test/check-list: test/check-list.c $(LIBLIGHTNING_AR)
 
 $(LIBLIGHTNING_AR): $(OBJS)
