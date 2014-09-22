@@ -159,6 +159,7 @@ void
 Event_free(Event *e)
 {
     assert(e && *e);
+    pthread_mutex_destroy( &(*e)->mutex );
+    pthread_cond_destroy( &(*e)->cond );
     FREE(*e);
 }
-

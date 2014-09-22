@@ -363,8 +363,6 @@ SampleRam_free(SampleRam *samp)
     SampleRam s = *samp;
     /* free the path char array */
     FREE(s->path);
-    /* free the sample rate converter */
-    /* SRC_free(&s->src); */
     /* free the done event */
     Event_free(&s->done_event);
     /* free the framep mutex */
