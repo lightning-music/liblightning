@@ -192,7 +192,7 @@ SampleRam_init(const char *file, pitch_t pitch, gain_t gain, nframes_t output_sr
     /* open audio file */
     SF sf = SF_open_read(file);
     if (sf == NULL) {
-        LOG(Error, "%s\n", SF_strerror(sf));
+        LOG(Warn, "could not open %s\n", file);
         FREE(s);
         return NULL;
     }

@@ -52,6 +52,20 @@ Sample_clone(Sample orig, pitch_t pitch, gain_t gain, nframes_t output_sr)
     return s;
 }
 
+int
+Sample_isnull(Sample samp)
+{
+    if (samp == NULL)
+        return 1;
+
+    switch(SAMPLE_TYPE) {
+    case SampleType_RAM:
+        return samp->ram == NULL;
+    case SampleType_DISK:
+        not_implemented();
+    }
+}
+
 /**
  * Path to loaded file.
  */

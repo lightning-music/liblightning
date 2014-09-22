@@ -180,6 +180,7 @@ Samples_add_dir(Samples samps, const char *dir)
     samps->dirs[i] = ALLOC(len + 1);
     memcpy(samps->dirs[i], dir, len);
     samps->dirs[len] = '\0';
+    LOG(Info, "added %s to search directories", dir);
     return 0;
 }
 
@@ -193,8 +194,12 @@ Samples_load(Samples samps, const char *path)
         LOG(Debug, "sample %s was not cached", path);
         /* initialize and cache it */
         Sample samp = Samples_find_file(samps, path, samps->output_sr);
-        LOG(Debug, "storing %s -> %p in cache", path, samp);
-        BinTree_insert(samps->cache, path, samp);
+        if (samp != NULL) {
+            LOG(Debug, "storing %s -> %p in cache", path, samp);
+            BinTree_insert(samps->cache, path, samp);
+        } else {
+            LOG(Info, "could not find %s in search dirs", path);
+        }
         return samp;
     } else {
         LOG(Debug, "returning cached sample %p", cached);
@@ -214,7 +219,7 @@ Samples_play(Samples samps, const char *path, pitch_t pitch, gain_t gain)
     assert(samps);
     LOG(Debug, "playing %s", path);
     Sample cached = Samples_load(samps, path);
-    if (cached == NULL) {
+    if (Sample_isnull(cached)) {
         LOG(Error, "could not load %s", path);
         return NULL;
     }
@@ -355,26 +360,30 @@ free_done_samples(void *arg)
 static Sample
 Samples_find_file(Samples samps, const char *file, nframes_t output_sr)
 {
-    /* try the file path as given */
+    LOG(Debug, "attempting to open %s", file);
     Sample s = Sample_init(file, 1.0, 1.0, output_sr);
-    if (s != NULL) {
+    if (!Sample_isnull(s)) {
         return s;
     }
     if (samps->dirs == NULL) {
-        /* no directories to search */
+        LOG(Info, "no search %s", "dirs");
         return NULL;
+    } else {
+        LOG(Info, "searching %s dirs", "search");
     }
     char catpath[4096];
     char *dp = *samps->dirs;
+    LOG(Info, "could not find %s, searching %s", file, dp);
     while (dp != NULL) {
         LOG(Debug, "searching %s for %s", dp, file);
         sprintf(catpath, "%s/%s", dp, file);
         LOG(Debug, "catpath is %s", catpath);
         s = Sample_init(catpath, 1.0, 1.0, output_sr);
-        if (s != NULL) {
+        if (! Sample_isnull(s)) {
             break;
         }
         dp++;
+        LOG(Info, "now searching %s", dp);
     }
     return s;
 }

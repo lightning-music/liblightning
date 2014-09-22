@@ -64,6 +64,8 @@ main(int argc, char **argv) {
     JackClient_activate(jack_client);
     JackClient_setup_ports(jack_client);
 
+    JackClient_connect_to(jack_client, "system:playback_1", "system:playback_2");
+
     Sample s = Samples_play(samps, f, pitch, gain);
 
     /* wait for sample to finish playing */

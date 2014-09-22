@@ -31,6 +31,13 @@ Sample_clone(Sample orig,
              nframes_t output_samplerate);
 
 /**
+ * Determine if the underlying sample structure is null.
+ * This is hacky and should be refactored.
+ */
+int
+Sample_isnull(Sample samp);
+
+/**
  * Get the path this sample was loaded from.
  */
 const char *
