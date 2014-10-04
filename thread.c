@@ -30,3 +30,9 @@ Thread_join(Thread t)
     return pthread_join(t->threadId, NULL);
 }
 
+void
+Thread_free(Thread *t)
+{
+    assert(t && *t);
+    FREE(*t);
+}

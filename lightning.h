@@ -50,30 +50,6 @@ Lightning_play_sample(Lightning lightning, const char *file,
                       pitch_t pitch, gain_t gain);
 
 /**
- * Want to be able to play patterns too.
- * Playing a pattern should
- * 1. Spin up a thread
- * 2. Use a Lightning instance to trigger samples
- * 3. Samples will be triggered with an Event.
- * 
- * How to write sequencer?
- * How are all the ADT's involved related to each other?
- * Patterns are collections of Note's.
- * Note's contain the data that is actually used to trigger
- * sounds.
- * Metro master maintains a clock that invokes a callback.
- * Metro slaves emit events at an interval which is an
- * integer ratio of their master.
- * These events get caught by a Sequencer which
- * contains a set of patterns and plays them according
- * to the events it receives.
- * For the purposes of v1, we will have only sample-playback
- * events.
- */
-/* int */
-/* Lightning_play_pattern(Lightning lightning, Pattern pat); */
-
-/**
  * Start exporting to an audio file
  */
 int

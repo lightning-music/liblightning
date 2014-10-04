@@ -146,7 +146,7 @@ Samples_init(nframes_t output_sr)
     free_thread->event = samps->free_event;
     samps->free_thread = Thread_create(free_done_samples, free_thread);
 
-    samps->new_sample = ALLOC(sizeof(Sample));
+    /* samps->new_sample = ALLOC(sizeof(Sample)); */
 
     if (Realtime_set_processing(samps->state)) {
         LOG(Error, "Could not set Samples state to processing%s", "");
@@ -322,8 +322,13 @@ Samples_free(Samples *samps)
         FREE(s->sum_bufs[i]);
         FREE(s->collect_bufs[i]);
     }
+    Thread_free(&s->play_thread);
+    Thread_free(&s->free_thread);
+    Realtime_free(&s->state);
+    /* FREE(s->new_sample); */
     FREE(s->sum_bufs);
     FREE(s->collect_bufs);
+    FREE(*samps);
 }
 
 void *

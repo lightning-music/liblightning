@@ -12,6 +12,7 @@ check-0.9.14/
 # programs
 examples/play-file
 examples/play-sample
+examples/lightning-play-sample
 # test programs
 test/check-list
 test/check-metro

@@ -91,6 +91,7 @@ Lightning_free(Lightning *lightning)
     Lightning s = *lightning;
     Samples_free(&s->samples);
     JackClient_free(&s->jack_client);
+    FREE(*lightning);
 }
 
 static int

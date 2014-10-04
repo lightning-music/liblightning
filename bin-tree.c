@@ -146,6 +146,8 @@ BinTree_lookup_under(BinTree tree, struct node *root, const char *key)
     }
 }
 
+/* We may want to pass in a function pointer
+   to free the nodes */
 void
 BinTree_free(BinTree *tree)
 {
@@ -153,7 +155,6 @@ BinTree_free(BinTree *tree)
     struct node *root = (*tree)->root;
     if (root != NULL) {
         BinTree_free_under(root);
-        FREE(root);
     } else {
         /* null tree */
     }

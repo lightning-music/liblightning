@@ -28,5 +28,6 @@ test/check-list: test/check-list.c $(LIBLIGHTNING_AR)
 $(LIBLIGHTNING_AR): $(OBJS)
 	$(AR) rcs $(LIBLIGHTNING_AR) $^
 
-examples/play-file: examples/play-file.c $(LIBLIGHTNING_AR)
-examples/play-sample: examples/play-sample.c $(LIBLIGHTNING_AR)
+# examples/play-file: examples/play-file.c $(LIBLIGHTNING_AR)
+# examples/play-sample: examples/play-sample.c $(LIBLIGHTNING_AR)
+# examples/lightning-play-sample: examples/lightn

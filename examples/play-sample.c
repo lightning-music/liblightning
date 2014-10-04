@@ -75,6 +75,7 @@ main(int argc, char **argv) {
     /* free sample and jack client */
 
     JackClient_free(&jack_client);
+    Samples_free(&samps);
 
     return 0;
 }

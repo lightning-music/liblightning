@@ -171,8 +171,10 @@ SampleRam_set_buffers(SampleRam samp, sample_t *buf, nframes_t output_sr)
 
     FREE(di_bufs[0]);
     FREE(di_bufs[1]);
-    FREE(srcs[0]);
-    FREE(srcs[1]);
+    SRC_free(&srcs[0]);
+    SRC_free(&srcs[1]);
+    /* FREE(srcs[0]); */
+    /* FREE(srcs[1]); */
 
     return 0;
 }

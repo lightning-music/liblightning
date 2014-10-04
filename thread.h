@@ -13,4 +13,7 @@ Thread_create(ThreadFunction f, ThreadArgument arg);
 int
 Thread_join(Thread t);
 
+void
+Thread_free(Thread *t);
+
 #endif
