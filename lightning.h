@@ -4,20 +4,24 @@
 #include "types.h"
 
 /**
- * lightning server data type
+ * Main lightning data structure.
  *
- * The server initializes a jack client and exposes
- * OSC endpoints to load and playback audio samples.
+ * All functions in this interface will fail if
+ * passed NULL instead of a properly initialized
+ * Lightning instance.
  *
- * The server also broadcasts messages over OSC
- * that provide clients a way to know what it is doing
- * internally.
+ * Typically an application will use a Lightning
+ * instance for its entire life, so you may never need
+ * to call Lightning_free()
  */
 typedef struct Lightning *Lightning;
 
 /**
- * Create a new lightning server.
- * If @a listenPort is NULL then liblo chooses an unused system port.
+ * Entrypoint for liblightning.
+ *
+ * The server also broadcasts messages over OSC/websocket
+ * that provide clients a way to know what it is doing
+ * internally.
  */
 Lightning
 Lightning_init();
@@ -25,9 +29,9 @@ Lightning_init();
 /**
  * Connect lightning to a pair of JACK sinks.
  *
- * @param  lightning   {Lightning}
- * @param  ch1         {const char *}
- * @param  ch2         {const char *}
+ * @param lightning Lightning instance
+ * @param ch1 first JACK output channel
+ * @param ch2 second JACK output channel
  *
  * @return 0 (success), nonzero (failure)
  */
@@ -36,12 +40,22 @@ Lightning_connect_to(Lightning lightning, const char *ch1, const char *ch2);
 
 /**
  * Add a directory for lighting to search for audio files.
+ *
+ * @param lightning Lightning instance
+ * @param dir Directory to add to lightning's search path
+ *
+ * @return 0 (success), nonzero (failure)
  */
 int
 Lightning_add_dir(Lightning lightning, const char *dir);
 
 /**
- * Play a sample
+ * Play a sample.
+ *
+ * @param lightning Lightning instance
+ * @param file Audio file to play
+ * @param pitch Playback speed. `1.0` is normal speed, `0.5` half speed, and so on.
+ * @param gain Gain [0.0, 1.0]
  *
  * @return 0 success, nonzero failure
  */
@@ -51,18 +65,28 @@ Lightning_play_sample(Lightning lightning, const char *file,
 
 /**
  * Start exporting to an audio file
+ *
+ * @param lightning Lightning instance
+ *
+ * @return 0 success, nonzero failure
  */
 int
 Lightning_export_start(Lightning lightning, const char *file);
 
 /**
- * If currently exporting, stop
+ * If currently exporting, stop.
+ *
+ * @param lightning Lightning instance
+ *
+ * @return 0 success, nonzero failure
  */
 int
 Lightning_export_stop(Lightning lightning);
 
 /**
- * Free the resources held by a lightning server
+ * Free the system resources associated with a Lightning instance.
+ *
+ * @param lightning pointer to a Lightning instance
  */
 void
 Lightning_free(Lightning *lightning);
