@@ -12,3 +12,5 @@ EXAMPLES := $(addprefix examples/,$(EXAMPLES))
 TEST_DIR=test
 TESTS := check-list check-metro
 TESTS := $(addprefix $(TEST_DIR)/, $(TESTS))
+# API docs
+API_DOCS_DIR=/var/www/html/liblightning

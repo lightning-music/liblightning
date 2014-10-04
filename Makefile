@@ -4,7 +4,7 @@ include flags.mk
 include objs.mk
 include vars.mk
 
-.PHONY: all install clean
+.PHONY: all install clean docs
 
 all .DEFAULT: $(LIBLIGHTNING_AR) $(EXAMPLES)
 
@@ -27,3 +27,7 @@ test/check-list: test/check-list.c $(LIBLIGHTNING_AR)
 
 $(LIBLIGHTNING_AR): $(OBJS)
 	$(AR) rcs $(LIBLIGHTNING_AR) $^
+
+docs:
+	doxygen
+	scp -r docs/html/* root@sorahan.net:/var/www/html/liblightning
