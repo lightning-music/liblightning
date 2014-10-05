@@ -57,14 +57,6 @@ lr(lua_State *lua_state, void *luasock, size_t *sz)
         error = zmq_getsockopt(luasock, ZMQ_RCVMORE, &more, &moresize);
     } while (more);    
 
-    /* size_t i; */
-    /* printf("unsigned char received_bytes[] = { "); */
-    /* for (i = 0; i < received; i++) { */
-    /*     printf("0x%02X, ", chunk[i]); */
-    /* } */
-    /* printf("}\n"); */
-
-    /* printf("done receiving chunk\n"); */
     *sz = received;
     return chunk;
 }

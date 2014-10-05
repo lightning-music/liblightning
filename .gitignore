@@ -24,3 +24,5 @@ opus-tools-0.1.9/
 docs/
 # REMOVE
 examples/weather.ipc
+*.lo
+*.la

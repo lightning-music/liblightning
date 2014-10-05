@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "jack-client.h"
-#include "lightning.h"
+#include "lightning/lightning.h"
 #include "log.h"
 #include "mem.h"
 #include "samples.h"

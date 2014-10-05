@@ -1,3 +1,10 @@
+/*
+ * Send lua code over a zeromq socket.
+ * I would like to build a hot-code-loading program
+ * like ChucK, but with lua and zeromq.
+ * The tricky part is being able to reference running lua
+ * functions.
+ */
 #include "includes.h"
 #include "luahelpers.h"
 #include "zhelpers.h"
@@ -47,11 +54,6 @@ main(int argc, char **argv)
     return 0;
 }
 
-/*
-  If this function feeds me pieces of chunks, how do
-  I know when I've been given the whole chunk and it is
-  ready to send over the socket?
- */
 static int
 lw(lua_State *lua_state, const void *p, size_t sz, void *luasock)
 {
@@ -68,20 +70,11 @@ lw(lua_State *lua_state, const void *p, size_t sz, void *luasock)
         }
     }
 
-    /* size_t i; */
-    /* printf("unsigned char sent_bytes[] = { "); */
-    /* for (i = 0; i < sz; i++) { */
-    /*     printf("0x%02X, ", ((unsigned char *)p)[i]); */
-    /* } */
-    /* printf("}\n"); */
-
     size_t sent;
     if (end) {
-        /* printf("done sending\n"); */
         sent = zmq_send(luasock, p, sz, 0);
     } else {
         // SNDMORE
-        /* printf("sndmore\n"); */
         sent = zmq_send(luasock, p, sz, ZMQ_SNDMORE);
         return 0;
     }
