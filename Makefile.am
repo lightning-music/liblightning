@@ -1,7 +1,5 @@
 lib_LTLIBRARIES = liblightning.la
 
-SUBDIRS = examples
-
 liblightning_la_SOURCES =     \
         atom.c                \
         bin-tree.c            \
@@ -29,3 +27,5 @@ liblightning_la_LIBADD = -ljack -lsndfile -lsamplerate -lcheck -lrt -lm
 liblightning_la_LDFLAGS = -release @PACKAGE_VERSION@ -version-info 0:0:0
 
 nobase_include_HEADERS = lightning/lightning.h
+
+SUBDIRS = . examples

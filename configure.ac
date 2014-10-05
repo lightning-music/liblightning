@@ -3,9 +3,14 @@
 
 AC_PREREQ([2.69])
 AC_INIT([liblightning], [0.1.0], [lightning-music@googlegroups.com])
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([realtime.c])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_AUX_DIR([ac-config])
 AM_INIT_AUTOMAKE([-Wall])
+
+# parameters for aclocal
+AC_SUBST(ACLOCAL_AMFLAGS, "-I m4")
 
 # Checks for programs.
 AC_PROG_CC
