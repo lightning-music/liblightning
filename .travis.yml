@@ -2,4 +2,4 @@ language: c
 before_script:
   - sudo apt-get update -qq
   - sudo apt-get install -qq autotools-dev autoconf automake libtool libjack-dev libsndfile1-dev libsamplerate0-dev check
-script: ./configure && make && sudo make install
+script: autoreconf -vfi && ./configure && make && sudo make install
