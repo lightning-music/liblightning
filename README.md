@@ -5,23 +5,23 @@ liblightning is a C library for playing audio samples with JACK on Linux systems
 
 [![Build Status](https://travis-ci.org/lightning/liblightning.svg?branch=master)](https://travis-ci.org/lightning/liblightning)
 
-It is a very young project, but can already
 
-* play back audio samples read from disk
+
+Current features:
+
+* play back audio samples read from disk using JACK
 * control pitch and gain for each triggered sample
-* export its output to an audio file
+* export to an audio file
 
 Ideas for the near future are:
 
 * support opus file format for playback and export
-* expose a sequencer API
+* expose a lua API that supports dynamic code loading (a la ChucK)
 
 
 
 Build
 -----
-
-**Note** There are helper scripts named `install-*.sh` for installing some of the dependencies, the rest should be available in your distro's package manager.
 
 Prerequisites:
 
@@ -44,6 +44,8 @@ Prerequisites:
 $ make test
 ```
 
+
+
 Install
 -------
 
@@ -58,6 +60,6 @@ $ make install
 * [lightning](https://github.com/lightning/lightning) - go bindings for liblightning
 * [lightningd](https://github.com/lightning/lightningd) - An http/websocket server for controlling a liblightning-based backend.
 
-### Discussion & Issues
+### Discussion
 
 lightning-music@googlegroups.com
