@@ -33,6 +33,5 @@ AC_FUNC_REALLOC
 AC_CHECK_FUNCS([gettimeofday memset strdup])
 
 AC_CONFIG_FILES([Makefile
-                 docs/latex/Makefile
                  examples/Makefile])
 AC_OUTPUT
