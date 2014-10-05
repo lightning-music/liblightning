@@ -4,6 +4,7 @@
  * and src sample rate converter.
  */
 #include <assert.h>
+#include <lightning/types.h>
 #include <pthread.h>
 #include <samplerate.h>
 #include <sndfile.h>
@@ -14,7 +15,6 @@
 
 #include "../jack-client.h"
 #include "../src.h"
-#include "../types.h"
 
 typedef enum {
     FP_INITIALIZING,

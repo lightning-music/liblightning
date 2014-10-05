@@ -1,9 +1,10 @@
 #ifndef SAMPLE_H_INCLUDED
 #define SAMPLE_H_INCLUDED
 
+#include <lightning/types.h>
+
 #include "sample-disk.h"
 #include "sample-ram.h"
-#include "types.h"
 
 /* typedef struct Sample *Sample; */
 typedef union Sample {

@@ -1,6 +1,6 @@
+#include <lightning/types.h>
 
 #include "clip.h"
-#include "types.h"
 
 inline sample_t
 clip(sample_t val, sample_t min, sample_t max) {

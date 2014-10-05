@@ -1,9 +1,8 @@
 #ifndef RINGBUFFER_H_INCLUDED
 #define RINGBUFFER_H_INCLUDED
 
+#include <lightning/types.h>
 #include <stddef.h>
-
-#include "types.h"
 
 typedef struct Ringbuffer *Ringbuffer;
 

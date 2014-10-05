@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>
+#include <lightning/types.h>
 #include <stddef.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -16,7 +17,6 @@
 #include "sample.h"
 #include "samples.h"
 #include "thread.h"
-#include "types.h"
 
 #define ASSUMED_CHANNELS 2
 

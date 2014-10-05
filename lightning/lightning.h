@@ -1,7 +1,7 @@
 #ifndef LIGHTNING_H_INCLUDED
 #define LIGHTNING_H_INCLUDED
 
-#include "types.h"
+#include <lightning/types.h>
 
 /**
  * Main lightning data structure.

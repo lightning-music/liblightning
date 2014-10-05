@@ -4,6 +4,7 @@
  */
 #include <assert.h>
 #include <jack/jack.h>
+#include <lightning/types.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,7 +18,6 @@
 #include "mutex.h"
 #include "ringbuffer.h"
 #include "thread.h"
-#include "types.h"
 
 typedef enum {
     JackClientState_Initializing,

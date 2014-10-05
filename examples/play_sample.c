@@ -1,3 +1,4 @@
+#include <lightning/types.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,7 +6,6 @@
 #include "../jack-client.h"
 #include "../sample.h"
 #include "../samples.h"
-#include "../types.h"
 
 int
 stereo_callback(sample_t **buffers,

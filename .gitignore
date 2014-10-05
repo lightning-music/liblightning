@@ -10,9 +10,9 @@ core
 check-0.9.14/
 *.tar.gz
 # programs
-examples/play-file
-examples/play-sample
-examples/lightning-play-sample
+examples/play_file
+examples/play_sample
+examples/lightning_play_sample
 examples/luaserver
 examples/luaclient
 # test programs
@@ -26,3 +26,4 @@ docs/
 examples/weather.ipc
 *.lo
 *.la
+.libs/

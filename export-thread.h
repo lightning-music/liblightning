@@ -1,7 +1,7 @@
 #ifndef EXPORT_THREAD_H_INCLUDED
 #define EXPORT_THREAD_H_INCLUDED
 
-#include "types.h"
+#include <lightning/types.h>
 
 typedef struct ExportThread *ExportThread;
 

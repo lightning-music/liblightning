@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <lightning/types.h>
 #include <samplerate.h>
 #include <stddef.h>
 #include <stdio.h>

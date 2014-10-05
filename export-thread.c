@@ -81,7 +81,7 @@
  * for JackClient to use to determine this.
  */
 #include <assert.h>
-/* #include <sndfile.h> */
+#include <lightning/types.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -93,7 +93,6 @@
 #include "ringbuffer.h"
 #include "sf.h"
 #include "thread.h"
-#include "types.h"
 
 static int
 ExportThread_set_exporting(ExportThread thread, int val);

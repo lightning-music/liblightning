@@ -1,9 +1,8 @@
 #ifndef SF_H_INCLUDED
 #define SF_H_INCLUDED
 
+#include <lightning/types.h>
 #include <sndfile.h>
-
-#include "types.h"
 
 typedef enum {
     /* libsndfile formats */

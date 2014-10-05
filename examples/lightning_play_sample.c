@@ -1,7 +1,6 @@
+#include <lightning/lightning.h>
 #include <stdio.h>
 #include <unistd.h>
-
-#include "../lightning/lightning.h"
 
 int
 main(int argc, char **argv)

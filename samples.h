@@ -3,8 +3,9 @@
 
 #define MAX_POLYPHONY 64
 
+#include <lightning/types.h>
+
 #include "sample.h"
-#include "types.h"
 
 /**
  * Polyphonic sample playback

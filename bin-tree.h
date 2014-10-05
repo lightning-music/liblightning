@@ -1,9 +1,8 @@
 #ifndef BINTREE_H_INCLUDED
 #define BINTREE_H_INCLUDED
 
+#include <lightning/types.h>
 #include <stddef.h>
-
-#include "types.h"
 
 /* It is a checked runtime error to pass a NULL BinTree to any
    function in this interface */

@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <lightning/types.h>
 #include <sndfile.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -7,7 +8,6 @@
 #include "log.h"
 #include "mem.h"
 #include "sf.h"
-#include "types.h"
 
 typedef enum {
     SF_MODE_READ,

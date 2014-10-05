@@ -1,10 +1,10 @@
 #include <assert.h>
 #include <jack/ringbuffer.h>
+#include <lightning/types.h>
 #include <stddef.h>
 
 #include "mem.h"
 #include "ringbuffer.h"
-#include "types.h"
 
 struct Ringbuffer {
     jack_ringbuffer_t *jrb;

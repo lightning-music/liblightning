@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <lightning/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -6,7 +7,6 @@
 #include "mem.h"
 #include "sample.h"
 #include "sample-ram.h"
-#include "types.h"
 
 static void
 not_implemented(void)

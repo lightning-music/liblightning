@@ -26,6 +26,6 @@ liblightning_la_LIBADD = -ljack -lsndfile -lsamplerate -lcheck -lrt -lm
 
 liblightning_la_LDFLAGS = -release @PACKAGE_VERSION@ -version-info 0:0:0
 
-nobase_include_HEADERS = lightning/lightning.h
+nobase_include_HEADERS = lightning/lightning.h lightning/types.h
 
 SUBDIRS = . examples

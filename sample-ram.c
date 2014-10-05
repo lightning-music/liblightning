@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <lightning/types.h>
 #include <math.h>
 /* #include <sndfile.h> */
 #include <stddef.h>
@@ -14,7 +15,6 @@
 #include "sample-ram.h"
 #include "sf.h"
 #include "src.h"
-#include "types.h"
 
 typedef enum {
     Initializing,

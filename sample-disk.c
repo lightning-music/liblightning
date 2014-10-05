@@ -1,8 +1,9 @@
+#include <lightning/types.h>
+
 #include "mem.h"
 #include "ring-buffer.h"
 #include "sample-disk.h"
 #include "thread.h"
-#include "types.h"
 
 struct SampleDisk {
     char *path;
