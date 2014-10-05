@@ -1,0 +1,28 @@
+liblightning is a simple C library for playing audio samples with JACK on Linux systems.
+
+API documentation is available at http://sorahan.net/liblightning
+
+Features
+* Play any file format supported by libsndfile
+* Control over playback speed and gain
+
+
+
+Build
+=====
+
+Dependencies:
+* jack
+* libsndfile
+* libsamplerate
+
+On ubuntu-based systems you can do
+# apt-get install libjack-dev libsndfile1-dev libsamplerate0-dev
+
+Then do
+# make
+# make install
+
+
+
+If you wish to contribute, see CONTRIBUTING.
