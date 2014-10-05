@@ -13,6 +13,8 @@ check-0.9.14/
 examples/play-file
 examples/play-sample
 examples/lightning-play-sample
+examples/luaserver
+examples/luaclient
 # test programs
 test/check-list
 test/check-metro
@@ -20,3 +22,5 @@ test/check-metro
 opus-1.1/
 opus-tools-0.1.9/
 docs/
+# REMOVE
+examples/weather.ipc
