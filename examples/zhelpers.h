@@ -1,4 +1,6 @@
 /*  =====================================================================
+    lifted from zguide source -brian
+
     zhelpers.h
 
     Helper header file for example applications.
