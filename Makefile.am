@@ -1,5 +1,7 @@
 lib_LTLIBRARIES = liblightning.la
 
+SUBDIRS = examples
+
 liblightning_la_SOURCES =     \
         atom.c                \
         bin-tree.c            \
