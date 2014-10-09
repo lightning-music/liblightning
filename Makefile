@@ -31,3 +31,7 @@ $(LIBLIGHTNING_AR): $(OBJS)
 docs:
 	doxygen
 	scp -r docs/html/* root@sorahan.net:/var/www/html/liblightning
+
+examples/play-file: examples/play-file.c
+examples/play-sample: examples/play-sample.c
+examples/lightning-play-sample: examples/lightning-play-sample.c
