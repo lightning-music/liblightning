@@ -3,7 +3,8 @@ bindir=$(prefix)/bin
 includedir=$(prefix)/include/lightning
 libdir=$(prefix)/lib
 # headers
-HEADERS = lightning.h types.h
+HEADERS := lightning.h types.h
+HEADERS := $(addprefix lightning/,$(HEADERS))
 # examples, archive
 LIBLIGHTNING_AR=liblightning.a
 EXAMPLES := play-file play-sample lightning-play-sample
