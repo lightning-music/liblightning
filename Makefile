@@ -20,7 +20,7 @@ uninstall:
 
 clean:
 	rm -rf $(EXAMPLES) *~ *.o examples/*~
-	rm -rf $(LIBLIGHTNING_AR)
+	rm -rf $(LIBLIGHTNING_AR) $(LIBLIGHTNING_SO) $(SHARED_DIR)
 	rm -rf core *.log *.tar.gz
 
 test/check-list: test/check-list.c $(LIBLIGHTNING_AR)

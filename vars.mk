@@ -7,6 +7,9 @@ HEADERS := lightning.h types.h
 HEADERS := $(addprefix lightning/,$(HEADERS))
 # examples, archive
 LIBLIGHTNING_AR=liblightning.a
+LIBLIGHTNING_SO=liblightning-0.1.0.so
+# directory to hold object files for shared library
+SHARED_DIR=.shared
 EXAMPLES := play-file play-sample lightning-play-sample
 EXAMPLES := $(addprefix examples/,$(EXAMPLES))
 # tests
