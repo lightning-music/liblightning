@@ -30,6 +30,8 @@ $(LIBLIGHTNING_AR): $(OBJS)
 
 docs:
 	doxygen
+
+sorahan.net:
 	scp -r docs/html/* root@sorahan.net:/var/www/html/liblightning
 
 examples/play-file: examples/play-file.c
