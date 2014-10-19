@@ -27,3 +27,5 @@ examples/weather.ipc
 *.lo
 *.la
 .libs/
+# ignore shared libs
+*.so
